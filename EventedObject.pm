@@ -1,13 +1,13 @@
 # Copyright (c) 2012, Mitchell Cooper
 #
-# The libuic UIC::EventedObject:
+# EventedObject 0.2 based on the libuic UIC::EventedObject:
 # event system based on EventedObject from foxy-java IRC Bot,
 # ... which is based on EventedObject from Arinity IRC Services,
 # ... which is based on EventedObject from ntirc IRC Client,
 # ... which is based on EventedObject from libirc IRC Library,
 # ... which can be found at https://github.com/cooper/evented-object.
 #
-package UIC::EventedObject;
+package EventedObject;
  
 use warnings;
 use strict;
