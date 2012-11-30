@@ -43,12 +43,13 @@ $obj->register_event(myEvent => sub {
 * __name:__ the name of the callback being registered.
 * __priority:__ a numerical priority of the callback.
 * __with_obj:__ if true, the EventedObject will be used as the first argument of the callback.
+* __data:__ any data that will be stored as 'event_data' as the callback is fired.
 
 Note: `->attach_event` by default fires the callback with the EventedObject as its first argument unless told not to do so.
 `->register_event`, however, functions in the opposite sense and *never* passes the EventedObject as the first argument
 unless the `with_obj` option is passed.
 
-## $obj->attach_event($event_name => \\&callback, $callback_name, $priority, $silent)
+## $obj->attach_event($event_name => \\&callback, $callback_name, $priority, $silent, $data)
 
 Attaches an event callback the object. When the specified event is fired, each of the callbacks registered using this method
 will be called by descending priority order (higher priority numbers are called first).
@@ -64,6 +65,7 @@ $obj->attach_event(some_event => \&my_callback, 'my.name', 20);
 * __callback_name:__ *optional*, the name of the callback being registered.
 * __priority:__ *optional*, a numerical priority of the callback.
 * __silent:__ *optional*, true if this callback should be called without the EventedObject as its first argument.
+* __data:__ *optional*, any data that will be stored as 'event_data' as the callback is fired.
 
 ## $obj->delete_event($event_name, $callback_name)
 
