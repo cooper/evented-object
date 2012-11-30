@@ -7,7 +7,7 @@
 # ... which is based on EventedObject from libirc IRC Library,
 # ... which can be found at https://github.com/cooper/evented-object.
 #
-package EventedObject 0.3;
+package EventedObject 0.4;
  
 use warnings;
 use strict;
@@ -17,14 +17,30 @@ use utf8;
 sub new {
     bless {}, shift;
 }
- 
-# attach an event callback
+
+# attach an event callback.
 sub attach_event {
     my ($obj, $event, $code, $name, $priority, $silent) = @_;
     $priority ||= 0; # priority does not matter, so call last.
     $obj->{events}->{$event}->{$priority} ||= [];
     push @{$obj->{events}->{$event}->{$priority}}, [$name, $code, $silent];
     return 1;
+}
+
+# attach an event callback.
+# $obj->register_event(myEvent => sub {
+#     ...
+# }, name => 'some.callback', priority => 200, with_obj => 1);
+# with_obj replaces $silent - it's the opposite of $silent.
+sub register_event {
+    my ($obj, $event, $code, %opts) = @_;
+    my $silent = $opts{with_obj} ? undef : 1;
+    return $obj->attach_event(
+        $event => $code,
+        $opts{name},
+        $opts{priority},
+        $silent
+    );
 }
  
 # fire an event.

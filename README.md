@@ -18,7 +18,37 @@ to call SUPER::new(), as EventedObject->new returns nothing more than an empty h
 my $obj = EventedObject->new();
 ```
 
-## $obj->attach_event($event_name, \\&callback, $callback_name, $priority, $silent)
+## $obj->register_event($event_name => \\&callback, %options)
+
+Intended to be a replacement for the former `->attach_event`.
+Attaches an event callback the object. When the specified event is fired, each of the callbacks registered using this method
+will be called by descending priority order (higher priority numbers are called first).
+
+```perl
+$obj->register_event(myEvent => sub {
+    ...
+}, name => 'some.callback', priority => 200, with_obj => 1);
+```
+
+### Parameters
+
+* __event_name:__ the name of the event.
+* __callback:__ a CODE reference to be called when the event is fired.
+* __options:__ *optional*, a hash (not hash reference) of any of the below options.
+
+### %options - event handler options
+
+**All of these options are optional.**
+
+* __name:__ the name of the callback being registered.
+* __priority:__ a numerical priority of the callback.
+* __with_obj:__ if true, the EventedObject will be used as the first argument of the callback.
+
+Note: `->attach_event` by default fires the callback with the EventedObject as its first argument unless told not to do so.
+`->register_event`, however, functions in the opposite sense and *never* passes the EventedObject as the first argument
+unless the `with_obj` option is passed.
+
+## $obj->attach_event($event_name => \\&callback, $callback_name, $priority, $silent)
 
 Attaches an event callback the object. When the specified event is fired, each of the callbacks registered using this method
 will be called by descending priority order (higher priority numbers are called first).
