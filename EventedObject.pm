@@ -7,13 +7,11 @@
 # ... which is based on EventedObject from libirc IRC Library,
 # ... which can be found at https://github.com/cooper/evented-object.
 #
-package EventedObject;
+package EventedObject 0.3;
  
 use warnings;
 use strict;
 use utf8;
-
-our $VERSION = '0.2';
  
 # create a new evented object
 sub new {
@@ -22,13 +20,14 @@ sub new {
  
 # attach an event callback
 sub attach_event {
-    my ($obj, $event, $code, $name, $priority) = @_;
+    my ($obj, $event, $code, $name, $priority, $silent) = @_;
     $priority ||= 0; # priority does not matter, so call last.
     $obj->{events}->{$event}->{$priority} ||= [];
-    push @{$obj->{events}->{$event}->{$priority}}, [$name, $code];
+    push @{$obj->{events}->{$event}->{$priority}}, [$name, $code, $silent];
     return 1;
 }
  
+# fire an event.
 sub fire_event {
     my ($obj, $event) = (shift, shift);
  
@@ -48,7 +47,12 @@ sub fire_event {
             };
  
             # call it.
-            $cb->[1]->($obj, @_);
+            $cb->[1]->($obj, @_) unless $cb->[2];
+            $cb->[1]->(   @_   ) if     $cb->[2];
+            
+            # delete event_info, as it causes a neverending reference.
+            delete $obj->{event_info};
+            
         }
     }
  

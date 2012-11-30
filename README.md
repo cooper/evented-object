@@ -18,7 +18,7 @@ to call SUPER::new(), as EventedObject->new returns nothing more than an empty h
 my $obj = EventedObject->new();
 ```
 
-## $obj->attach_event($event_name, \\&callback, $callback_name, $priority)
+## $obj->attach_event($event_name, \\&callback, $callback_name, $priority, $silent)
 
 Attaches an event callback the object. When the specified event is fired, each of the callbacks registered using this method
 will be called by descending priority order (higher priority numbers are called first).
@@ -33,6 +33,7 @@ $obj->attach_event(some_event => \&my_callback, 'my.name', 20);
 * __callback:__ a CODE reference to be called when the event is fired.
 * __callback_name:__ *optional*, the name of the callback being registered.
 * __priority:__ *optional*, a numerical priority of the callback.
+* __silent:__ *optional*, true if this callback should be called without the EventedObject as its first argument.
 
 ## $obj->delete_event($event_name, $callback_name)
 
