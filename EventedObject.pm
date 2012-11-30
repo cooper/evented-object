@@ -7,7 +7,7 @@
 # ... which is based on EventedObject from libirc IRC Library,
 # ... which can be found at https://github.com/cooper/evented-object.
 #
-package EventedObject 0.4;
+package EventedObject 0.5;
  
 use warnings;
 use strict;
@@ -46,9 +46,12 @@ sub register_event {
 # fire an event.
 sub fire_event {
     my ($obj, $event) = (shift, shift);
- 
+    
     # event does not have any callbacks
     return unless $obj->{events}->{$event};
+ 
+    # clear the last event_return.
+    delete $obj->{event_return};
  
     # iterate through callbacks by priority.
     foreach my $priority (sort { $b <=> $a } keys %{$obj->{events}->{$event}}) {
@@ -63,8 +66,8 @@ sub fire_event {
             };
  
             # call it.
-            $cb->[1]->($obj, @_) unless $cb->[2];
-            $cb->[1]->(   @_   ) if     $cb->[2];
+            $obj->{event_return} = $cb->[1]->($obj, @_) unless $cb->[2];
+            $obj->{event_return} = $cb->[1]->(   @_   ) if     $cb->[2];
             
             # delete event_info, as it causes a neverending reference.
             delete $obj->{event_info};
