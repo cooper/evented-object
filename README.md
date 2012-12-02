@@ -96,7 +96,7 @@ will be called by descending priority order (higher priority numbers are called 
 ```perl
 $obj->register_event(myEvent => sub {
     ...
-}, name => 'some.callback', priority => 200, with_obj => 1);
+}, name => 'some.callback', priority => 200, silent => 1);
 ```
 
 ### Parameters
@@ -107,16 +107,18 @@ $obj->register_event(myEvent => sub {
 
 ### %options - event handler options
 
-**All of these options are optional.**
+**All of these options are optional**, but the use of a callback name is **highly recommended**.
 
-* __name:__ the name of the callback being registered.
+* __name:__ the name of the callback being registered. must be unique to this particular event.
 * __priority:__ a numerical priority of the callback.
 * __silent:__ if true, the $event object will be omitted from the callback argument list.
 * __data:__ any data that will be stored as 'event_data' as the callback is fired.
 
 Note: `->attach_event` by default fires the callback with the EventedObject as its first argument unless told not to do so.
-`->register_event`, however, functions in the opposite sense and *never* passes the EventedObject as the first argument
-unless the `with_obj` option is passed.
+`->register_event` in the 0.* series, however, functions in the opposite sense and *never* passes the EventedObject as the first argument
+unless the `with_obj` option is passed.  
+In the 1.* series and above, the event object is passed as the first argument unless the `silent` option is passed. The EventedObject
+instance itself is now accessible through `$event->{object}`.
 
 ### Parameters
 
