@@ -41,11 +41,13 @@
 # least the late 2.* series.
 #
 
-package EventedObject 1.8;
+package EventedObject;
  
 use warnings;
 use strict;
 use utf8;
+
+our $VERSION = 1.9;
 
 my $events = 'eventedObject.events';
 
