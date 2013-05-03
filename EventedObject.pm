@@ -40,6 +40,9 @@
 # in favor of the new register_event(); however, it will remain in EventedObject until at
 # least the late 2.* series.
 #
+# Version 2.0 breaks things even more because ->on() is now an alias for ->register_event()
+# rather than ->attach_event() as it always has been.
+#
 
 package EventedObject;
  
@@ -47,7 +50,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = 1.9;
+our $VERSION = '2.0';
 
 my $events = 'eventedObject.events';
 
@@ -185,7 +188,7 @@ sub delete_event {
  
 # aliases.
 sub on; sub del; sub fire;
-*on   = *attach_event;
+*on   = *register_event;
 *del  = *delete_event;
 *fire = *fire_event;
  
