@@ -50,7 +50,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.1';
+our $VERSION = '2.11';
 
 my $events = 'eventedObject.events';
 
@@ -96,7 +96,7 @@ sub register_events {
     my ($obj, @events) = @_;
     my @return;
     foreach my $event (@events) {
-        push @return, $obj->register_event(@$event);
+        push @return, $obj->register_event(%$event);
     }
     return @return;
 }
