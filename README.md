@@ -99,6 +99,12 @@ $obj->register_event(myEvent => sub {
 }, name => 'some.callback', priority => 200, silent => 1);
 ```
 
+## $obj->register_events(@events)
+
+Registers several events at once. The arguments should be a list of hash references.
+These references take the same options as `->register_event`. Returns a list of return
+values in the order that the events were specified.
+
 ### Parameters
 
 * __event_name:__ the name of the event.

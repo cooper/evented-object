@@ -50,7 +50,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.0';
+our $VERSION = '2.1';
 
 my $events = 'eventedObject.events';
 
@@ -89,6 +89,16 @@ sub register_event {
         $silent,
         $opts{data}
     );
+}
+
+# attach several event callbacks.
+sub register_events {
+    my ($obj, @events) = @_;
+    my @return;
+    foreach my $event (@events) {
+        push @return, $obj->register_event(@$event);
+    }
+    return @return;
 }
  
 # fire an event.
