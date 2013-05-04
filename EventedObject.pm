@@ -50,7 +50,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.11';
+our $VERSION = '2.12';
 
 my $events = 'eventedObject.events';
 
@@ -170,17 +170,22 @@ sub delete_event {
     
         # if a specific callback name is specified, weed it out.
         if (defined $name) {
-            my $a = $obj->{$events}{$event_name}{$priority};
-            @$a = grep { $_->{name} ne $name } @$a;
+            my @a = @{$obj->{$events}{$event_name}{$priority}};
+            @a = grep { $_->{name} ne $name } @a;
             
             # none left in this priority.
-            if (scalar @$a == 0) {
+            if (scalar @a == 0) {
                 delete $obj->{$events}{$event_name}{$priority};
             }
             
             # delete this event because all priorities have been removed.
             if (scalar keys %{$obj->{$events}{$event_name}} == 0) {
                 delete $obj->{$events}{$event_name};
+            }
+            
+            # store the new array.
+            else {
+                $obj->{$events}{$event_name}{$priority} = \@a;
             }
             
         }
