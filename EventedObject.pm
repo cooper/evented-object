@@ -50,7 +50,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.12';
+our $VERSION = '2.13';
 
 my $events = 'eventedObject.events';
 
@@ -160,13 +160,13 @@ sub fire_event {
 # returns a true value if any events were deleted, false otherwise.
 sub delete_event {
     my ($obj, $event_name, $name) = @_;
-    my $amount;
+    my $amount = 0;
     
     # event does not have any callbacks.
     return unless $obj->{$events}{$event_name};
  
     # iterate through callbacks and delete matches.
-    foreach my $priority (keys %{$obj->{$events}{$event_name}}) {
+    PRIORITY: foreach my $priority (keys %{$obj->{$events}{$event_name}}) {
     
         # if a specific callback name is specified, weed it out.
         if (defined $name) {
@@ -176,17 +176,20 @@ sub delete_event {
             # none left in this priority.
             if (scalar @a == 0) {
                 delete $obj->{$events}{$event_name}{$priority};
-            }
-            
-            # delete this event because all priorities have been removed.
-            if (scalar keys %{$obj->{$events}{$event_name}} == 0) {
-                delete $obj->{$events}{$event_name};
+                
+                # delete this event because all priorities have been removed.
+                if (scalar keys %{$obj->{$events}{$event_name}} == 0) {
+                    delete $obj->{$events}{$event_name};
+                    return 1;
+                }
+                
+                $amount++;
+                next PRIORITY;
+                
             }
             
             # store the new array.
-            else {
-                $obj->{$events}{$event_name}{$priority} = \@a;
-            }
+            $obj->{$events}{$event_name}{$priority} = \@a;
             
         }
         
