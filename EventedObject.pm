@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.54';
+our $VERSION = '2.6';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -159,6 +159,9 @@ sub fire_event {
             $event->{$props}{callback_name}     = $cb->{name};                          # $event->callback_name
             $event->{$props}{callback_priority} = $priority;                            # $event->callback_priority
             $event->{$props}{callback_data}     = $cb->{data} if defined $cb->{data};   # $event->callback_data
+ 
+            # this callback has been cancelled.
+            next CALLBACK if $event->{$props}{cancelled}{$cb->{name}};
  
             # set last return value.
             $event->{$props}{last_return} =
@@ -289,6 +292,10 @@ sub pending {
 
 # cancels a future callback once.
 sub cancel {
+    my ($event, $callback) = @_;
+    $event->{$props}{cancelled}{$callback} = 1;
+    $event->{$props}{cancellor}{$callback} = $event->callback_name;
+    return 1;
 }
 
 # returns the return value of the given callback.
