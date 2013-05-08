@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.73';
+our $VERSION = '2.74';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -148,7 +148,7 @@ sub fire_event {
     );
  
     my @priorities = sort { $b <=> $a } keys %{$eo->{$events}{$event_name}};
-    $event->{current_priority_set} = \@priorities;
+    $event->{$props}{current_priority_set} = \@priorities;
     
     # iterate through callbacks by priority (higher number is called first)
     my ($priority_index, $callback_index) = (-1, -1);
@@ -195,7 +195,7 @@ sub fire_event {
             # $event->last
             $event->{$props}{last_callback} = $cb->{name};
             
-            # if $event->{stop} is true, $event->stop was called. stop the iteration.
+            # if $event->{$props}{stop} is true, $event->stop was called. stop the iteration.
             if ($event->{$props}{stop}) {
                 $event->{$props}{stopper} = $cb->{name}; # set $event->stopper.
                 last PRIORITY;
