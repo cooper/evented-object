@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.71';
+our $VERSION = '2.72';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -67,13 +67,6 @@ sub new {
 # attach an event callback. deprecated. do not use directly.
 sub attach_event {
     my ($eo, $event_name, $code, $name, $priority, $silent, $data) = @_;
-    
-    # no name was provided, so we shall construct
-    # one using the power of pure hackery.
-    if (!defined $name) {
-        my @caller = caller;
-        $name = "$event_name.$caller[0]($caller[2])";
-    }
     
     $priority ||= 0; # priority does not matter.
     $eo->{$events}{$event_name}{$priority} ||= [];
@@ -97,6 +90,14 @@ sub attach_event {
 sub register_event {
     my ($eo, $event_name, $code, %opts) = @_;
     my $silent = $opts{no_obj} ? undef : 1;
+    
+    # no name was provided, so we shall construct
+    # one using the power of pure hackery.
+    if (!defined $opts{name}) {
+        my @caller = caller;
+        $opts{name} = "$event_name.$caller[0]($caller[2])";
+    }
+    
     
     # the good old ->attach_event().
     return $eo->attach_event(
@@ -180,7 +181,7 @@ sub fire_event {
             $event->{$props}{last_return} =
             
             # set this callback's return value.
-            $event->{return}{$cb->{name}} =
+            $event->{$props}{return}{$cb->{name}} =
             
             # silent really makes no sense - not even I am sure what it does anymore.
             $cb->{silent} ? $cb->{code}($event, @_) : $cb->{code}(@_);
@@ -196,7 +197,7 @@ sub fire_event {
             
             # if $event->{stop} is true, $event->stop was called. stop the iteration.
             if ($event->{$props}{stop}) {
-                $event->{stopper} = $event->{callback_name}; # set $event->stopper.
+                $event->{$props}{stopper} = $event->{callback_name}; # set $event->stopper.
                 last PRIORITY;
             }
 
