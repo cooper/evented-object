@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.5';
+our $VERSION = '2.51';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -186,6 +186,13 @@ sub fire_event {
 
         }
     }
+
+    # dispose of things that are no longer needed.
+    delete $event->{$props}{$_} foreach qw(
+        callback_name callback_priority callback_data
+        current_priority_set current_callback_set
+        priority_i callback_i
+    );
 
     return $event;
 }
