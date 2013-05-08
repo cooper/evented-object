@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.8';
+our $VERSION = '2.81';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -271,7 +271,7 @@ package EventedObject::Event;
 
 our $VERSION = $EventedObject::VERSION;
 
-our $events = $EventedObject::events
+our $events = $EventedObject::events;
 our $props  = $EventedObject::props;
 
 # create a new event object.
