@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.52';
+our $VERSION = '2.53';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -265,6 +265,11 @@ sub stop {
 # returns a true value if the given callback has been called.
 # with no argument, returns number of callbacks called so far.
 sub called {
+    my ($event, $callback) = @_;
+    
+    # return whether the specified callback was called.
+    return $event->{$props}{called}{$callback};
+    
 }
 
 # returns a true value if the given callback will be called soon.
@@ -276,9 +281,7 @@ sub pending {
     if (!defined $callback) {
         return scalar $event->_pending_callbacks;
     }
-    
-    # return whether the specified callback was called.
-    return $event->{$props}{called}{$callback};
+
     
 }
 
