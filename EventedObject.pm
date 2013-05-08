@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.75';
+our $VERSION = '2.76';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -267,6 +267,11 @@ sub delete_event {
 #####################
 
 package EventedObject::Event;
+
+our $VERSION = $EventedObject::VERSION;
+
+my $events = 'eventedObject.events';
+my $props  = 'eventedObject.props';
 
 # create a new event object.
 sub new {
