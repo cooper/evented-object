@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.81';
+our $VERSION = '2.82';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -282,7 +282,7 @@ sub new {
 
 # cancel all future callbacks once.
 sub stop {
-    shift->{stop} = 1;
+    shift->{$props}{stop} = 1;
 }
 
 # returns a true value if the given callback has been called.
