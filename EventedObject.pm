@@ -43,6 +43,10 @@
 # Version 2.0 breaks things even more because ->on() is now an alias for ->register_event()
 # rather than ->attach_event() as it always has been.
 #
+# Version 2.2 introduces new incompatibilities. The former values fetched as hash elements
+# from event objects are now fetched by methods instead. $event->{stop} has been replaced
+# by $event->stop, $event->{return}{$callback} by $event->return_of($callback), etc.
+#
 
 package EventedObject;
  
@@ -50,9 +54,10 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.13';
+our $VERSION = '2.2';
 
 my $events = 'eventedObject.events';
+my $props  = 'eventedObject.props';
 
 # create a new evented object
 sub new {
@@ -63,7 +68,7 @@ sub new {
 sub attach_event {
     my ($obj, $event_name, $code, $name, $priority, $silent, $data) = @_;
     $name ||= $event_name.q(.).rand(9001); # so illegal.
-    $priority ||= 0; # priority does not matter, so call last.
+    $priority ||= 0; # priority does not matter.
     $obj->{$events}{$event_name}{$priority} ||= [];
     push @{$obj->{$events}{$event_name}{$priority}}, {
         name   => $name,
@@ -112,8 +117,6 @@ sub register_events {
 #     return        => a hashref of name:value return values,
 #     last_return   => the return value of the last-called event,
 #     count         => the number of callbacks called,
-#     data          => data passed to event when handler was registered,
-#     stop          => true to stop iteration of events
 # };
 # returns $event.
 sub fire_event {
@@ -123,36 +126,49 @@ sub fire_event {
     return unless $obj->{$events}{$event_name};
  
     # create event object.
-    my $event = {
-        name   => $event_name,
-        object => $obj,
-        caller => [caller 1]
-    };
+    my $event = EventedEvent->new(
+        name   => $event_name,  # $event->event_name
+        object => $obj,         # $event->object
+        caller => [caller 1],   # $event->caller
+        count  => 0             # $event->called
+    );
  
-    # iterate through callbacks by priority.
-    PRIORITY: foreach my $priority (sort { $b <=> $a } keys %{$obj->{$events}{$event_name}}) {
-        CALLBACK: foreach my $cb (@{$obj->{$events}{$event_name}{$priority}}) {
+    my @priorities_in_order = sort { $b <=> $a } keys %{$obj->{$events}{$event_name}};
+    
+    # iterate through callbacks by priority (higher number is called first)   
+    PRIORITY: foreach my $priority (@priorities_in_order) {
+    
+        my @this_priority = @{$obj->{$events}{$event_name}{$priority}};
+        
+        # iterate through each callback in this priority.
+        CALLBACK: foreach my $cb (@this_priority) {
  
             # create info about the call.
-            $event->{callback}      = $cb->{code};
-            $event->{callback_name} = $cb->{name};
-            $event->{priority}      = $priority;
-            $event->{data}          = $cb->{data} if defined $cb->{data};
+            $event->{$props}{callback_name}     = $cb->{name};                          # $event->callback_name
+            $event->{$props}{callback_priority} = $priority;                            # $event->callback_priority
+            $event->{$props}{callback_data}     = $cb->{data} if defined $cb->{data};   # $event->callback_data
  
-            # call it.
-            $event->{last_return}      =
-            $event->{return}{$cb->{name}} = $cb->{silent} ? $cb->{code}($event, @_) : $cb->{code}(@_);
+            # set last return value.
+            $event->{$props}{last_return} =
             
-            # if $event->{stop} is true, stop the iteration.
-            if ($event->{stop}) {
-                $event->{stopper} = $event->{callback_name};
+            # set this callback's return value.
+            $event->{return}{$cb->{name}} =
+            
+            # silent really makes no sense - not even I am sure what it does anymore.
+            $cb->{silent} ? $cb->{code}($event, @_) : $cb->{code}(@_);
+            
+            # increase the number of callbacks called for $event->called.
+            $event->{$props}{count}++;
+            
+            # if $event->{stop} is true, $event->stop was called. stop the iteration.
+            if ($event->{$props}{stop}) {
+                $event->{stopper} = $event->{callback_name}; # set $event->stopper.
                 last PRIORITY;
             }
-            
+
         }
     }
-    
-    delete $event->{object};
+
     return $event;
 }
 
@@ -203,11 +219,83 @@ sub delete_event {
 
     return $amount;
 }
- 
-# aliases.
-sub on; sub del; sub fire;
-*on   = *register_event;
-*del  = *delete_event;
-*fire = *fire_event;
+
+#####################
+### EVENT OBJECTS ###
+#####################
+
+package EventedEvent;
+
+# cancel all future callbacks once.
+sub stop {
+}
+
+# returns a true value if the given callback has been called.
+# with no argument, returns number of callbacks called so far.
+sub called {
+}
+
+# returns a true value if the given callback will be called soon.
+# with no argument, returns number of callbacks pending.
+sub pending {
+}
+
+# cancels a future callback once.
+sub cancel {
+}
+
+# returns the return value of the given callback.
+# if it has not yet been called, this will return undef.
+# if the return value has a possibility of being undef,
+# the only way to be sure is to first test ->callback_called.
+sub return_of {
+}
+
+# returns the callback that was last called.
+sub last {
+}
+
+# returns the return value of the last-called callback.
+sub last_return {
+}
+
+# returns the callback that stopped the event.
+sub stopper {
+}
+
+# returns the name of the event being fired.
+sub event_name {
+}
+
+# returns the name of the callback being called.
+sub callback_name {
+}
+
+# returns the caller(1) value of ->fire_event().
+sub caller {
+}
+
+# returns the priority of the callback being called.
+sub callback_priority {
+}
+
+# returns the value of the 'data' option when the callback was registered.
+sub callback_data {
+}
+
+# returns the evented object.
+sub object {
+}
+
+
+###############
+### ALIASES ###
+###############
+
+package EventedObject;
+
+sub on   { &register_event }
+sub del  { &delete_event   }
+sub fire { &fire_event     }
  
 1
