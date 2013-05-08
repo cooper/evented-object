@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.22';
+our $VERSION = '2.3';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -135,14 +135,21 @@ sub fire_event {
  
     my @priorities_in_order = sort { $b <=> $a } keys %{$obj->{$events}{$event_name}};
     
-    # iterate through callbacks by priority (higher number is called first)   
+    # iterate through callbacks by priority (higher number is called first)
+    my ($priority_index, $callback_index) = (-1, -1);
     PRIORITY: foreach my $priority (@priorities_in_order) {
-    
-        my @this_priority = @{$obj->{$events}{$event_name}{$priority}};
+        $priority_index++;
+        
+        # set current priority set - used primarily for ->pending.
+        $event->{$props}{current_priority_set} = $obj->{$events}{$event_name}{$priority};
+        my @callbacks = @{$event->{$props}{current_priority_set}};
+        
+        # set current priority index.
         
         # iterate through each callback in this priority.
-        CALLBACK: foreach my $cb (@this_priority) {
- 
+        CALLBACK: foreach my $cb (@callbacks) {
+            $callback_index++;
+            
             # create info about the call.
             $event->{$props}{callback_name}     = $cb->{name};                          # $event->callback_name
             $event->{$props}{callback_priority} = $priority;                            # $event->callback_priority
@@ -159,6 +166,9 @@ sub fire_event {
             
             # increase the number of callbacks called for $event->called.
             $event->{$props}{count}++;
+            
+            # this callback has been called, yes.
+            $event->{$props}{called}{$cb->{name}} = 1;
             
             # if $event->{stop} is true, $event->stop was called. stop the iteration.
             if ($event->{$props}{stop}) {
@@ -275,10 +285,12 @@ sub event_name {
 
 # returns the name of the callback being called.
 sub callback_name {
+    shift->{$props}{callback_name};
 }
 
 # returns the caller(1) value of ->fire_event().
 sub caller {
+
 }
 
 # returns the priority of the callback being called.
