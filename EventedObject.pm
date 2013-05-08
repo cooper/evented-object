@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.77';
+our $VERSION = '2.78';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -412,8 +412,9 @@ sub _pending_callbacks {
 
 package EventedObject;
 
-sub on   { &register_event }
-sub del  { &delete_event   }
-sub fire { &fire_event     }
+sub on; sub del; sub fire;
+*on   = *register_event;
+*del  = *delete_event;
+*fire = *fire_event;
  
 1
