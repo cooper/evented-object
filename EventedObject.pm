@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.6';
+our $VERSION = '2.7';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -66,42 +66,55 @@ sub new {
 
 # attach an event callback. deprecated. do not use directly.
 sub attach_event {
-    my ($obj, $event_name, $code, $name, $priority, $silent, $data) = @_;
-    $name ||= $event_name.q(.).rand(9001); # so illegal.
+    my ($eo, $event_name, $code, $name, $priority, $silent, $data) = @_;
+    
+    # no name was provided, so we shall construct
+    # one using the power of pure hackery.
+    if (!defined $name) {
+        my @caller = caller;
+        $name = "$event_name.$caller[0]($caller[2])";
+    }
+    
     $priority ||= 0; # priority does not matter.
-    $obj->{$events}{$event_name}{$priority} ||= [];
-    push @{$obj->{$events}{$event_name}{$priority}}, {
+    $eo->{$events}{$event_name}{$priority} ||= [];
+    
+    # store this event callback.
+    push @{$eo->{$events}{$event_name}{$priority}}, {
         name   => $name,
         code   => $code,
         silent => $silent,
         data   => $data
     };
+    
     return 1;
 }
 
 # attach an event callback.
-# $obj->register_event(myEvent => sub {
+# $eo->register_event(myEvent => sub {
 #     ...
 # }, name => 'some.callback', priority => 200, with_obj => 1);
 # note: no_obj fires callback without $event as first argument.
 sub register_event {
-    my ($obj, $event_name, $code, %opts) = @_;
+    my ($eo, $event_name, $code, %opts) = @_;
     my $silent = $opts{no_obj} ? undef : 1;
-    return $obj->attach_event(
+    
+    # the good old ->attach_event().
+    return $eo->attach_event(
         $event_name => $code,
         $opts{name},
         $opts{priority},
         $silent,
         $opts{data}
     );
+
 }
 
 # attach several event callbacks.
 sub register_events {
-    my ($obj, @events) = @_;
+    my ($eo, @events) = @_;
     my @return;
     foreach my $event (@events) {
-        push @return, $obj->register_event(%$event);
+        push @return, $eo->register_event(%$event);
     }
     return @return;
 }
@@ -120,20 +133,20 @@ sub register_events {
 # };
 # returns $event.
 sub fire_event {
-    my ($obj, $event_name) = (shift, shift);
+    my ($eo, $event_name) = (shift, shift);
     
     # event does not have any callbacks.
-    return unless $obj->{$events}{$event_name};
+    return unless $eo->{$events}{$event_name};
  
     # create event object.
     my $event = EventedObject::Event->new(
         name   => $event_name,  # $event->event_name
-        object => $obj,         # $event->object
+        object => $eo,          # $event->object
         caller => [caller 1],   # $event->caller
         count  => 0             # $event->called
     );
  
-    my @priorities = sort { $b <=> $a } keys %{$obj->{$events}{$event_name}};
+    my @priorities = sort { $b <=> $a } keys %{$eo->{$events}{$event_name}};
     $event->{current_priority_set} = \@priorities;
     
     # iterate through callbacks by priority (higher number is called first)
@@ -142,7 +155,7 @@ sub fire_event {
         $priority_index++;
         
         # set current callback set - used primarily for ->pending.
-        $event->{$props}{current_callback_set} = $obj->{$events}{$event_name}{$priority};
+        $event->{$props}{current_callback_set} = $eo->{$events}{$event_name}{$priority};
         my @callbacks = @{$event->{$props}{current_callback_set}};
         
         # set current priority index.
@@ -203,27 +216,27 @@ sub fire_event {
 # delete an event callback or all callbacks of an event.
 # returns a true value if any events were deleted, false otherwise.
 sub delete_event {
-    my ($obj, $event_name, $name) = @_;
+    my ($eo, $event_name, $name) = @_;
     my $amount = 0;
     
     # event does not have any callbacks.
-    return unless $obj->{$events}{$event_name};
+    return unless $eo->{$events}{$event_name};
  
     # iterate through callbacks and delete matches.
-    PRIORITY: foreach my $priority (keys %{$obj->{$events}{$event_name}}) {
+    PRIORITY: foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
     
         # if a specific callback name is specified, weed it out.
         if (defined $name) {
-            my @a = @{$obj->{$events}{$event_name}{$priority}};
+            my @a = @{$eo->{$events}{$event_name}{$priority}};
             @a = grep { $_->{name} ne $name } @a;
             
             # none left in this priority.
             if (scalar @a == 0) {
-                delete $obj->{$events}{$event_name}{$priority};
+                delete $eo->{$events}{$event_name}{$priority};
                 
                 # delete this event because all priorities have been removed.
-                if (scalar keys %{$obj->{$events}{$event_name}} == 0) {
-                    delete $obj->{$events}{$event_name};
+                if (scalar keys %{$eo->{$events}{$event_name}} == 0) {
+                    delete $eo->{$events}{$event_name};
                     return 1;
                 }
                 
@@ -233,14 +246,14 @@ sub delete_event {
             }
             
             # store the new array.
-            $obj->{$events}{$event_name}{$priority} = \@a;
+            $eo->{$events}{$event_name}{$priority} = \@a;
             
         }
         
         # if no callback is specified, delete all events of this type.
         else {
-            $amount = scalar keys %{$obj->{$events}{$event_name}};
-            delete $obj->{$events}{$event_name};
+            $amount = scalar keys %{$eo->{$events}{$event_name}};
+            delete $eo->{$events}{$event_name};
         }
  
     }
@@ -359,7 +372,7 @@ sub _pending_callbacks {
     
     # fetch iteration values.
     my ($priority_index, $callback_index) = ($event->{priority_i}, $event->{callback_i});
-    my @callbacks           = @{$event->{current_callback_set}};
+    my @callbacks  = @{$event->{current_callback_set}};
     my @priorities = @{$event->{current_priority_set}};
     
     # if $callback_index != $#callbacks, there are more callbacks in this priority.
