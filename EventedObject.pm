@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.53';
+our $VERSION = '2.54';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -282,6 +282,8 @@ sub pending {
         return scalar $event->_pending_callbacks;
     }
 
+    # return whether the specified callback is pending.
+    return scalar grep { $_->callback_name eq $callback } $event->_pending_callbacks;
     
 }
 
