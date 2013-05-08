@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.4';
+our $VERSION = '2.5';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -133,22 +133,27 @@ sub fire_event {
         count  => 0             # $event->called
     );
  
-    my @priorities_in_order = sort { $b <=> $a } keys %{$obj->{$events}{$event_name}};
+    my @priorities = sort { $b <=> $a } keys %{$obj->{$events}{$event_name}};
+    $event->{current_priority_set} = \@priorities;
     
     # iterate through callbacks by priority (higher number is called first)
     my ($priority_index, $callback_index) = (-1, -1);
-    PRIORITY: foreach my $priority (@priorities_in_order) {
+    PRIORITY: foreach my $priority (@priorities) {
         $priority_index++;
         
-        # set current priority set - used primarily for ->pending.
-        $event->{$props}{current_priority_set} = $obj->{$events}{$event_name}{$priority};
-        my @callbacks = @{$event->{$props}{current_priority_set}};
+        # set current callback set - used primarily for ->pending.
+        $event->{$props}{current_callback_set} = $obj->{$events}{$event_name}{$priority};
+        my @callbacks = @{$event->{$props}{current_callback_set}};
         
         # set current priority index.
+        $event->{$props}{priority_i} = $priority_index;
         
         # iterate through each callback in this priority.
         CALLBACK: foreach my $cb (@callbacks) {
             $callback_index++;
+            
+            # set current callback index.
+            $event->{$props}{callback_i} = $callback_index;
             
             # create info about the call.
             $event->{$props}{callback_name}     = $cb->{name};                          # $event->callback_name
@@ -258,6 +263,14 @@ sub called {
 # returns a true value if the given callback will be called soon.
 # with no argument, returns number of callbacks pending.
 sub pending {
+    my ($event, $callback) = @_;
+    
+    # return number of callbacks remaining.
+    if (!defined $callback) {
+        return scalar $event->_pending_callbacks;
+    }
+    
+    
 }
 
 # cancels a future callback once.
@@ -316,6 +329,34 @@ sub callback_data {
 # returns the evented object.
 sub object {
     shift->{$props}{object};
+}
+
+# internal use only.
+# returns an array of the callbacks to come.
+sub _pending_callbacks {
+    my ($event, @pending) = shift;
+    
+    # fetch iteration values.
+    my ($priority_index, $callback_index) = ($event->{priority_i}, $event->{callback_i});
+    my @callbacks           = @{$event->{current_callback_set}};
+    my @priorities = @{$event->{current_priority_set}};
+    
+    # if $callback_index != $#callbacks, there are more callbacks in this priority.
+    if ($callback_index < $#callbacks) {
+        push @pending, @callbacks[$callback_index..$#callbacks];
+    }
+    
+    # this is the last priority.
+    return @pending if $priority_index >= $#priorities;
+    
+    # for each remaining priority, insert all callbacks.
+    foreach my $priority (@priorities[$priority_index + 1 .. $#priorities]) {
+        push @pending, @{$event->object->{$events}{$event->event_name}{$priority}};
+    }
+    
+    # return the pending callbacks.
+    return @pending;
+    
 }
 
 
