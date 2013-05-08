@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.74';
+our $VERSION = '2.75';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -383,7 +383,7 @@ sub _pending_callbacks {
     
     # if $callback_index != $#callbacks, there are more callbacks in this priority.
     if ($callback_index < $#callbacks) {
-        push @pending, @callbacks[$callback_index..$#callbacks];
+        push @pending, @callbacks[$callback_index + 1 .. $#callbacks];
     }
     
     # this is the last priority.
