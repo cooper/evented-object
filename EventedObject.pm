@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.78';
+our $VERSION = '2.79';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -93,9 +93,10 @@ sub register_event {
     
     # no name was provided, so we shall construct
     # one using the power of pure hackery.
+    # this is one of the most criminal things I've ever done.
     if (!defined $opts{name}) {
         my @caller = caller;
-        $opts{name} = "$event_name.$caller[0]($caller[2])";
+        $opts{name} = "$event_name.$caller[0]($caller[2], ".int(rand 9001).q[)];
     }
     
     
