@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.21';
+our $VERSION = '2.22';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -126,7 +126,7 @@ sub fire_event {
     return unless $obj->{$events}{$event_name};
  
     # create event object.
-    my $event = EventedEvent->new(
+    my $event = EventedObject::Event->new(
         name   => $event_name,  # $event->event_name
         object => $obj,         # $event->object
         caller => [caller 1],   # $event->caller
@@ -224,7 +224,7 @@ sub delete_event {
 ### EVENT OBJECTS ###
 #####################
 
-package EventedEvent;
+package EventedObject::Event;
 
 # create a new event object.
 sub new {
