@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.3';
+our $VERSION = '2.4';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -170,6 +170,9 @@ sub fire_event {
             # this callback has been called, yes.
             $event->{$props}{called}{$cb->{name}} = 1;
             
+            # $event->last
+            $event->{$props}{last_callback} = $cb->{name};
+            
             # if $event->{stop} is true, $event->stop was called. stop the iteration.
             if ($event->{$props}{stop}) {
                 $event->{stopper} = $event->{callback_name}; # set $event->stopper.
@@ -244,6 +247,7 @@ sub new {
 
 # cancel all future callbacks once.
 sub stop {
+    shift->{stop} = 1;
 }
 
 # returns a true value if the given callback has been called.
@@ -265,22 +269,28 @@ sub cancel {
 # if the return value has a possibility of being undef,
 # the only way to be sure is to first test ->callback_called.
 sub return_of {
+    my ($event, $callback) = @_;
+    return $event->{$props}{return}{$callback};
 }
 
 # returns the callback that was last called.
 sub last {
+    shift->{$props}{last_callback};
 }
 
 # returns the return value of the last-called callback.
 sub last_return {
+    shift->{$props}{last_return};
 }
 
 # returns the callback that stopped the event.
 sub stopper {
+    shift->{$props}{stopper};
 }
 
 # returns the name of the event being fired.
 sub event_name {
+    shift->{$props}{name};
 }
 
 # returns the name of the callback being called.
@@ -290,19 +300,22 @@ sub callback_name {
 
 # returns the caller(1) value of ->fire_event().
 sub caller {
-
+    my @a = shift->{$props}{caller};
 }
 
 # returns the priority of the callback being called.
 sub callback_priority {
+    shift->{$props}{callback_priority};
 }
 
 # returns the value of the 'data' option when the callback was registered.
 sub callback_data {
+    shift->{$props}{callback_data};
 }
 
 # returns the evented object.
 sub object {
+    shift->{$props}{object};
 }
 
 
