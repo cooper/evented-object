@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.72';
+our $VERSION = '2.73';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -197,7 +197,7 @@ sub fire_event {
             
             # if $event->{stop} is true, $event->stop was called. stop the iteration.
             if ($event->{$props}{stop}) {
-                $event->{$props}{stopper} = $event->{callback_name}; # set $event->stopper.
+                $event->{$props}{stopper} = $cb->{name}; # set $event->stopper.
                 last PRIORITY;
             }
 
@@ -377,9 +377,9 @@ sub _pending_callbacks {
     my ($event, @pending) = shift;
     
     # fetch iteration values.
-    my ($priority_index, $callback_index) = ($event->{priority_i}, $event->{callback_i});
-    my @callbacks  = @{$event->{current_callback_set}};
-    my @priorities = @{$event->{current_priority_set}};
+    my ($priority_index, $callback_index) = ($event->{$props}{priority_i}, $event->{$props}{callback_i});
+    my @callbacks  = @{$event->{$props}{current_callback_set}};
+    my @priorities = @{$event->{$props}{current_priority_set}};
     
     # if $callback_index != $#callbacks, there are more callbacks in this priority.
     if ($callback_index < $#callbacks) {
