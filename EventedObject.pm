@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.2';
+our $VERSION = '2.21';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -225,6 +225,12 @@ sub delete_event {
 #####################
 
 package EventedEvent;
+
+# create a new event object.
+sub new {
+    my ($class, %opts) = @_;
+    return bless { $props => \%opts }, $class;
+}
 
 # cancel all future callbacks once.
 sub stop {
