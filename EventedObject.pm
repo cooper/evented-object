@@ -54,7 +54,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.7';
+our $VERSION = '2.71';
 
 my $events = 'eventedObject.events';
 my $props  = 'eventedObject.props';
@@ -282,6 +282,11 @@ sub stop {
 # with no argument, returns number of callbacks called so far.
 sub called {
     my ($event, $callback) = @_;
+    
+    # return the number of callbacks called.
+    if (!defined $callback) {
+        return $event->{$props}{count};
+    }
     
     # return whether the specified callback was called.
     return $event->{$props}{called}{$callback};
