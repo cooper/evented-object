@@ -65,14 +65,14 @@ rather than the new deprecated `->attach_event()` as it always has been.
 ### Introduction of event methods 2.2+
 
 Version 2.2+ introduces a new class, EventedObject::Event, which provides several methods for
-event objects. These methods replace the former hash keys `$event->{return}`, `$event->{object}`,
-etc. The former hash interface is no longer supported and will lead to error.
+event objects. These methods such as `$event->return` and `$event->object` replace the former hash keys
+`$event->{return}`, `$event->{object}`, etc. The former hash interface is no longer supported and will lead to error.
 
 ## Event objects
 
-Event objects are passed to all callbacks of EventedObject (unless the silent parameter was specified.) Event objects contain
+Event objects are passed to all callbacks of an EventedObject (unless the `silent` parameter was specified.) Event objects contain
 information about the event itself, the callback, the caller of the event, event data, and more. Event objects replace the
-former values stored within the EventedObject itself.
+former values stored within the EventedObject itself. This new method promotes asynchronous event firing.
 
 ## EventedObject methods
 
@@ -91,40 +91,51 @@ my $eo = EventedObject->new();
 
 Intended to be a replacement for the former `->attach_event`.
 Attaches an event callback the object. When the specified event is fired, each of the callbacks registered using this method
-will be called by descending priority order (higher priority numbers are called first).
+will be called by descending priority order (higher priority numbers are called first.)
 
 ```perl
 $eo->register_event(myEvent => sub {
     ...
-}, name => 'some.callback', priority => 200, silent => 1);
+}, name => 'some.callback', priority => 200);
 ```
-
 
 #### Parameters
 
-* __event_name:__ the name of the event.
-* __callback:__ a CODE reference to be called when the event is fired.
-* __options:__ *optional*, a hash (not hash reference) of any of the below options.
+* __event_name__: the name of the event.
+* __callback__: a CODE reference to be called when the event is fired.
+* __options__: *optional*, a hash (not hash reference) of any of the below options.
 
 #### %options - event handler options
 
 **All of these options are optional**, but the use of a callback name is **highly recommended**.
 
-* __name:__ the name of the callback being registered. must be unique to this particular event.
-* __priority:__ a numerical priority of the callback.
-* __silent:__ if true, the $event object will be omitted from the callback argument list.
-* __data:__ any data that will be stored as `$event->event_data` as the callback is fired.
+* __name__: the name of the callback being registered. must be unique to this particular event.
+* __priority__: a numerical priority of the callback.
+* __silent__: if true, the $event object will be omitted from the callback argument list.
+* __data__: any data that will be stored as `$event->event_data` as the callback is fired.
 
 Note: `->attach_event` by default fires the callback with the EventedObject as its first argument unless told not to do so.
 `->register_event`, however, functions in the opposite sense and *never* passes the EventedObject as the first argument unless the `with_obj` option is passed.  
+  
 In the 1.* series and above, the event object is passed as the first argument unless the `silent` option is passed. The EventedObject
-instance itself is accessible through `$event->{object}` in version 1.0 to 2.2 and from `$event->object` from there on.
+instance itself is now accessible with `$event->object`.
 
 ### $eo->register_events(@events)
 
 Registers several events at once. The arguments should be a list of hash references.
 These references take the same options as `->register_event()`. Returns a list of return
 values in the order that the events were specified.
+
+```perl
+$eo->register_events(
+    { myEvent => \\&my_event_1, name => 'cb.1', priority => 200 },
+    { myEvent => \\&my_event_2, name => 'cb.2', priority => 100 }
+);
+```
+
+### Parameters
+
+* __events__: an array of hash references to pass to `->register_event()`.
 
 ### $eo->delete_event($event_name, $callback_name)
 
@@ -136,10 +147,10 @@ Returns a true value if any events were deleted, false otherwise.
 
 #### Parameters
 
-* __event_name:__ the name of the event.
-* __callback_name:__ *optional*, the name of the callback being removed.
+* __event_name__: the name of the event.
+* __callback_name__: *optional*, the name of the callback being removed.
 
-### $eo->fire_event($event_name)
+### $eo->fire_event($event_name, @arguments)
 
 Fires the specified event, calling each callback that was registered with `->attach_event` in descending order of
 their priorities.
@@ -150,7 +161,8 @@ $eo->fire_event('some_event');
 
 #### Parameters
 
-* __event_name:__ the name of the event being fired.
+* __event_name__: the name of the event being fired.
+* __arguments__: *optional*, list of arguments to pass to event callbacks.
 
 ### $eo->on($event_name, \\&callback, $callback_name, $priority)
 
@@ -163,6 +175,11 @@ Alias for `->fire_event()`.
 ### $eo->del($event_name, $callback_name)
 
 **Deprecated**. Alias for `->delete_event()`.  
+Do not use this. It is likely to removed in the near future.
+
+### $eo->attach_event(...)
+
+**Deprecated**. Use `->register_event()` instead.  
 Do not use this. It is likely to removed in the near future.
 
 ## Example
