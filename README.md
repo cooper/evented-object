@@ -323,11 +323,35 @@ else {
 
 ### $event->event_name
 
+Returns the name of the event.
+
+```perl
+say 'the event being fired is ', $event->event_name;
+```
+
 ### $event->callback_name
+
+Returns the name of the current callback.
+
+```perl
+say 'the current callback being called is ', $event->callback_name;
+```
 
 ### $event->callback_priority
 
+Returns the priority of the current callback.
+
+```perl
+say 'the priority of the current callback is ', $event->callback_priority;
+```
+
 ### $event->callback_data
+
+Returns the data supplied to the callback when it was registered, if any.
+
+```perl
+say 'my data is ', $event->callback_data;
+```
 
 ## Example
 
