@@ -356,6 +356,9 @@ say 'my data is ', $event->callback_data;
 
 ## Example
 
+This example demonstrates basic EventedObject subclasses,
+priorities of event callbacks, as well as event objects and their methods.
+
 ```perl
 package Person;
 
@@ -365,13 +368,19 @@ use feature 'say';
 use parent 'EventedObject';
 
 use EventedObject;
+```
 
-# create a new person
+Creates a new person object. This is nothing special. EventedObject does not require any specific constructor to be called.
+
+```perl
 sub new {
     my ($class, %opts) = @_;
     bless \%opts, $class;
 }
+```
 
+
+```perl
 # have a birthday.
 sub have_birthday {
     my $person = shift;
