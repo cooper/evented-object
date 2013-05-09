@@ -1,6 +1,6 @@
 # EventedObject
 
-**I doubt your objects have never been this evented.** This concept is so incredible that we're using a noun
+**I doubt your objects have ever been this evented.** This concept is so incredible that we're using a noun
 as a verb without being arrested by the grammar police.  
   
 EventedObject started as a basic class in ntirc for registering event handlers and firing events. after being used in ntirc IRC client, Arinity IRC services package, foxy-java modular IRC bot, and other projects, EventedObject has become more complex and quite featureful.  
