@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Mitchell Cooper
+# Copyright (c) 2011-13, Mitchell Cooper
 #
 # EventedObject: a simple yet featureful base class event framework.
 #
