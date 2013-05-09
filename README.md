@@ -68,12 +68,6 @@ Version 2.2+ introduces a new class, EventedObject::Event, which provides severa
 event objects. These methods such as `$event->return` and `$event->object` replace the former hash keys
 `$event->{return}`, `$event->{object}`, etc. The former hash interface is no longer supported and will lead to error.
 
-## Event objects
-
-Event objects are passed to all callbacks of an EventedObject (unless the `silent` parameter was specified.) Event objects contain
-information about the event itself, the callback, the caller of the event, event data, and more. Event objects replace the
-former values stored within the EventedObject itself. This new method promotes asynchronous event firing.
-
 ## EventedObject methods
 
 The EventedObject package provides several convenient methods for managing an event-driven object.
@@ -89,7 +83,7 @@ my $eo = EventedObject->new();
 
 ### $eo->register_event($event_name => \\&callback, %options)
 
-Intended to be a replacement for the former `->attach_event`.
+Intended to be a replacement for the former `->attach_event()`.
 Attaches an event callback the object. When the specified event is fired, each of the callbacks registered using this method
 will be called by descending priority order (higher priority numbers are called first.)
 
@@ -155,7 +149,7 @@ $eo->delete_event('myEvent');
 
 ### $eo->fire_event($event_name, @arguments)
 
-Fires the specified event, calling each callback that was registered with `->attach_event` in descending order of
+Fires the specified event, calling each callback that was registered with `->attach_event()` in descending order of
 their priorities.
 
 ```perl
@@ -182,6 +176,40 @@ Do not use this. It is likely to removed in the near future.
 
 **Deprecated**. Use `->register_event()` instead.  
 Do not use this. It is likely to removed in the near future.
+
+## Event objects
+
+Event objects are passed to all callbacks of an EventedObject (unless the `silent` parameter was specified.) Event objects contain
+information about the event itself, the callback, the caller of the event, event data, and more. Event objects replace the
+former values stored within the EventedObject itself. This new method promotes asynchronous event firing.
+
+### $event->object
+
+### $event->caller
+
+### $event->stop
+
+### $event->stopper
+
+### $event->called
+
+### $event->pending
+
+### $event->cancel
+
+### $event->return_of
+
+### $event->last
+
+### $event->last_return
+
+### $event->event_name
+
+### $event->callback_name
+
+### $event->callback_priority
+
+### $event->callback_data
 
 ## Example
 
