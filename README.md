@@ -8,6 +8,49 @@ EventedObject started as a basic class in ntirc for registering event handlers a
 EventedObject supplies an (obviously objective) interface to store callbacks for events, fire events, and more. It provides
 several methods for convenience and simplicity.
 
+## Introduction
+
+First and foremost, the goal of EventedObject is to make your objects more evented than ever before.  
+Allow us to explain what exactly it means for an object to be evented.
+
+### Naming confusion
+
+To clear some things up...  
+  
+'EventedObject' refers to the EventedObject package, but 'evented object' refers to an object
+which is a member of the EventedObject class or a class which inherits from the EventedObject class.
+'Event object' (without the -ed) refers to an object representing an event fire.  
+
+* __EventedObject__: the class that provides methods for managing events.
+* __Evented object__: an object that uses EventedObject for event management.
+* __Event object__: an object that represents an event fire.
+
+EventedObject and its core packages are prefixed with `EventedObject`.  
+Packages which are specifically designed for use with EventedObject are prefixed with `Evented::`.
+
+### Purpose of EventedObject
+
+In short, EventedObject allows you attach event callbacks to an object (also known as a blessed hash reference)
+and then fire events on the object. To relate, event fires are much like method calls. However, there can be many
+handlers, many return values, and many responses rather than just one of each of these.  
+
+### Event callbacks
+
+These handlers, known as callbacks, are called in descending order by priority. This allows you to place a certain
+callback in front of or behind another. They can modify other callbacks, modify the evented object itself, and much more.
+
+### Objective approach
+
+Whereas many event systems involve globally unique event names, EventedObject allows you to attach events to a specific
+object. The event callbacks, information, and other data are stored secretly within the object itself. This is quite
+comparable to the JavaScript event systems often found in browsers.
+
+### Event objects
+  
+Another important concept of EventedObject is the event object. It provides methods for fetching information relating
+to the event being fired, callback being called, and more. Additionally, it provides an interface for modifying the
+evented object and modifying future callbacks.
+
 ## History
 
 EventedObject has evolved throughout the history of multiple projects, improving in each project it passed through.
@@ -15,14 +58,23 @@ It originated as IRC::EventedObject in NoTrollPlzDev's libirc. From then on, it 
 Arinity IRC Services, and foxy-java IRC client. The Arinity IRC Services package was the first to use a standalone
 EventedObject; before then, it was only packaged with libirc.  
   
-Today, EventedObject is found in all many different projects, usually included as a git submodule. A variety
-of classes have been written specifically for the EventedObject framework, including a configuration classe,
+Today, EventedObject is found in many different projects, usually included as a git submodule. A variety
+of classes have been written specifically for the EventedObject framework, including an evented configuration class,
 an evented database interface, an event-driven socket protocol, and more.
+
+### Classes designed upon EventedObject
+
+This is a list of classes designed specifically to work with EventedObject.
+
+* [__Evented::Configuration__](https://github.com/cooper/evented-configuration) - an event-driven configuration class that notifies when configuration values are modified.
+* [__Evented::Database__](https://github.com/cooper/evented-database) - a package providing a database mechanism built upon Evented::Configuration.
+* [__Evented::Query__](https://github.com/cooper/evented-query) - an evented database interface wrapping around DBI.
+* [__Evented::Socket__](https://github.com/cooper/evented-socket) - an event-driven TCP socket protocol for networked programming.
 
 ## Author
 
-Mitchell Cooper, "cooper" <mitchell@notroll.net>  
-Copyright © 2011-2013. See LICENSE file.
+[Mitchell Cooper](http://github.com/cooper), "cooper" <mitchell@notroll.net>  
+Copyright © 2011-2013. See LICENSE file.  
 
 ## Compatibility notes
 
