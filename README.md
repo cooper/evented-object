@@ -379,6 +379,7 @@ sub new {
 }
 ```
 
+Fire birthday event and increment age.
 
 ```perl
 # have a birthday.
@@ -387,23 +388,34 @@ sub have_birthday {
     $person->fire(birthday => ++$person->{age});
 }
 
+```
+
+In some other package...
+
+```perl
 package main;
+```
 
-# This example demonstrates basic EventedObject subclasses,
-# priorities of events, and event objects and their methods.
+Create a person named Jake at age 19.
 
-# create Jake at age 19.
+```perl
 my $jake = Person->new(name => 'Jake', age => 19);
+```
 
-# not yet 21 with priorty 0.
+Add an event callback that assumes Jake is under 21.
+
+```perl
 $jake->on(birthday => sub {
     my ($event, $new_age) = @_;
 
     say 'not quite 21 yet...';
 
 }, name => '21-soon');
+```
 
-# finally 21 with priority 1 (called before 21-soon.)
+Add an event callback that checks if Jake is 21 and cancels the above callback if he is.
+
+```perl
 $jake->on(birthday => sub {
     my ($event, $new_age) =  @_;
 
@@ -413,8 +425,11 @@ $jake->on(birthday => sub {
     }
 
 }, name => 'finally-21', priority => 1);
+```
 
+Jake has two birthdays.
 
+```perl
 # Jake's 20th birthday.
 $jake->have_birthday;
 
@@ -423,4 +438,11 @@ $jake->have_birthday;
 
 # Because 21-soon has a lower priority than finally-21,
 # finally-21 will cancel 21-soon if Jake is 21.
+```
+
+The result is as follows:
+
+```
+not quite 21 yet...
+time to get drunk!
 ```
