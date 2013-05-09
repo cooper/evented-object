@@ -38,7 +38,7 @@ EventedObject 1.8+ is designed to be more thread-friendly and work well in async
 programs, whereas the previous versions were not suitable for such uses.  
   
 The main comptability issue is the arguments passed to the callbacks. In the earlier
-versions, the EventedObject instance was *always* the first argument of *all* events,
+versions, the evented object was *always* the first argument of *all* events,
 until EventedObject 0.6 added the ability to pass a parameter to `->attach_event()` that
 would tell EventedObject to omit the object from the callback's argument list.  
   
@@ -108,11 +108,11 @@ $eo->register_event(myEvent => sub {
 
 #### Differences from ->attach_event()
 
-Note: `->attach_event()` by default fires the callback with the EventedObject as its first argument unless told not to do so.
-`->register_event()`, however, functions in the opposite sense and *never* passes the EventedObject as the first argument unless the `with_obj` option is passed.  
+Note: `->attach_event()` by default fires the callback with the evented object as its first argument unless told not to do so.
+`->register_event()`, however, functions in the opposite sense and *never* passes the evented object as the first argument unless the `with_obj` option is passed.  
   
-In the 1.* series and above, the event object is passed as the first argument unless the `silent` option is passed. The EventedObject
-instance itself is now accessible with `$event->object`.
+In the 1.* series and above, the event object is passed as the first argument unless the `silent` option is passed. The 
+evented object itself is now accessible from `$event->object`.
 
 ### $eo->register_events(@events)
 
@@ -179,21 +179,95 @@ Do not use this. It is likely to removed in the near future.
 
 ## Event objects
 
-Event objects are passed to all callbacks of an EventedObject (unless the `silent` parameter was specified.) Event objects contain
-information about the event itself, the callback, the caller of the event, event data, and more. Event objects replace the
-former values stored within the EventedObject itself. This new method promotes asynchronous event firing.
+Event objects are passed to all callbacks of an EventedObject (unless the `silent` parameter
+was specified.) Event objects contain information about the event itself, the callback, the caller
+of the event, event data, and more.  
+  
+Event objects replace the former values stored within the EventedObject itself. This new method
+promotes asynchronous event firing.  
+  
+Event objects are specific to each firing. If you fire the same event twice in a row, the event
+object passed to the callbacks the first time will not be the same as the second time. Therefore,
+all modifications made by the event object's methods apply only to the callbacks remaining in this
+particular fire. For example, `$event->cancel($callback)` will only cancel the supplied callback
+once. The next time the event is fired, that cancelled callback will be called regardless.
 
 ### $event->object
 
+Returns the evented object.
+
+```perl
+$event->object->delete_event('myEvent');
+```
+
 ### $event->caller
+
+Returns the value of `caller()` from within the `->fire()` method. This allows you to determine
+from where the event was fired.
+
+```perl
+my $name   = $event->event_name;
+my @caller = $event->caller;
+say "Package $caller[0] line $caller[2] called event $name";
+```
 
 ### $event->stop
 
+Cancels all remaining callbacks. This stops the rest of the event firing. After a callback
+calls `$event->stop`, it is stored as `$event->stopper`.
+
+```perl
+# ignore messages from trolls
+if ($user eq 'noah') {
+    # user is a troll.
+    # stop further callbacks.
+    return $event->stop;
+}
+```
+
 ### $event->stopper
 
-### $event->called
+Returns the callback which called `$event->stop`.
 
-### $event->pending
+```perl
+if ($event->stopper) {
+    say 'Event was stopped by '.$event->stopper;
+}
+```
+
+### $event->called([$callback])
+
+If no argument is supplied, returns the number of callbacks called so far, including the current one.
+If a callback argument is supplied, returns whether that particular callback has been called.
+
+```perl
+say $event->called, 'callbacks have been called so far.';
+```
+
+```perl
+if ($event->called('some.callback')) {
+    say 'some.callback has been called already.';
+}
+```
+
+* __callback__: *optional*, the callback being checked.
+
+### $event->pending([$callback])
+
+If no argument is supplied, returns the number of callbacks pending to be called, excluding the current one.
+If a callback argument is supplied, returns whether that particular callback is pending for being called.
+
+```perl
+say $event->pending, 'callbacks are left.';
+```
+
+```perl
+if ($event->pending('some.callback')) {
+    say 'some.callback will be called soon.';
+}
+```
+
+* __callback__: *optional*, the callback being checked.
 
 ### $event->cancel
 
