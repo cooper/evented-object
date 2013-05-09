@@ -1,6 +1,6 @@
 # EventedObject
 
-I doubt your objects have never been this evented. This concept is so incredible that we're using a noun
+**I doubt your objects have never been this evented.** This concept is so incredible that we're using a noun
 as a verb without being arrested by the grammar police.  
   
 EventedObject started as a basic class in ntirc for registering event handlers and firing events. after being used in ntirc IRC client, Arinity IRC services package, foxy-java modular IRC bot, and other projects, EventedObject has become more complex and quite featureful.  
@@ -49,7 +49,7 @@ comparable to the JavaScript event systems often found in browsers.
   
 Another important concept of EventedObject is the event object. It provides methods for fetching information relating
 to the event being fired, callback being called, and more. Additionally, it provides an interface for modifying the
-evented object and modifying future callbacks.
+evented object and modifying future event callbacks.
 
 ## History
 
@@ -91,6 +91,11 @@ This is a list of classes and frameworks which make major use of EventedObject.
 
 [Mitchell Cooper](http://github.com/cooper), "cooper" <mitchell@notroll.net>  
 Copyright © 2011-2013. See LICENSE file.  
+  
+* __IRC channel__: [irc.mac-mini.org #k](irc://irc.mac-mini.org/#k)
+* __Email__: <mitchell@notroll.net>
+
+Comments, complaints, and recommendations are accepted. IRC is my preferred communication medium.
 
 ## Compatibility notes
 
