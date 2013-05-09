@@ -356,4 +356,63 @@ say 'my data is ', $event->callback_data;
 
 ## Example
 
-Coming soon.
+```perl
+
+package Person;
+
+use warnings;
+use strict;
+use feature 'say';
+use parent 'EventedObject';
+
+use EventedObject;
+
+# create a new person
+sub new {
+    my ($class, %opts) = @_;
+    bless \%opts, $class;
+}
+
+sub have_birthday {
+    my $person = shift;
+    $person->fire(birthday => ++$person->{age});
+}
+
+package main;
+
+# This example demonstrates basic EventedObject subclasses,
+# priorities of events, and event objects and their methods.
+
+# create Jake at age 19.
+my $jake = Person->new(name => 'Jake', age => 19);
+
+# not yet 21 with priorty 0.
+$jake->on(birthday => sub {
+    my ($event, $new_age) = @_;
+
+    say 'not quite 21 yet...';
+
+}, name => '21-soon');
+
+# finally 21 with priority 1 (called before 21-soon.)
+$jake->on(birthday => sub {
+    my ($event, $new_age) =  @_;
+
+    if ($age == 21) {
+        say 'time to get drunk!';
+        $event->cancel('21-soon');
+    }
+
+}, name => 'finally-21', priority => 1);
+
+
+# Jake's 20th birthday.
+$jake->have_birthday;
+
+# Jake's 21st birthday.
+$jake->have_birthday;
+
+# Because 21-soon has a lower priority than finally-21,
+# finally-21 will cancel 21-soon if Jake is 21.
+
+```
