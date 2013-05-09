@@ -64,12 +64,28 @@ an evented database interface, an event-driven socket protocol, and more.
 
 ### Classes designed upon EventedObject
 
-This is a list of classes designed specifically to work with EventedObject.
+This is a list of classes designed exclusively upon EventedObject.
 
 * [__Evented::Configuration__](https://github.com/cooper/evented-configuration) - an event-driven configuration class that notifies when configuration values are modified.
 * [__Evented::Database__](https://github.com/cooper/evented-database) - a package providing a database mechanism built upon Evented::Configuration.
 * [__Evented::Query__](https://github.com/cooper/evented-query) - an evented database interface wrapping around DBI.
 * [__Evented::Socket__](https://github.com/cooper/evented-socket) - an event-driven TCP socket protocol for networked programming.
+
+This is a list of classes and frameworks which make major use of EventedObject.
+
+* [__Net::Async::Omegle__](https://github.com/cooper/net-async-omegle) - a complete, evented, and objective Perl interface to Omegle.com.
+* [__libirc__](https://github.com/cooper/libirc) - an evented and objective Internet Relay Chat framework.
+* [__libuic__](https://github.com/cooper/libirc) - an evented and objective Universal Internet Chat framework.
+
+### Event-driven applications powered by EventedObject
+
+* [__kedler__](https://github.com/cooper/kedler) - an event-driven, modular, and excessively flexible IRC daemon written in Perl.
+* [__uicd__](https://github.com/cooper/uicd) - daemon of the Univseral Internet Chat protocol based upon the libuic UIC library.
+* [__simple-relay__](https://github.com/cooper/simple-relay) - a very basic IRC bot powered by libirc.
+* [__foxy-java__](https://github.com/cooper/foxy-java) - a poorly named but highly extensible IRC bot powered by libirc.
+* [__ntirc__](https://github.com/cooper/ntirc) - a Perl IRC client with the potential to be incredible.
+* [__Arinity__](https://github.com/cooper/arinity) - an IRC services package written in Perl.
+* [__ombot__](https://github.com/cooper/ombot) - an Omegle IRC bot powered by libirc and Net::Async::Omegle.
 
 ## Author
 
@@ -127,7 +143,7 @@ The EventedObject package provides several convenient methods for managing an ev
 ### EventedObject->new()
 
 Creates a new EventedObject. Typically, this method is overriden by a child class of EventedObject. It is unncessary
-to call SUPER::new(), as EventedObject->new returns nothing more than an empty hash reference blessed to EventedObject.
+to call `SUPER::new()`, as `EventedObject->new()` returns nothing more than an empty hash reference blessed to EventedObject.
 
 ```perl
 my $eo = EventedObject->new();
