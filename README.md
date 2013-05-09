@@ -216,13 +216,17 @@ $eo->delete_event('myEvent');
 * __event_name__: the name of the event.
 * __callback_name__: *optional*, the name of the callback being removed.
 
-### $eo->fire_event($event_name, @arguments)
+### $eo->fire_event($event_name => @arguments)
 
 Fires the specified event, calling each callback that was registered with `->attach_event()` in descending order of
 their priorities.
 
 ```perl
 $eo->fire_event('some_event');
+```
+
+```perl
+$eo->fire_event(some_event => $some_argument, $some_other_argument);
 ```
 
 * __event_name__: the name of the event being fired.
