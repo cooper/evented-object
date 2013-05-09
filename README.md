@@ -104,12 +104,13 @@ $eo->register_event(myEvent => sub {
 * __name__: the name of the callback being registered. must be unique to this particular event.
 * __priority__: a numerical priority of the callback.
 * __silent__: if true, the $event object will be omitted from the callback argument list.
+* __with_obj__: if true, the evented object will be passed as the first argument. See below.
 * __data__: any data that will be stored as `$event->event_data` as the callback is fired.
 
 #### Differences from ->attach_event()
 
 Note: `->attach_event()` by default fires the callback with the evented object as its first argument unless told not to do so.
-`->register_event()`, however, functions in the opposite sense and *never* passes the evented object as the first argument unless the `with_obj` option is passed.  
+`->register_event()`, however, functions in the opposite sense and *never* passes the evented object as the first argument unless the `with_obj` option is passed (this is for compatibility only, and all new code should make use of `$event->object`.)  
   
 In the 1.* series and above, the event object is passed as the first argument unless the `silent` option is passed. The 
 evented object itself is now accessible from `$event->object`.
