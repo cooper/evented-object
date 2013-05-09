@@ -133,17 +133,22 @@ $eo->register_events(
 );
 ```
 
-### Parameters
-
 * __events__: an array of hash references to pass to `->register_event()`.
 
 ### $eo->delete_event($event_name, $callback_name)
 
 Deletes an event callback from the object with the given callback name.  
 If no callback name is specified, deletes all callbacks of this event.  
-Note: If a callback name is not specified in `->attach_event()`, it is impossible to delete the event.  
   
 Returns a true value if any events were deleted, false otherwise.
+
+```perl
+# delete a single callback.
+$eo->delete_event(myEvent => 'my.callback');
+
+# delete all callbacks.
+$eo->delete_event('myEvent');
+```
 
 * __event_name__: the name of the event.
 * __callback_name__: *optional*, the name of the callback being removed.
