@@ -296,7 +296,30 @@ if ($event->return('my.callback')) {
 
 ### $event->last
 
+Returns the most recent previous callback called.  
+This is also useful for determining which callback was the last to be called.
+
+```perl
+say $event->last, ' was called before this one.';
+```
+
+```perl
+my $event = $eo->fire_event('myEvent');
+say $event->last, ' was the last callback called.';
+```
+
 ### $event->last_return
+
+Returns the last callback's return value.
+
+```perl
+if ($event->last_return) {
+    say 'the callback before this one returned a true value.';
+}
+else {
+    die 'the last callback returned a false value.';
+}
+```
 
 ### $event->event_name
 
