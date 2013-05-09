@@ -21,7 +21,8 @@ an evented database interface, an event-driven socket protocol, and more.
 
 ## Author
 
-Mitchell Cooper, "cooper" <mitchell@notroll.net>
+Mitchell Cooper, "cooper" <mitchell@notroll.net>  
+Copyright © 2011-2013. See LICENSE file.
 
 ## Compatibility notes
 
