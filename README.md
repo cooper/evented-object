@@ -398,7 +398,7 @@ $jake->on(birthday => sub {
 $jake->on(birthday => sub {
     my ($event, $new_age) =  @_;
 
-    if ($age == 21) {
+    if ($new_age == 21) {
         say 'time to get drunk!';
         $event->cancel('21-soon');
     }
