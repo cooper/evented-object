@@ -357,7 +357,6 @@ say 'my data is ', $event->callback_data;
 ## Example
 
 ```perl
-
 package Person;
 
 use warnings;
@@ -373,6 +372,7 @@ sub new {
     bless \%opts, $class;
 }
 
+# have a birthday.
 sub have_birthday {
     my $person = shift;
     $person->fire(birthday => ++$person->{age});
@@ -414,5 +414,4 @@ $jake->have_birthday;
 
 # Because 21-soon has a lower priority than finally-21,
 # finally-21 will cancel 21-soon if Jake is 21.
-
 ```
