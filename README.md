@@ -122,8 +122,8 @@ values in the order that the events were specified.
 
 ```perl
 $eo->register_events(
-    { myEvent => \\&my_event_1, name => 'cb.1', priority => 200 },
-    { myEvent => \\&my_event_2, name => 'cb.2', priority => 100 }
+    { myEvent => \&my_event_1, name => 'cb.1', priority => 200 },
+    { myEvent => \&my_event_2, name => 'cb.2', priority => 100 }
 );
 ```
 
@@ -269,9 +269,30 @@ if ($event->pending('some.callback')) {
 
 * __callback__: *optional*, the callback being checked.
 
-### $event->cancel
+### $event->cancel($callback)
 
-### $event->return_of
+Cancels the supplied callback once.
+
+```perl
+if ($user eq 'noah') {
+    # we don't love noah!
+    $event->cancel('send.hearts');
+}
+```
+
+* __callback__: the callback to be cancelled.
+
+### $event->return_of($callback)
+
+Returns the return value of the supplied callback.
+
+```perl
+if ($event->return('my.callback')) {
+    say 'my.callback returned a true value';
+}
+```
+
+* __callback__: the desired callback.
 
 ### $event->last
 
