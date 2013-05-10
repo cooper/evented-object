@@ -21,7 +21,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '3.01';
+our $VERSION = '3.02';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -83,7 +83,7 @@ sub register_events {
 # };
 # returns $event.
 sub fire_event {
-    my ($eo, $event_name, @args) = (shift, shift);
+    my ($eo, $event_name, @args) = @_;
     
     # event does not have any callbacks.
     return unless $eo->{$events}{$event_name};
