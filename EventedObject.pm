@@ -21,7 +21,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.9';
+our $VERSION = '2.91';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -53,7 +53,7 @@ sub register_event {
     # add this event.
     push @{$eo->{$events}{$event_name}{$priority}}, {
         name   => $opts{name},
-        code   => $opts{code},
+        code   => $code,
         no_obj => $opts{no_obj},
         eo_obj => $opts{eo_obj} || $opts{with_obj}, # compat < 2.9
         data   => $opts{data}
@@ -133,9 +133,9 @@ sub fire_event {
             # call the callback.
             $event->{$props}{last_return}               =   # set last return value.
             $event->{$props}{return}{$cb->{name}}       =   # set this callback's return value.
-                $cb->{no_obj} ? $cb->{code}(@_)         :   # use no object as the first argument.
-                $cb->{eo_obj} ? $cb->{code}($eo, @_)    :   # use the evented object as the first argument.
-                $cb->{code}($event, @_);                    # use the event object as the first argument.
+                 $cb->{no_obj} ? $cb->{code}(@_)        :   # use no object as the first argument.
+                 $cb->{eo_obj} ? $cb->{code}($eo, @_)   :   # use the evented object as the first argument.
+                                 $cb->{code}($event, @_);   # use the event object as the first argument.
             
             # increase the number of callbacks called for $event->called.
             $event->{$props}{count}++;
