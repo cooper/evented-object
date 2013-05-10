@@ -21,7 +21,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '3.0';
+our $VERSION = '3.01';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -140,7 +140,7 @@ sub fire_event {
                 unshift @cb_args, $event unless $cb->{no_fire_obj};
                 
                 # add evented object if eo_obj.
-                unshift @cb_args, $eo    unless $cb->{with_evented_obj} || $cb->{eo_obj} || $cb->{with_obj};
+                unshift @cb_args, $eo if $cb->{with_evented_obj} || $cb->{eo_obj} || $cb->{with_obj};
                                                                     
             }
             
