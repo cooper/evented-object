@@ -19,11 +19,11 @@ To clear some things up...
   
 'EventedObject' refers to the EventedObject package, but 'evented object' refers to an object
 which is a member of the EventedObject class or a class which inherits from the EventedObject class.
-'Event object' (without the -ed) refers to an object representing an event fire.  
+'Event fire object' refers to an object representing an event fire.  
 
 * __EventedObject__: the class that provides methods for managing events.
 * __Evented object__: an object that uses EventedObject for event management.
-* __Event object__: an object that represents an event fire.
+* __Event fire object__: an object that represents an event fire.
 
 EventedObject and its core packages are prefixed with `EventedObject`.  
 Packages which are specifically designed for use with EventedObject are prefixed with `Evented::`.
@@ -46,9 +46,9 @@ Whereas many event systems involve globally unique event names, EventedObject al
 object. The event callbacks, information, and other data are stored secretly within the object itself. This is quite
 comparable to the JavaScript event systems often found in browsers.
 
-### Event objects
+### Event fire objects
   
-Another important concept of EventedObject is the event object. It provides methods for fetching information relating
+Another important concept of EventedObject is the event fire object. It provides methods for fetching information relating
 to the event being fired, callback being called, and more. Additionally, it provides an interface for modifying the
 evented object and modifying future event callbacks.
 
@@ -116,7 +116,7 @@ versions, the evented object was *always* the first argument of *all* events,
 until EventedObject 0.6 added the ability to pass a parameter to `->attach_event()` that
 would tell EventedObject to omit the object from the callback's argument list.  
   
-### Introduction of event objects 1.8+
+### Introduction of event fire objects 1.8+
   
 The EventedObject series 1.8+ passes a hash reference `$event` instead of the
 EventedObject as the first argument. `$event` contains information that was formerly held within the object
@@ -139,7 +139,7 @@ rather than the former deprecated `->attach_event()`.
 ### Introduction of event methods 2.2+
 
 Version 2.2+ introduces a new class, EventedObject::Event, which provides several methods for
-event objects. These methods such as `$event->return` and `$event->object` replace the former hash keys
+event fire objects. These methods such as `$event->return` and `$event->object` replace the former hash keys
 `$event->{return}`, `$event->{object}`, etc. The former hash interface is no longer supported and will lead to error.
 
 ### Removal of ->attach_event() 2.9+
@@ -183,17 +183,24 @@ $eo->register_event(myEvent => sub {
 
 * __name__: the name of the callback being registered. must be unique to this particular event.
 * __priority__: a numerical priority of the callback.
-* __no_obj__: if true, no objects will be passed as the first argument.
-* __eo_obj__: if true, the evented object will be passed as the first argument rather than the event object. See below.
 * __data__: any data that will be stored as `$event->event_data` as the callback is fired.
+* __no_fire_obj__: if true, the event fire object will not be prepended to the argument list.
+* __with_evented_obj__: if true, the evented object will prepended to the argument list.
+
+* __no_obj__: **Deprecated**. Use `no_fire_obj` instead.
+* __eo_obj__: **Deprecated**. Use `with_evented_obj` instead.
+* __with_obj__: **Deprecated**. Use `with_evented_obj` instead.
+
+Note: the order of objects will always be `$eo`, `$event`, `@args`, regardless of omissions.  
+By default, the argument list is `$event`, `@args`.
 
 #### Differences from ->attach_event()
 
 Note: `->attach_event()` by default fires the callback with the evented object as its first argument unless told not to do so.
 `->register_event()`, however, functions in the opposite sense and *never* passes the evented object as the first argument unless the `with_obj` option is passed (this is for compatibility only, and all new code should make use of `$event->object`.)  
   
-In the 1.* series and above, the event object is passed as the first argument unless the `silent` option is passed. The 
-evented object itself is now accessible from `$event->object`.
+In the 1.* series and above, the event fire object is passed as the first argument unless the `no_fire_obj` option is passed. The 
+evented object itself is now accessible from `$event->object`.  
 
 ### $eo->register_events(@events)
 
@@ -261,18 +268,18 @@ Do not use this. It is likely to removed in the near future.
 
 **Removed** in version 2.9. Use `->register_event()` instead.
 
-## Event objects
+## Event fire objects
 
-Event objects are passed to all callbacks of an EventedObject (unless the `silent` parameter
-was specified.) Event objects contain information about the event itself, the callback, the caller
+Event fire objects are passed to all callbacks of an EventedObject (unless the `silent` parameter
+was specified.) Event fire objects contain information about the event itself, the callback, the caller
 of the event, event data, and more.  
   
-Event objects replace the former values stored within the EventedObject itself. This new method
+Event fire objects replace the former values stored within the EventedObject itself. This new method
 promotes asynchronous event firing.  
   
-Event objects are specific to each firing. If you fire the same event twice in a row, the event
+Event fire objects are specific to each firing. If you fire the same event twice in a row, the event
 object passed to the callbacks the first time will not be the same as the second time. Therefore,
-all modifications made by the event object's methods apply only to the callbacks remaining in this
+all modifications made by the event fire object's methods apply only to the callbacks remaining in this
 particular fire. For example, `$event->cancel($callback)` will only cancel the supplied callback
 once. The next time the event is fired, that cancelled callback will be called regardless.
 
@@ -286,7 +293,7 @@ $event->object->delete_event('myEvent');
 
 ### $event->caller
 
-Returns the value of `caller()` from within the `->fire()` method. This allows you to determine
+Returns the value of `caller(1)` from within the `->fire()` method. This allows you to determine
 from where the event was fired.
 
 ```perl
@@ -440,7 +447,7 @@ say 'my data is ', $event->callback_data;
 ## Example
 
 This example demonstrates basic EventedObject subclasses,
-priorities of event callbacks, as well as event objects and their methods.
+priorities of event callbacks, as well as event fire objects and their methods.
 
 ```perl
 package Person;

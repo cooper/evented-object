@@ -21,7 +21,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.91';
+our $VERSION = '3.0';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -52,11 +52,8 @@ sub register_event {
     
     # add this event.
     push @{$eo->{$events}{$event_name}{$priority}}, {
-        name   => $opts{name},
-        code   => $code,
-        no_obj => $opts{no_obj},
-        eo_obj => $opts{eo_obj} || $opts{with_obj}, # compat < 2.9
-        data   => $opts{data}
+        %opts,
+        code => $code
     };
     
     return 1;
@@ -83,21 +80,19 @@ sub register_events {
 #     caller        => the caller of fire_event,
 #     return        => a hashref of name:value return values,
 #     last_return   => the return value of the last-called event,
-#     count         => the number of callbacks called,
 # };
 # returns $event.
 sub fire_event {
-    my ($eo, $event_name) = (shift, shift);
+    my ($eo, $event_name, @args) = (shift, shift);
     
     # event does not have any callbacks.
     return unless $eo->{$events}{$event_name};
  
     # create event object.
-    my $event = EventedObject::Event->new(
+    my $event = EventedObject::EventFire->new(
         name   => $event_name,  # $event->event_name
         object => $eo,          # $event->object
-        caller => [caller 1],   # $event->caller
-        count  => 0             # $event->called
+        caller => [caller 1]    # $event->caller
     );
  
     my @priorities = sort { $b <=> $a } keys %{$eo->{$events}{$event_name}};
@@ -129,21 +124,35 @@ sub fire_event {
  
             # this callback has been cancelled.
             next CALLBACK if $event->{$props}{cancelled}{$cb->{name}};
- 
-            # call the callback.
+
+            # determine callback arguments.
+            
+            my @cb_args = @args;
+            if ($cb->{no_obj}) {
+                # compat < 3.0: no_obj -> no_fire_obj - fire with only actual arguments.
+                # no_obj is now deprecated.
+            }
+            else {
+                # compat < 2.9: with_obj -> eo_obj
+                # compat < 3.0: eo_obj   -> with_evented_obj
+                
+                # add event object unless no_obj.
+                unshift @cb_args, $event unless $cb->{no_fire_obj};
+                
+                # add evented object if eo_obj.
+                unshift @cb_args, $eo    unless $cb->{with_evented_obj} || $cb->{eo_obj} || $cb->{with_obj};
+                                                                    
+            }
+            
+            # set return values.
             $event->{$props}{last_return}               =   # set last return value.
             $event->{$props}{return}{$cb->{name}}       =   # set this callback's return value.
-                 $cb->{no_obj} ? $cb->{code}(@_)        :   # use no object as the first argument.
-                 $cb->{eo_obj} ? $cb->{code}($eo, @_)   :   # use the evented object as the first argument.
-                                 $cb->{code}($event, @_);   # use the event object as the first argument.
             
-            # increase the number of callbacks called for $event->called.
-            $event->{$props}{count}++;
+                # call the callback with proper arguments.
+                $cb->{code}(@cb_args);
             
-            # this callback has been called, yes.
+            # set $event->called($cb) true, and set $event->last to the callback's name.
             $event->{$props}{called}{$cb->{name}} = 1;
-            
-            # $event->last
             $event->{$props}{last_callback} = $cb->{name};
             
             # if stop is true, $event->stop was called. stop the iteration.
@@ -219,7 +228,7 @@ sub delete_event {
 ### EVENT OBJECTS ###
 #####################
 
-package EventedObject::Event;
+package EventedObject::EventFire;
 
 our $VERSION = $EventedObject::VERSION;
 
@@ -245,7 +254,7 @@ sub called {
     # return the number of callbacks called.
     # this includes the current callback.
     if (!defined $callback) {
-        return $event->{$props}{count} + 1;
+        return scalar(keys %{$event->{$props}{called}}) + 1;
     }
     
     # return whether the specified callback was called.
