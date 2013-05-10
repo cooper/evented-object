@@ -210,7 +210,7 @@ $eo->register_events(
 
 * __events__: an array of hash references to pass to `->register_event()`.
 
-### $eo->delete_event($event_name, $callback_name)
+### $eo->delete_event($event_name => $callback_name)
 
 Deletes an event callback from the object with the given callback name.  
 If no callback name is specified, deletes all callbacks of this event.  
@@ -228,7 +228,7 @@ $eo->delete_event('myEvent');
 * __event_name__: the name of the event.
 * __callback_name__: *optional*, the name of the callback being removed.
 
-### $eo->fire_event($event_name => [@arguments])
+### $eo->fire_event($event_name => @arguments)
 
 Fires the specified event, calling each callback that was registered with `->attach_event()` in descending order of
 their priorities.
@@ -248,7 +248,7 @@ $eo->fire_event(some_event => $some_argument, $some_other_argument);
 
 Alias for `->attach_event()`.
 
-### $eo->fire($event_name => [@arguments])
+### $eo->fire($event_name => @arguments)
 
 Alias for `->fire_event()`.
 
@@ -319,7 +319,7 @@ if ($event->stopper) {
 }
 ```
 
-### $event->called([$callback])
+### $event->called($callback)
 
 If no argument is supplied, returns the number of callbacks called so far, including the current one.
 If a callback argument is supplied, returns whether that particular callback has been called.
@@ -336,7 +336,7 @@ if ($event->called('some.callback')) {
 
 * __callback__: *optional*, the callback being checked.
 
-### $event->pending([$callback])
+### $event->pending($callback)
 
 If no argument is supplied, returns the number of callbacks pending to be called, excluding the current one.
 If a callback argument is supplied, returns whether that particular callback is pending for being called.
