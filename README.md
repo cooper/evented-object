@@ -30,14 +30,15 @@ Packages which are specifically designed for use with EventedObject are prefixed
 
 ### Purpose of EventedObject
 
-In short, EventedObject allows you attach event callbacks to an object (also known as a blessed hash reference)
-and then fire events on the object. To relate, event fires are much like method calls. However, there can be many
-handlers, many return values, and many responses rather than just one of each of these.  
+In short, EventedObject allows you to attach event callbacks to an object (also known as a blessed hash reference)
+and then fire events on that object. To relate, event fires are much like method calls. However, there can be many
+handlers, many return values, and many responses rather than just one of each of these.
 
 ### Event callbacks
 
-These handlers, known as callbacks, are called in descending order by priority. This allows you to place a certain
-callback in front of or behind another. They can modify other callbacks, modify the evented object itself, and much more.
+These handlers, known as callbacks, are called in descending order by priority. Numerically larger priorities are called
+first. This allows you to place a certain callback in front of or behind another. They can modify other callbacks,
+modify the evented object itself, and much more.
 
 ### Objective approach
 
@@ -133,13 +134,19 @@ least the late 2.* series.
 ### Alias changes 2.0+
 
 Version 2.0 breaks things even more because `->on()` is now an alias for `->register_event()`
-rather than the new deprecated `->attach_event()` as it always has been.
+rather than the former deprecated `->attach_event()`.
   
 ### Introduction of event methods 2.2+
 
 Version 2.2+ introduces a new class, EventedObject::Event, which provides several methods for
 event objects. These methods such as `$event->return` and `$event->object` replace the former hash keys
 `$event->{return}`, `$event->{object}`, etc. The former hash interface is no longer supported and will lead to error.
+
+### Removal of ->attach_event() 2.9+
+
+Version 2.9 removes the long-deprecated `->attach_event()` method in favor of the more
+flexible `->register_event()`. This will break compatibility with any package still making
+use of `->attach_event()`.
 
 ## EventedObject methods
 
@@ -176,8 +183,8 @@ $eo->register_event(myEvent => sub {
 
 * __name__: the name of the callback being registered. must be unique to this particular event.
 * __priority__: a numerical priority of the callback.
-* __silent__: if true, the $event object will be omitted from the callback argument list.
-* __with_obj__: if true, the evented object will be passed as the first argument. See below.
+* __no_obj__: if true, no objects will be passed as the first argument.
+* __eo_obj__: if true, the evented object will be passed as the first argument rather than the event object. See below.
 * __data__: any data that will be stored as `$event->event_data` as the callback is fired.
 
 #### Differences from ->attach_event()
@@ -221,7 +228,7 @@ $eo->delete_event('myEvent');
 * __event_name__: the name of the event.
 * __callback_name__: *optional*, the name of the callback being removed.
 
-### $eo->fire_event($event_name => @arguments)
+### $eo->fire_event($event_name => [@arguments])
 
 Fires the specified event, calling each callback that was registered with `->attach_event()` in descending order of
 their priorities.
@@ -237,23 +244,22 @@ $eo->fire_event(some_event => $some_argument, $some_other_argument);
 * __event_name__: the name of the event being fired.
 * __arguments__: *optional*, list of arguments to pass to event callbacks.
 
-### $eo->on($event_name, \\&callback, $callback_name, $priority)
+### $eo->on($event_name => \\&callback, %options)
 
 Alias for `->attach_event()`.
 
-### $eo->fire($event_name)
+### $eo->fire($event_name => [@arguments])
 
 Alias for `->fire_event()`.
 
-### $eo->del($event_name, $callback_name)
+### $eo->del(...)
 
 **Deprecated**. Alias for `->delete_event()`.  
 Do not use this. It is likely to removed in the near future.
 
 ### $eo->attach_event(...)
 
-**Deprecated**. Use `->register_event()` instead.  
-Do not use this. It is likely to removed in the near future.
+**Removed** in version 2.9. Use `->register_event()` instead.
 
 ## Event objects
 

@@ -12,40 +12,7 @@
 #
 #
 # COMPATIBILITY NOTES:
-#
-# EventedObject versions 0.0 to 0.7 are entirely compatible - anything that worked in
-# version 0.0 or even compies of EventedObject before it was versioned also work in
-# version 0.7; however, some recent changes break the compatibility with these previous
-# versions in many cases.
-#
-# EventedObject 1.* series and above are incompatible with the former versions.
-# EventedObject 1.8+ is designed to be more thread-friendly and work well in asyncrhonous
-# programs, whereas the previous versions were not suitable for such uses.
-#
-# The main comptability issue is the arguments passed to the callbacks. In the earlier
-# versions, the EventedObject instance was *always* the first argument of *all* events,
-# until EventedObject 0.6 added the ability to pass a parameter to attach_event() that
-# would tell EventedObject to omit the object from the callback's argument list.
-#
-# The new EventedObject series, 1.8+, passes a hash reference $event instead of the
-# EventedObject. $event contains information that was formerly held within the object
-# itself, such as event_info, event_return, and event_data. These are now accessible
-# through this new hash reference as $event->{info}, $event->{return}, $event->{data},
-# etc. The object is now accessible with $event->{object}.
-#
-# Events are now stored in the 'eventedObject.events' hash key instead of 'events', as
-# 'events' was a tad bit too broad and could conflict with other libraries.
-#
-# In addition to these changes, the attach_event() method was deprecated in version 1.8
-# in favor of the new register_event(); however, it will remain in EventedObject until at
-# least the late 2.* series.
-#
-# Version 2.0 breaks things even more because ->on() is now an alias for ->register_event()
-# rather than ->attach_event() as it always has been.
-#
-# Version 2.2 introduces new incompatibilities. The former values fetched as hash elements
-# from event objects are now fetched by methods instead. $event->{stop} has been replaced
-# by $event->stop, $event->{return}{$callback} by $event->return_of($callback), etc.
+#   Major problem-causing changes listed in README.md.
 #
 
 package EventedObject;
@@ -54,7 +21,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '2.82';
+our $VERSION = '2.9';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -64,32 +31,13 @@ sub new {
     bless {}, shift;
 }
 
-# attach an event callback. deprecated. do not use directly.
-sub attach_event {
-    my ($eo, $event_name, $code, $name, $priority, $silent, $data) = @_;
-    
-    $priority ||= 0; # priority does not matter.
-    $eo->{$events}{$event_name}{$priority} ||= [];
-    
-    # store this event callback.
-    push @{$eo->{$events}{$event_name}{$priority}}, {
-        name   => $name,
-        code   => $code,
-        silent => $silent,
-        data   => $data
-    };
-    
-    return 1;
-}
-
 # attach an event callback.
 # $eo->register_event(myEvent => sub {
 #     ...
-# }, name => 'some.callback', priority => 200, with_obj => 1);
+# }, name => 'some.callback', priority => 200, eo_obj => 1);
 # note: no_obj fires callback without $event as first argument.
 sub register_event {
     my ($eo, $event_name, $code, %opts) = @_;
-    my $silent = $opts{no_obj} ? undef : 1;
     
     # no name was provided, so we shall construct
     # one using the power of pure hackery.
@@ -99,15 +47,19 @@ sub register_event {
         $opts{name} = "$event_name.$caller[0]($caller[2], ".int(rand 9001).q[)];
     }
     
+    my $priority = $opts{priority} || 0; # priority does not matter.
+    $eo->{$events}{$event_name}{$priority} ||= [];
     
-    # the good old ->attach_event().
-    return $eo->attach_event(
-        $event_name => $code,
-        $opts{name},
-        $opts{priority},
-        $silent,
-        $opts{data}
-    );
+    # add this event.
+    push @{$eo->{$events}{$event_name}{$priority}}, {
+        name   => $opts{name},
+        code   => $opts{code},
+        no_obj => $opts{no_obj},
+        eo_obj => $opts{eo_obj} || $opts{with_obj}, # compat < 2.9
+        data   => $opts{data}
+    };
+    
+    return 1;
 
 }
 
@@ -178,14 +130,12 @@ sub fire_event {
             # this callback has been cancelled.
             next CALLBACK if $event->{$props}{cancelled}{$cb->{name}};
  
-            # set last return value.
-            $event->{$props}{last_return} =
-            
-            # set this callback's return value.
-            $event->{$props}{return}{$cb->{name}} =
-            
-            # silent really makes no sense - not even I am sure what it does anymore.
-            $cb->{silent} ? $cb->{code}($event, @_) : $cb->{code}(@_);
+            # call the callback.
+            $event->{$props}{last_return}               =   # set last return value.
+            $event->{$props}{return}{$cb->{name}}       =   # set this callback's return value.
+                $cb->{no_obj} ? $cb->{code}(@_)         :   # use no object as the first argument.
+                $cb->{eo_obj} ? $cb->{code}($eo, @_)    :   # use the evented object as the first argument.
+                $cb->{code}($event, @_);                    # use the event object as the first argument.
             
             # increase the number of callbacks called for $event->called.
             $event->{$props}{count}++;
@@ -196,7 +146,7 @@ sub fire_event {
             # $event->last
             $event->{$props}{last_callback} = $cb->{name};
             
-            # if $event->{$props}{stop} is true, $event->stop was called. stop the iteration.
+            # if stop is true, $event->stop was called. stop the iteration.
             if ($event->{$props}{stop}) {
                 $event->{$props}{stopper} = $cb->{name}; # set $event->stopper.
                 last PRIORITY;
@@ -212,7 +162,9 @@ sub fire_event {
         priority_i callback_i
     );
 
+    # return the event object.
     return $event;
+    
 }
 
 # delete an event callback or all callbacks of an event.
