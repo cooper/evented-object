@@ -21,7 +21,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '3.02';
+our $VERSION = '3.1';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -362,8 +362,14 @@ sub _pending_callbacks {
         push @pending, @{$event->object->{$events}{$event->event_name}{$priority}};
     }
     
+    # filter out any cancelled callbacks.
+    my @filtered;
+    foreach my $cb (@callbacks) {
+        push @filtered, $cb unless $event->{$props}{cancelled}{$cb->{name}};
+    }
+    
     # return the pending callbacks.
-    return @pending;
+    return @filtered;
     
 }
 
