@@ -186,10 +186,9 @@ $eo->register_event(myEvent => sub {
 * __data__: any data that will be stored as `$event->event_data` as the callback is fired.
 * __no_fire_obj__: if true, the event fire object will not be prepended to the argument list.
 * __with_evented_obj__: if true, the evented object will prepended to the argument list.
-
-* __no_obj__: **Deprecated**. Use `no_fire_obj` instead.
-* __eo_obj__: **Deprecated**. Use `with_evented_obj` instead.
-* __with_obj__: **Deprecated**. Use `with_evented_obj` instead.
+* __no_obj__: *Deprecated*. Use `no_fire_obj` instead.
+* __eo_obj__: *Deprecated*. Use `with_evented_obj` instead.
+* __with_obj__: *Deprecated*. Use `with_evented_obj` instead.
 
 Note: the order of objects will always be `$eo`, `$event`, `@args`, regardless of omissions.  
 By default, the argument list is `$event`, `@args`.
