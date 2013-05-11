@@ -21,7 +21,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '3.1';
+our $VERSION = '3.11';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -224,9 +224,9 @@ sub delete_event {
     return $amount;
 }
 
-#####################
-### EVENT OBJECTS ###
-#####################
+##########################
+### EVENT FIRE OBJECTS ###
+##########################
 
 package EventedObject::EventFire;
 
@@ -321,7 +321,7 @@ sub callback_name {
 
 # returns the caller(1) value of ->fire_event().
 sub caller {
-    my @a = shift->{$props}{caller};
+    @{shift->{$props}{caller}};
 }
 
 # returns the priority of the callback being called.
