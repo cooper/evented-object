@@ -196,7 +196,7 @@ By default, the argument list is `$event`, `@args`.
 #### Differences from ->attach_event()
 
 Note: `->attach_event()` by default fires the callback with the evented object as its first argument unless told not to do so.
-`->register_event()`, however, functions in the opposite sense and *never* passes the evented object as the first argument unless the `with_obj` option is passed (this is for compatibility only, and all new code should make use of `$event->object`.)  
+`->register_event()`, however, functions in the opposite sense and *never* passes the evented object as the first argument unless the `with_evented_obj` option is passed.  
   
 In the 1.* series and above, the event fire object is passed as the first argument unless the `no_fire_obj` option is passed. The 
 evented object itself is now accessible from `$event->object`.  
