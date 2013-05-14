@@ -3,10 +3,11 @@
 **I doubt your objects have ever been this evented.** This concept is so incredible that we're using a noun
 as a verb without being arrested by the grammar police.  
   
-EventedObject started as a basic class in ntirc for registering event handlers and firing events. after being used in ntirc IRC client, Arinity IRC services package, foxy-java modular IRC bot, and other projects, EventedObject has become more complex and quite featureful.  
+EventedObject started as a basic class for registering event handlers and firing events. After many improvements
+throughout several projects, EventedObject has become far more complex and quite featureful.  
   
-EventedObject supplies an (obviously objective) interface to store callbacks for events, fire events, and more. It provides
-several methods for convenience and simplicity.
+EventedObject supplies an (obviously objective) interface to store and manage callbacks for events, fire events
+upon objects, and more. It provides several methods for convenience and simplicity.
 
 ## Introduction
 
