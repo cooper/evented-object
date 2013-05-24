@@ -12,7 +12,7 @@
 #
 #
 # COMPATIBILITY NOTES:
-#   Major problem-causing changes listed in README.md.
+#   See README.md.
 #
 
 package EventedObject;
@@ -21,12 +21,12 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '3.11';
+our $VERSION = '3.2';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
 
-# create a new evented object
+# create a new evented object.
 sub new {
     bless {}, shift;
 }
@@ -99,70 +99,12 @@ sub fire_event {
     $event->{$props}{current_priority_set} = \@priorities;
     
     # iterate through callbacks by priority (higher number is called first)
-    my ($priority_index, $callback_index) = (-1, -1);
-    PRIORITY: foreach my $priority (@priorities) {
-        $priority_index++;
-        
-        # set current callback set - used primarily for ->pending.
-        $event->{$props}{current_callback_set} = $eo->{$events}{$event_name}{$priority};
-        my @callbacks = @{$event->{$props}{current_callback_set}};
-        
-        # set current priority index.
-        $event->{$props}{priority_i} = $priority_index;
-        
-        # iterate through each callback in this priority.
-        CALLBACK: foreach my $cb (@callbacks) {
-            $callback_index++;
-            
-            # set current callback index.
-            $event->{$props}{callback_i} = $callback_index;
-            
-            # create info about the call.
-            $event->{$props}{callback_name}     = $cb->{name};                          # $event->callback_name
-            $event->{$props}{callback_priority} = $priority;                            # $event->callback_priority
-            $event->{$props}{callback_data}     = $cb->{data} if defined $cb->{data};   # $event->callback_data
- 
-            # this callback has been cancelled.
-            next CALLBACK if $event->{$props}{cancelled}{$cb->{name}};
-
-            # determine callback arguments.
-            
-            my @cb_args = @args;
-            if ($cb->{no_obj}) {
-                # compat < 3.0: no_obj -> no_fire_obj - fire with only actual arguments.
-                # no_obj is now deprecated.
-            }
-            else {
-                # compat < 2.9: with_obj -> eo_obj
-                # compat < 3.0: eo_obj   -> with_evented_obj
-                
-                # add event object unless no_obj.
-                unshift @cb_args, $event unless $cb->{no_fire_obj};
-                
-                # add evented object if eo_obj.
-                unshift @cb_args, $eo if $cb->{with_evented_obj} || $cb->{eo_obj} || $cb->{with_obj};
-                                                                    
-            }
-            
-            # set return values.
-            $event->{$props}{last_return}               =   # set last return value.
-            $event->{$props}{return}{$cb->{name}}       =   # set this callback's return value.
-            
-                # call the callback with proper arguments.
-                $cb->{code}(@cb_args);
-            
-            # set $event->called($cb) true, and set $event->last to the callback's name.
-            $event->{$props}{called}{$cb->{name}} = 1;
-            $event->{$props}{last_callback} = $cb->{name};
-            
-            # if stop is true, $event->stop was called. stop the iteration.
-            if ($event->{$props}{stop}) {
-                $event->{$props}{stopper} = $cb->{name}; # set $event->stopper.
-                last PRIORITY;
-            }
-
-        }
+    ($event->{$props}{callback_i}, $event->{$props}{priority_i}) = (-1, -1);
+    foreach my $priority (@priorities) {
+        $eo->fire_event_priority($event_name, $event, $priority, @args) or last;
     }
+
+
 
     # dispose of things that are no longer needed.
     delete $event->{$props}{$_} foreach qw(
@@ -174,6 +116,70 @@ sub fire_event {
     # return the event object.
     return $event;
     
+}
+
+# fire a certain priority of an event.
+# this method is for internal use only.
+sub fire_event_priority {
+    my ($eo, $event_name, $event, $priority, @args);
+    $event->{$props}{priority_i}++;
+    
+    # set current callback set - used primarily for ->pending.
+    $event->{$props}{current_callback_set} = $eo->{$events}{$event_name}{$priority};
+    my @callbacks = @{$event->{$props}{current_callback_set}};
+    
+    
+    # iterate through each callback in this priority.
+    CALLBACK: foreach my $cb (@callbacks) {
+        $event->{$props}{callback_i}++;
+       
+        # create info about the call.
+        $event->{$props}{callback_name}     = $cb->{name};                          # $event->callback_name
+        $event->{$props}{callback_priority} = $priority;                            # $event->callback_priority
+        $event->{$props}{callback_data}     = $cb->{data} if defined $cb->{data};   # $event->callback_data
+
+        # this callback has been cancelled.
+        next CALLBACK if $event->{$props}{cancelled}{$cb->{name}};
+
+        # determine callback arguments.
+        
+        my @cb_args = @args;
+        if ($cb->{no_obj}) {
+            # compat < 3.0: no_obj -> no_fire_obj - fire with only actual arguments.
+            # no_obj is now deprecated.
+        }
+        else {
+            # compat < 2.9: with_obj -> eo_obj
+            # compat < 3.0: eo_obj   -> with_evented_obj
+            
+            # add event object unless no_obj.
+            unshift @cb_args, $event unless $cb->{no_fire_obj};
+            
+            # add evented object if eo_obj.
+            unshift @cb_args, $eo if $cb->{with_evented_obj} || $cb->{eo_obj} || $cb->{with_obj};
+                                                                
+        }
+        
+        # set return values.
+        $event->{$props}{last_return}               =   # set last return value.
+        $event->{$props}{return}{$cb->{name}}       =   # set this callback's return value.
+        
+            # call the callback with proper arguments.
+            $cb->{code}(@cb_args);
+        
+        # set $event->called($cb) true, and set $event->last to the callback's name.
+        $event->{$props}{called}{$cb->{name}} = 1;
+        $event->{$props}{last_callback} = $cb->{name};
+        
+        # if stop is true, $event->stop was called. stop the iteration.
+        if ($event->{$props}{stop}) {
+            $event->{$props}{stopper} = $cb->{name}; # set $event->stopper.
+            return;
+        }
+
+    }
+    
+    return 1;
 }
 
 # delete an event callback or all callbacks of an event.
