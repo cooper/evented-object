@@ -21,7 +21,7 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '3.2';
+our $VERSION = '3.21';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -121,7 +121,7 @@ sub fire_event {
 # fire a certain priority of an event.
 # this method is for internal use only.
 sub fire_event_priority {
-    my ($eo, $event_name, $event, $priority, @args);
+    my ($eo, $event_name, $event, $priority, @args) = @_;
     $event->{$props}{priority_i}++;
     
     # set current callback set - used primarily for ->pending.
