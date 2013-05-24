@@ -25,6 +25,7 @@ which is a member of the EventedObject class or a class which inherits from the 
 * __EventedObject__: the class that provides methods for managing events.
 * __Evented object__: an object that uses EventedObject for event management.
 * __Event fire object__: an object that represents an event fire.
+* __Listener object__: another evented object that receives event notifications.
 
 EventedObject and its core packages are prefixed with `EventedObject`.  
 Packages which are specifically designed for use with EventedObject are prefixed with `Evented::`.
@@ -52,6 +53,18 @@ comparable to the JavaScript event systems often found in browsers.
 Another important concept of EventedObject is the event fire object. It provides methods for fetching information relating
 to the event being fired, callback being called, and more. Additionally, it provides an interface for modifying the
 evented object and modifying future event callbacks.
+
+### Object listeners
+
+Additional evented objects can be registered as "listeners."  
+Consider a scenario where you have a class whose objects represent a farm. You have another class which represents a cow.
+You would like to use the same callback for all of the moos that occur on the farm, regardless of which cow initiated it.  
+  
+Rather than attaching an event callback to every cow, you can instead make the farm a listener of the cow. Then, you can
+attach a single callback to your farm. If your cow's event for mooing is `moo`, your farm's event for mooing is `cow.moo`.  
+
+The farm becomes a listener of the cow by using `$cow->add_listener($farm, 'cow')`.  
+The cow holds a weak reference to the farm, so you do not need to worry about removing it later.
 
 ## History
 
@@ -250,6 +263,31 @@ $eo->fire_event(some_event => $some_argument, $some_other_argument);
 
 * __event_name__: the name of the event being fired.
 * __arguments__: *optional*, list of arguments to pass to event callbacks.
+
+### $eo->add_listener($other_eo, $prefix)
+
+Makes the passed evented object a listener of this evented object. See the "object listeners" section
+for more information on this feature.
+
+```perl
+$cow->add_listener($farm, 'cow');
+```
+
+* __other_eo__: the evented object that will listen.
+* __prefix__: a string that event names will be prefixed with on the listener.
+
+### $eo->delete_listener($other_eo)
+
+Removes an evented object listener of this evented object. See the "object listeners" section
+for more information on this feature.
+
+```perl
+$cow->delete_listener($farm, 'cow');
+```
+
+* __other_eo__: the evented object that will listen.
+* __prefix__: a string that event names will be prefixed with on the listener.
+
 
 ### $eo->on($event_name => \\&callback, %options)
 

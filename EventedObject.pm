@@ -23,7 +23,7 @@ use utf8;
 
 use Scalar::Util 'weaken';
 
-our $VERSION = '3.3';
+our $VERSION = '3.31';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -104,16 +104,40 @@ sub fire_event {
     ($event->{$props}{callback_i}, $event->{$props}{priority_i}) = (-1, -1);
     foreach my $priority (@priorities) {
     
-        # fire callbacks of this priority.
-        $eo->fire_event_priority($event_name, $event, $priority, @args) or last;
-        
         # if there are any listening objects, call its callbacks of this priority.
         if ($eo->{$props}{listeners}) {
-            foreach my $l (@{$eo->{$props}{listeners}}) {
+            my @delete;
+            my $listeners = $eo->{$props}{listeners};
+            
+            foreach my $i (0 .. $#$listeners) {
+                my $l = $listeners->[$i] or next;
+                
                 my ($prefix, $obj) = @$l;
-                $eo->fire_event_priority("$prefix.$event_name", $event, $priority, @args) or last;
+                
+                # object has been deallocated by garbage disposal, so we can delete this listener.
+                if (!$obj) {
+                    push @delete, $i;
+                    next;
+                }
+                
+                # fire the event on the listener for this priority.
+                $obj->fire_event_priority("$prefix.$event_name", $event, $priority, @args) or last;
             }
+            
+            # delete listener if necessary.
+            if (scalar @delete) {
+                my @new_listeners;
+                foreach my $i (0 .. $#$listeners) {
+                    next if $i ~~ @delete;
+                    push @new_listeners, $listeners->[$i];
+                }
+                @$listeners = \@new_listeners; 
+            }
+            
         }
+        
+        # fire local callbacks of this priority.
+        $eo->fire_event_priority($event_name, $event, $priority, @args) or last;
         
     }
 
@@ -250,7 +274,7 @@ sub add_listener {
     my $listeners = $eo->{$props}{listeners};
     
     # store this listener.
-    my $last_i = $#{$listeners};
+    my $last_i = $#$listeners;
     $listeners->[$last_i + 1] = [$prefix, $obj];
     
     # weaken the reference to the listener.
@@ -260,7 +284,7 @@ sub add_listener {
 }
 
 # remove a listener.
-sub remove_listener {
+sub delete_listener {
     my ($eo, $obj) = @_;
     return 1 unless my $listeners = $eo->{$props}{listeners};
     @$listeners = grep { ref $_->[1] eq 'ARRAY' and $_->[1] != $obj } @$listeners;
