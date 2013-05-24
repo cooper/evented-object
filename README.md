@@ -57,14 +57,26 @@ evented object and modifying future event callbacks.
 ### Object listeners
 
 Additional evented objects can be registered as "listeners."  
+  
 Consider a scenario where you have a class whose objects represent a farm. You have another class which represents a cow.
 You would like to use the same callback for all of the moos that occur on the farm, regardless of which cow initiated it.  
   
 Rather than attaching an event callback to every cow, you can instead make the farm a listener of the cow. Then, you can
 attach a single callback to your farm. If your cow's event for mooing is `moo`, your farm's event for mooing is `cow.moo`.  
-
+  
 The farm becomes a listener of the cow by using `$cow->add_listener($farm, 'cow')`.  
-The cow holds a weak reference to the farm, so you do not need to worry about removing it later.
+
+#### Potential looping references
+
+The cow holds a weak reference to the farm, so you do not need to worry about deleting it later. This, however, means that
+your listener object must also be referred to in another location in order for this to work. I doubt that will be a problem,
+though.
+
+#### Priorities
+
+EventedObject is rather genius when it comes to callback priorities. With object listeners, it is as though
+the callbacks belong to the object being listened to. Referring to the above example, if you attach a callback
+on the farm object with priority 1, it will be called before your callback with priority 0 on the cow object.
 
 ## History
 
