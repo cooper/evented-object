@@ -21,7 +21,9 @@ use warnings;
 use strict;
 use utf8;
 
-our $VERSION = '3.21';
+use Scalar::Util 'weaken';
+
+our $VERSION = '3.3';
 
 our $events = 'eventedObject.events';
 our $props  = 'eventedObject.props';
@@ -101,10 +103,19 @@ sub fire_event {
     # iterate through callbacks by priority (higher number is called first)
     ($event->{$props}{callback_i}, $event->{$props}{priority_i}) = (-1, -1);
     foreach my $priority (@priorities) {
+    
+        # fire callbacks of this priority.
         $eo->fire_event_priority($event_name, $event, $priority, @args) or last;
+        
+        # if there are any listening objects, call its callbacks of this priority.
+        if ($eo->{$props}{listeners}) {
+            foreach my $l (@{$eo->{$props}{listeners}}) {
+                my ($prefix, $obj) = @$l;
+                $eo->fire_event_priority("$prefix.$event_name", $event, $priority, @args) or last;
+            }
+        }
+        
     }
-
-
 
     # dispose of things that are no longer needed.
     delete $event->{$props}{$_} foreach qw(
@@ -228,6 +239,32 @@ sub delete_event {
     }
 
     return $amount;
+}
+
+# add an object to listen to events.
+sub add_listener {
+    my ($eo, $prefix, $obj) = @_;
+    
+    # find listeners list.
+    $eo->{$props}{listeners} ||= [];
+    my $listeners = $eo->{$props}{listeners};
+    
+    # store this listener.
+    my $last_i = $#{$listeners};
+    $listeners->[$last_i + 1] = [$prefix, $obj];
+    
+    # weaken the reference to the listener.
+    weaken($listeners->[$last_i + 1]);
+    
+    return 1;
+}
+
+# remove a listener.
+sub remove_listener {
+    my ($eo, $obj) = @_;
+    return 1 unless my $listeners = $eo->{$props}{listeners};
+    @$listeners = grep { ref $_->[1] eq 'ARRAY' and $_->[1] != $obj } @$listeners;
+    return 1;
 }
 
 ##########################
