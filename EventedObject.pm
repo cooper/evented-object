@@ -20,13 +20,14 @@ package EventedObject;
 use warnings;
 use strict;
 use utf8;
+use 5.010;
 
 use Scalar::Util 'weaken';
 
-our $VERSION = '3.31';
+our $VERSION = '3.32';
 
-our $events = 'eventedObject.events';
-our $props  = 'eventedObject.props';
+my $events = 'eventedObject.events';
+my $props  = 'eventedObject.props';
 
 # create a new evented object.
 sub new {
@@ -45,8 +46,9 @@ sub register_event {
     # one using the power of pure hackery.
     # this is one of the most criminal things I've ever done.
     if (!defined $opts{name}) {
-        my @caller = caller;
-        $opts{name} = "$event_name.$caller[0]($caller[2], ".int(rand 9001).q[)];
+        my @caller  = caller;
+        state $c    = 0;
+        $opts{name} = "$event_name.$caller[0]($caller[2], ".$c++.q[)];
     }
     
     my $priority = $opts{priority} || 0; # priority does not matter.
@@ -298,9 +300,6 @@ sub delete_listener {
 package EventedObject::EventFire;
 
 our $VERSION = $EventedObject::VERSION;
-
-our $events = $EventedObject::events;
-our $props  = $EventedObject::props;
 
 # create a new event object.
 sub new {
