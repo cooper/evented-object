@@ -33,7 +33,7 @@ use Scalar::Util 'weaken';
 
 use EventedObject::EventFire;
 
-our $VERSION = '3.34';
+our $VERSION = '3.4';
 
 # create a new evented object.
 sub new {
@@ -85,94 +85,78 @@ sub register_events {
 sub fire_event {
     my ($eo, $event_name, @args) = @_;
     
-    # event does not have any callbacks.
-    return unless $eo->{$events}{$event_name};
- 
     # create event object.
     my $event = EventedObject::EventFire->new(
         name   => $event_name,  # $event->event_name
         object => $eo,          # $event->object
-        caller => [caller 1]    # $event->caller
+        caller => [caller 1],   # $event->caller
+        $props => {}        
     );
- 
-    my @priorities = sort { $b <=> $a } keys %{$eo->{$events}{$event_name}};
-    $event->{$props}{current_priority_set} = \@priorities;
     
-    # iterate through callbacks by priority (higher number is called first)
-    ($event->{$props}{callback_i}, $event->{$props}{priority_i}) = (-1, -1);
-    foreach my $priority (@priorities) {
+    my $ef_props = $event->{$props};
     
-        # if there are any listening objects, call its callbacks of this priority.
-        if ($eo->{$props}{listeners}) {
-            my @delete;
-            my $listeners = $eo->{$props}{listeners};
+    # priority number : array of callbacks.
+    my %p;
+    
+    # if there are any listening objects, call its callbacks of this priority.
+    if ($eo->{$props}{listeners}) {
+        my @delete;
+        my $listeners = $eo->{$props}{listeners};
+        
+        LISTENER: foreach my $i (0 .. $#$listeners) {
+            my $l = $listeners->[$i] or next;
+            my ($prefix, $obj) = @$l;
+            my $listener_event_name = $prefix.q(.).$event_name;
             
-            foreach my $i (0 .. $#$listeners) {
-                my $l = $listeners->[$i] or next;
-                
-                my ($prefix, $obj) = @$l;
-                
-                # object has been deallocated by garbage disposal, so we can delete this listener.
-                if (!$obj) {
-                    push @delete, $i;
-                    next;
-                }
-                
-                # fire the event on the listener for this priority.
-                $obj->fire_event_priority("$prefix.$event_name", $event, $priority, @args) or last;
+            # object has been deallocated by garbage disposal, so we can delete this listener.
+            if (!$obj) {
+                push @delete, $i;
+                next LISTENER;
             }
             
-            # delete listener if necessary.
-            if (scalar @delete) {
-                my @new_listeners;
-                foreach my $i (0 .. $#$listeners) {
-                    next if $i ~~ @delete;
-                    push @new_listeners, $listeners->[$i];
-                }
-                @$listeners = \@new_listeners; 
+            # add the callbacks from this priority.
+            foreach my $priority (keys %{$obj->{$events}{$listener_event_name}}) {
+                $p{$priority} ||= [];
+                push @{$p{$priority}}, @{$obj->{$events}{$listener_event_name}{$priority}};
             }
             
         }
         
-        # fire local callbacks of this priority.
-        $eo->fire_event_priority($event_name, $event, $priority, @args) or last;
+        # delete listeners if necessary.
+        if (scalar @delete) {
+            my @new_listeners;
+            foreach my $i (0 .. $#$listeners) {
+                next if $i ~~ @delete;
+                push @new_listeners, $listeners->[$i];
+            }
+            @$listeners = \@new_listeners; 
+        }
+        
+        # TODO: Callback collections.
         
     }
 
-    # dispose of things that are no longer needed.
-    delete $event->{$props}{$_} foreach qw(
-        callback_name callback_priority callback_data
-        current_priority_set current_callback_set
-        priority_i callback_i
-    );
-
-    # return the event object.
-    return $event;
+    # add the local callbacks from this priority.
+    if ($eo->{$events}{$event_name}) {
+        foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
+            $p{$priority} ||= [];
+            push @{$p{$priority}}, @{$eo->{$events}{$event_name}{$priority}};
+        }
+    }
     
-}
-
-# fire a certain priority of an event.
-# this method is for internal use only.
-sub fire_event_priority {
-    my ($eo, $event_name, $event, $priority, @args) = @_;
-    $event->{$props}{priority_i}++;
+    # call each callback.
+    PRIORITY: foreach my $priority (sort { $b <=> $a } keys %p) { 
+    CALLBACK: foreach my $cb       (@{$p{$priority}}) {
     
-    # set current callback set - used primarily for ->pending.
-    $event->{$props}{current_callback_set} = $eo->{$events}{$event_name}{$priority};
-    my @callbacks = @{$event->{$props}{current_callback_set}};
-    
-    
-    # iterate through each callback in this priority.
-    CALLBACK: foreach my $cb (@callbacks) {
-        $event->{$props}{callback_i}++;
+        $ef_props->{callback_i}++;
        
         # create info about the call.
-        $event->{$props}{callback_name}     = $cb->{name};                          # $event->callback_name
-        $event->{$props}{callback_priority} = $priority;                            # $event->callback_priority
-        $event->{$props}{callback_data}     = $cb->{data} if defined $cb->{data};   # $event->callback_data
+        $ef_props->{callback_name}     = $cb->{name};                          # $event->callback_name
+        $ef_props->{callback_priority} = $priority;                            # $event->callback_priority
+        $ef_props->{callback_data}     = $cb->{data} if defined $cb->{data};   # $event->callback_data
 
         # this callback has been cancelled.
-        next CALLBACK if $event->{$props}{cancelled}{$cb->{name}};
+        next CALLBACK if $ef_props->{cancelled}{$cb->{name}};
 
         # determine callback arguments.
         
@@ -194,25 +178,34 @@ sub fire_event_priority {
         }
         
         # set return values.
-        $event->{$props}{last_return}               =   # set last return value.
-        $event->{$props}{return}{$cb->{name}}       =   # set this callback's return value.
+        $ef_props->{last_return}               =   # set last return value.
+        $ef_props->{return}{$cb->{name}}       =   # set this callback's return value.
         
             # call the callback with proper arguments.
             $cb->{code}(@cb_args);
         
         # set $event->called($cb) true, and set $event->last to the callback's name.
-        $event->{$props}{called}{$cb->{name}} = 1;
-        $event->{$props}{last_callback} = $cb->{name};
+        $ef_props->{called}{$cb->{name}} = 1;
+        $ef_props->{last_callback}       = $cb->{name};
         
         # if stop is true, $event->stop was called. stop the iteration.
-        if ($event->{$props}{stop}) {
-            $event->{$props}{stopper} = $cb->{name}; # set $event->stopper.
-            return;
+        if ($ef_props->{stop}) {
+            $ef_props->{stopper} = $cb->{name}; # set $event->stopper.
+            last PRIORITY;
         }
 
-    }
+     
+    } } # ew.
     
-    return 1;
+    # dispose of things that are no longer needed.
+    delete $event->{$props}{$_} foreach qw(
+        callback_name callback_priority callback_data
+        priority_i callback_i
+    );
+
+    # return the event object.
+    return $event;
+    
 }
 
 # delete an event callback or all callbacks of an event.
@@ -265,18 +258,17 @@ sub delete_event {
 
 # add an object to listen to events.
 sub add_listener {
-    my ($eo, $prefix, $obj) = @_;
+    my ($eo, $obj, $prefix) = @_;
     
     # find listeners list.
     $eo->{$props}{listeners} ||= [];
     my $listeners = $eo->{$props}{listeners};
     
     # store this listener.
-    my $last_i = $#$listeners;
-    $listeners->[$last_i + 1] = [$prefix, $obj];
+    push @$listeners, [$prefix, $obj];
     
     # weaken the reference to the listener.
-    weaken($listeners->[$last_i + 1]);
+    weaken($listeners->[$#$listeners][1]);
     
     return 1;
 }
