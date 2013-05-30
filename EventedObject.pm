@@ -33,7 +33,7 @@ use Scalar::Util 'weaken';
 
 use EventedObject::EventFire;
 
-our $VERSION = '3.4';
+our $VERSION = '3.41';
 
 # create a new evented object.
 sub new {
@@ -145,15 +145,19 @@ sub fire_event {
     }
     
     # call each callback.
+    my %called;
     PRIORITY: foreach my $priority (sort { $b <=> $a } keys %p) { 
     CALLBACK: foreach my $cb       (@{$p{$priority}}) {
-    
         $ef_props->{callback_i}++;
-       
+        
         # create info about the call.
         $ef_props->{callback_name}     = $cb->{name};                          # $event->callback_name
         $ef_props->{callback_priority} = $priority;                            # $event->callback_priority
         $ef_props->{callback_data}     = $cb->{data} if defined $cb->{data};   # $event->callback_data
+
+        # this callback has been called already.
+        next CALLBACK if $ef_props->{called}{$cb->{name}};
+        next CALLBACK if $called{$cb};
 
         # this callback has been cancelled.
         next CALLBACK if $ef_props->{cancelled}{$cb->{name}};
@@ -185,6 +189,7 @@ sub fire_event {
             $cb->{code}(@cb_args);
         
         # set $event->called($cb) true, and set $event->last to the callback's name.
+        $called{$cb}                     =
         $ef_props->{called}{$cb->{name}} = 1;
         $ef_props->{last_callback}       = $cb->{name};
         
