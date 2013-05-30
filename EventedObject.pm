@@ -22,14 +22,18 @@ use strict;
 use utf8;
 use 5.010;
 
+# these must be set before loading EventFire.
+our ($events, $props);
+BEGIN {
+    $events = 'eventedObject.events';
+    $props  = 'eventedObject.props';
+}
+
 use Scalar::Util 'weaken';
 
 use EventedObject::EventFire;
 
-our $VERSION = '3.33';
-
-our $events  = 'eventedObject.events';
-our $props   = 'eventedObject.props';
+our $VERSION = '3.34';
 
 # create a new evented object.
 sub new {
