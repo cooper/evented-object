@@ -33,7 +33,7 @@ use Scalar::Util 'weaken';
 
 use EventedObject::EventFire;
 
-our $VERSION = '3.41';
+our $VERSION = '3.42';
 
 # create a new evented object.
 sub new {
@@ -292,8 +292,11 @@ sub delete_listener {
 ###############
 
 sub on; sub del; sub fire;
-*on   = *register_event;
-*del  = *delete_event;
-*fire = *fire_event;
+
+BEGIN {
+    *on   = *register_event;
+    *del  = *delete_event;
+    *fire = *fire_event;
+}
  
 1
