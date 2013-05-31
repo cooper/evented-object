@@ -33,7 +33,7 @@ use Scalar::Util 'weaken';
 
 use EventedObject::EventFire;
 
-our $VERSION = '3.42';
+our $VERSION = '3.43';
 
 # create a new evented object.
 sub new {
@@ -96,54 +96,8 @@ sub fire_event {
     my $ef_props = $event->{$props};
     
     # priority number : array of callbacks.
-    my %p;
-    
-    # if there are any listening objects, call its callbacks of this priority.
-    if ($eo->{$props}{listeners}) {
-        my @delete;
-        my $listeners = $eo->{$props}{listeners};
+    my %p = %{ _get_callbacks(@_) };
         
-        LISTENER: foreach my $i (0 .. $#$listeners) {
-            my $l = $listeners->[$i] or next;
-            my ($prefix, $obj) = @$l;
-            my $listener_event_name = $prefix.q(.).$event_name;
-            
-            # object has been deallocated by garbage disposal, so we can delete this listener.
-            if (!$obj) {
-                push @delete, $i;
-                next LISTENER;
-            }
-            
-            # add the callbacks from this priority.
-            foreach my $priority (keys %{$obj->{$events}{$listener_event_name}}) {
-                $p{$priority} ||= [];
-                push @{$p{$priority}}, @{$obj->{$events}{$listener_event_name}{$priority}};
-            }
-            
-        }
-        
-        # delete listeners if necessary.
-        if (scalar @delete) {
-            my @new_listeners;
-            foreach my $i (0 .. $#$listeners) {
-                next if $i ~~ @delete;
-                push @new_listeners, $listeners->[$i];
-            }
-            @$listeners = \@new_listeners; 
-        }
-        
-        # TODO: Callback collections.
-        
-    }
-
-    # add the local callbacks from this priority.
-    if ($eo->{$events}{$event_name}) {
-        foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
-            $p{$priority} ||= [];
-            push @{$p{$priority}}, @{$eo->{$events}{$event_name}{$priority}};
-        }
-    }
-    
     # call each callback.
     my %called;
     PRIORITY: foreach my $priority (sort { $b <=> $a } keys %p) { 
@@ -211,6 +165,59 @@ sub fire_event {
     # return the event object.
     return $event;
     
+}
+
+# fetches callbacks of an event.
+# internal use only.
+sub _get_callbacks {
+    my ($eo, $event_name, @args) = @_;
+    my %p;
+    
+    # if there are any listening objects, call its callbacks of this priority.
+    if ($eo->{$props}{listeners}) {
+        my @delete;
+        my $listeners = $eo->{$props}{listeners};
+        
+        LISTENER: foreach my $i (0 .. $#$listeners) {
+            my $l = $listeners->[$i] or next;
+            my ($prefix, $obj) = @$l;
+            my $listener_event_name = $prefix.q(.).$event_name;
+            
+            # object has been deallocated by garbage disposal, so we can delete this listener.
+            if (!$obj) {
+                push @delete, $i;
+                next LISTENER;
+            }
+            
+            # add the callbacks from this priority.
+            foreach my $priority (keys %{$obj->{$events}{$listener_event_name}}) {
+                $p{$priority} ||= [];
+                push @{$p{$priority}}, @{$obj->{$events}{$listener_event_name}{$priority}};
+            }
+            
+        }
+        
+        # delete listeners if necessary.
+        if (scalar @delete) {
+            my @new_listeners;
+            foreach my $i (0 .. $#$listeners) {
+                next if $i ~~ @delete;
+                push @new_listeners, $listeners->[$i];
+            }
+            @$listeners = \@new_listeners; 
+        }
+       
+    }
+
+    # add the local callbacks from this priority.
+    if ($eo->{$events}{$event_name}) {
+        foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
+            $p{$priority} ||= [];
+            push @{$p{$priority}}, @{$eo->{$events}{$event_name}{$priority}};
+        }
+    }
+    
+    return \%p;
 }
 
 # delete an event callback or all callbacks of an event.
