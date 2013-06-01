@@ -96,7 +96,7 @@ callbacks, including those belonging to the evented object.
 
 EventedObject has evolved throughout the history of multiple projects, improving in each project it passed through.
 It originated as IRC::EventedObject in NoTrollPlzDev's [libirc](https://github.com/cooper/libirc). From then on,
-it was found in the (ntirc)[https://github.com/cooper/ntirc] IRC client,
+it was found in the [ntirc](https://github.com/cooper/ntirc) IRC client,
 [Arinity](https://github.com/cooper/arinity) IRC Services, and
 [foxy-java](https://github.com/cooper/foxy-java) IRC client. The Arinity IRC Services package was the first to use a standalone
 EventedObject; before then, it was only packaged with libirc.  
