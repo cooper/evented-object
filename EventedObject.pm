@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use EventedObject::EventFire;
 
-our $VERSION = '3.51';
+our $VERSION = '3.52';
 
 # create a new evented object.
 sub new {
@@ -70,11 +70,7 @@ sub register_event {
         %opts,
         code => $code
     };
-    
-    # weaken the reference to the evented object to prevent
-    # it from retaining itself.
-    weaken($callbacks->[$#$callbacks]{object});
-    
+        
     return 1;
 
 }
