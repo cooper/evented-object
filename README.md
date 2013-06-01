@@ -78,7 +78,7 @@ EventedObject is rather genius when it comes to callback priorities. With object
 the callbacks belong to the object being listened to. Referring to the above example, if you attach a callback
 on the farm object with priority 1, it will be called before your callback with priority 0 on the cow object.
 
-#### Fire objects and listener
+#### Fire objects and listeners
 
 When an event is fired on an object, the same event fire object is used for callbacks
 belonging to both the evented object and its listening objects. Therefore, callback names
@@ -185,7 +185,7 @@ Version 2.9 removes the long-deprecated `->attach_event()` method in favor of th
 flexible `->register_event()`. This will break compatibility with any package still making
 use of `->attach_event()`.
 
-## EventedObject methods
+## Evented object methods
 
 The EventedObject package provides several convenient methods for managing an event-driven object.
 
@@ -329,7 +329,40 @@ Do not use this. It is likely to removed in the near future.
 
 **Removed** in version 2.9. Use `->register_event()` instead.
 
-## Event fire objects
+## EventedObject procedural functions
+
+The EventedObject package provides some functions for use. These functions typically are
+associated with more than one evented object or none at all.
+
+### fire_events_together(@events)
+
+Fires multiple events at the same time. This allows you to fire multiple similar events
+on several evented objects at the same time. It essentially pretends that the callbacks
+are all for the same event and all on the same object.  
+  
+It follows priorities throughout
+all of the events and all of the objects, so it is ideal for firing similar or identical
+events on multiple objects.  
+  
+The same event fire object is used throughout this entire routine. This means that
+callback names must unique among all of these objects and events. It also means that
+stopping an event from any callback will cancel all remaining callbacks, regardless to
+which event or which object they belong.  
+  
+The function takes a list of array references in the form of:  
+`[ $evented_object, event_name => @arguments ]`
+
+```perl
+EventedObject::fire_events_together(
+    [ $server,  user_joined_channel => $user, $channel ],
+    [ $channel, user_joined         => $user           ],
+    [ $user,    joined_channel      => $channel        ]
+);
+```
+
+* __events__: an array of events in the form of `[$eo, event_name => @arguments]`.
+
+## Event fire object methods
 
 Event fire objects are passed to all callbacks of an EventedObject (unless the `silent` parameter
 was specified.) Event fire objects contain information about the event itself, the callback, the caller
