@@ -300,6 +300,28 @@ sub _get_callbacks {
     return \%collection;
 }
 
+# This is the structure of a collection:
+#   %collection = (
+#
+#       # priorities are keys.
+#
+#       # priority 0
+#       0 => [
+#           
+#           # this arrayref consists of an arrayref of callbacks an arrayref of arguments.
+#
+#           [ \&some_callback, \&some_other_callback ],
+#           [ 'my_argument', 'my_other_argument'     ]
+#
+#       ],
+#
+#       # priority 1
+#       1 => [
+#           ...
+#       ]
+#
+#   )
+
 # call the passed callback priority sets.
 sub _call_callbacks {
     my ($event, %collection) = @_;
