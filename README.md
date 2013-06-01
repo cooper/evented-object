@@ -82,18 +82,23 @@ on the farm object with priority 1, it will be called before your callback with 
 
 When an event is fired on an object, the same event fire object is used for callbacks
 belonging to both the evented object and its listening objects. Therefore, callback names
-must be unique not only to the listener object but to the object being listened on as well.  
+must be unique not only to the listener object but to the object being listened on as well.
   
 You should also note the values of the event fire object:
 
 * __$event->event_name__: the name of the event from the perspective of the listener; i.e. `cow.moo` (NOT `moo`)
 * __$event->object__: the object being listened to; i.e. `$cow` (NOT `$farm`)
 
+This also means that stopping the event from a listener object will cancel all remaining
+callbacks, including those belonging to the evented object.
+
 ## History
 
 EventedObject has evolved throughout the history of multiple projects, improving in each project it passed through.
-It originated as IRC::EventedObject in NoTrollPlzDev's libirc. From then on, it was found in ntirc IRC client,
-Arinity IRC Services, and foxy-java IRC client. The Arinity IRC Services package was the first to use a standalone
+It originated as IRC::EventedObject in NoTrollPlzDev's [libirc](https://github.com/cooper/libirc). From then on,
+it was found in the (ntirc)[https://github.com/cooper/ntirc] IRC client,
+[Arinity](https://github.com/cooper/arinity) IRC Services, and
+[foxy-java](https://github.com/cooper/foxy-java) IRC client. The Arinity IRC Services package was the first to use a standalone
 EventedObject; before then, it was only packaged with libirc.  
   
 Today, EventedObject is found in many different projects, usually included as a git submodule. A variety
@@ -124,6 +129,7 @@ This is a list of classes and frameworks which make major use of EventedObject.
 * [__ntirc__](https://github.com/cooper/ntirc) - a Perl IRC client with the potential to be incredible.
 * [__Arinity__](https://github.com/cooper/arinity) - an IRC services package written in Perl.
 * [__ombot__](https://github.com/cooper/ombot) - an Omegle IRC bot powered by libirc and Net::Async::Omegle.
+* [__PBot__](https://github.com/mattwb65/PBot) - an objective, event-driven IRC bot with a very original name.
 
 ## Author
 
