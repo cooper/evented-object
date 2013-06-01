@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use EventedObject::EventFire;
 
-our $VERSION = '3.5';
+our $VERSION = '3.51';
 
 # create a new evented object.
 sub new {
@@ -68,9 +68,7 @@ sub register_event {
     my $callbacks = $eo->{$events}{$event_name}{$priority};
     push @$callbacks, {
         %opts,
-        object     => $eo,
-        code       => $code,
-        event_name => $event_name
+        code => $code
     };
     
     # weaken the reference to the evented object to prevent
@@ -272,7 +270,12 @@ sub _get_callbacks {
             # add the callbacks from this priority.
             foreach my $priority (keys %{$obj->{$events}{$listener_event_name}}) {
                 $collection{$priority} ||= [];
-                push @{$collection{$priority}}, [ $obj->{$events}{$listener_event_name}{$priority}, \@args ];
+                push @{$collection{$priority}}, [
+                    $eo, # TODO: document how $event->object is the real object
+                    $listener_event_name,
+                    $obj->{$events}{$listener_event_name}{$priority},
+                    \@args
+                ];
             }
             
         }
@@ -293,7 +296,12 @@ sub _get_callbacks {
     if ($eo->{$events}{$event_name}) {
         foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
             $collection{$priority} ||= [];
-            push @{ $collection{$priority} }, [ $eo->{$events}{$event_name}{$priority}, \@args ];
+            push @{ $collection{$priority} }, [
+                $eo,
+                $event_name,
+                $eo->{$events}{$event_name}{$priority},
+                \@args
+            ];
         }
     }
     
@@ -308,10 +316,10 @@ sub _get_callbacks {
 #       # priority 0
 #       0 => [
 #           
-#           # this arrayref consists of an arrayref of callbacks an arrayref of arguments.
-#
-#           [ \&some_callback, \&some_other_callback ],
-#           [ 'my_argument', 'my_other_argument'     ]
+#           $eo,                                            # evented object
+#           'my_event_name',                                # event name
+#           [ \&some_callback, \&some_other_callback ],     # callbacks
+#           [ 'my_argument', 'my_other_argument'     ]      # arguments
 #
 #       ],
 #
@@ -330,17 +338,14 @@ sub _call_callbacks {
     
     # call each callback.
     PRIORITY:   foreach my $priority (sort { $b <=> $a } keys %collection)  { 
-    COLLECTION: foreach my $col      (@{ $collection{$priority} }        )  {
-    CALLBACK:   foreach my $cb       (@{ $col->[0] }                     )  {
-    
-        # fetch the evented object of this callback.
-        # fetch the event name of this callback.
-        # with the addition of fire_events_together(), this is now necessary.
-        my $eo = $ef_props->{object} = $cb->{object};
-        $ef_props->{name}            = $cb->{event_name};
-        
-        
+    COLLECTION: foreach my $col      (@{ $collection{$priority} }        )  { my ($eo, $event_name, $callbacks, $args) = @$col;
+    CALLBACK:   foreach my $cb       (@$callbacks                        )  {
         $ef_props->{callback_i}++;
+        
+        # set the evented object of this callback.
+        # set the event name of this callback.
+        $ef_props->{object} = $eo;
+        $ef_props->{name}   = $event_name;
         
         # create info about the call.
         $ef_props->{callback_name}     = $cb->{name};                          # $event->callback_name
@@ -356,7 +361,7 @@ sub _call_callbacks {
 
         # determine callback arguments.
         
-        my @cb_args = @{ $col->[1] };
+        my @cb_args = @$args;
         if ($cb->{no_obj}) {
             # compat < 3.0: no_obj -> no_fire_obj - fire with only actual arguments.
             # no_obj is now deprecated.
