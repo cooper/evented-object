@@ -29,16 +29,20 @@ BEGIN {
     $props  = 'eventedObject.props';
 }
 
-use Scalar::Util 'weaken';
+use Scalar::Util qw(weaken blessed);
 
 use EventedObject::EventFire;
 
-our $VERSION = '3.43';
+our $VERSION = '3.44';
 
 # create a new evented object.
 sub new {
     bless {}, shift;
 }
+
+##########################
+### MANAGING CALLBACKS ###
+##########################
 
 # attach an event callback.
 # $eo->register_event(myEvent => sub {
@@ -61,10 +65,16 @@ sub register_event {
     $eo->{$events}{$event_name}{$priority} ||= [];
     
     # add this event.
-    push @{$eo->{$events}{$event_name}{$priority}}, {
+    my $callbacks = $eo->{$events}{$event_name}{$priority};
+    push @$callbacks, {
         %opts,
-        code => $code
+        object => $eo,
+        code   => $code
     };
+    
+    # weaken the reference to the evented object to prevent
+    # it from retaining itself.
+    weaken($callbacks->[$#$callbacks]{object});
     
     return 1;
 
@@ -93,79 +103,95 @@ sub fire_event {
         $props => {}        
     );
     
-    my $ef_props = $event->{$props};
-    
     # priority number : array of callbacks.
     my %p = %{ _get_callbacks(@_) };
         
-    # call each callback.
-    my %called;
-    PRIORITY: foreach my $priority (sort { $b <=> $a } keys %p) { 
-    CALLBACK: foreach my $cb       (@{$p{$priority}}) {
-        $ef_props->{callback_i}++;
-        
-        # create info about the call.
-        $ef_props->{callback_name}     = $cb->{name};                          # $event->callback_name
-        $ef_props->{callback_priority} = $priority;                            # $event->callback_priority
-        $ef_props->{callback_data}     = $cb->{data} if defined $cb->{data};   # $event->callback_data
-
-        # this callback has been called already.
-        next CALLBACK if $ef_props->{called}{$cb->{name}};
-        next CALLBACK if $called{$cb};
-
-        # this callback has been cancelled.
-        next CALLBACK if $ef_props->{cancelled}{$cb->{name}};
-
-        # determine callback arguments.
-        
-        my @cb_args = @args;
-        if ($cb->{no_obj}) {
-            # compat < 3.0: no_obj -> no_fire_obj - fire with only actual arguments.
-            # no_obj is now deprecated.
-        }
-        else {
-            # compat < 2.9: with_obj -> eo_obj
-            # compat < 3.0: eo_obj   -> with_evented_obj
-            
-            # add event object unless no_obj.
-            unshift @cb_args, $event unless $cb->{no_fire_obj};
-            
-            # add evented object if eo_obj.
-            unshift @cb_args, $eo if $cb->{with_evented_obj} || $cb->{eo_obj} || $cb->{with_obj};
-                                                                
-        }
-        
-        # set return values.
-        $ef_props->{last_return}               =   # set last return value.
-        $ef_props->{return}{$cb->{name}}       =   # set this callback's return value.
-        
-            # call the callback with proper arguments.
-            $cb->{code}(@cb_args);
-        
-        # set $event->called($cb) true, and set $event->last to the callback's name.
-        $called{$cb}                     =
-        $ef_props->{called}{$cb->{name}} = 1;
-        $ef_props->{last_callback}       = $cb->{name};
-        
-        # if stop is true, $event->stop was called. stop the iteration.
-        if ($ef_props->{stop}) {
-            $ef_props->{stopper} = $cb->{name}; # set $event->stopper.
-            last PRIORITY;
-        }
-
-     
-    } } # ew.
-    
-    # dispose of things that are no longer needed.
-    delete $event->{$props}{$_} foreach qw(
-        callback_name callback_priority callback_data
-        priority_i callback_i
-    );
-
-    # return the event object.
-    return $event;
+    # call them.
+    return _call_callbacks($event, \@args, %p);
     
 }
+
+
+# delete an event callback or all callbacks of an event.
+# returns a true value if any events were deleted, false otherwise.
+sub delete_event {
+    my ($eo, $event_name, $name) = @_;
+    my $amount = 0;
+    
+    # event does not have any callbacks.
+    return unless $eo->{$events}{$event_name};
+ 
+    # iterate through callbacks and delete matches.
+    PRIORITY: foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
+    
+        # if a specific callback name is specified, weed it out.
+        if (defined $name) {
+            my @a = @{$eo->{$events}{$event_name}{$priority}};
+            @a = grep { $_->{name} ne $name } @a;
+            
+            # none left in this priority.
+            if (scalar @a == 0) {
+                delete $eo->{$events}{$event_name}{$priority};
+                
+                # delete this event because all priorities have been removed.
+                if (scalar keys %{$eo->{$events}{$event_name}} == 0) {
+                    delete $eo->{$events}{$event_name};
+                    return 1;
+                }
+                
+                $amount++;
+                next PRIORITY;
+                
+            }
+            
+            # store the new array.
+            $eo->{$events}{$event_name}{$priority} = \@a;
+            
+        }
+        
+        # if no callback is specified, delete all events of this type.
+        else {
+            $amount = scalar keys %{$eo->{$events}{$event_name}};
+            delete $eo->{$events}{$event_name};
+        }
+ 
+    }
+
+    return $amount;
+}
+
+########################
+### LISTENER OBJECTS ###
+########################
+
+# add an object to listen to events.
+sub add_listener {
+    my ($eo, $obj, $prefix) = @_;
+    
+    # find listeners list.
+    $eo->{$props}{listeners} ||= [];
+    my $listeners = $eo->{$props}{listeners};
+    
+    # store this listener.
+    push @$listeners, [$prefix, $obj];
+    
+    # weaken the reference to the listener.
+    weaken($listeners->[$#$listeners][1]);
+    
+    return 1;
+}
+
+# remove a listener.
+sub delete_listener {
+    my ($eo, $obj) = @_;
+    return 1 unless my $listeners = $eo->{$props}{listeners};
+    @$listeners = grep { ref $_->[1] eq 'ARRAY' and $_->[1] != $obj } @$listeners;
+    return 1;
+}
+
+#########################
+### INTERNAL ROUTINES ###
+#########################
 
 # fetches callbacks of an event.
 # internal use only.
@@ -220,79 +246,84 @@ sub _get_callbacks {
     return \%p;
 }
 
-# delete an event callback or all callbacks of an event.
-# returns a true value if any events were deleted, false otherwise.
-sub delete_event {
-    my ($eo, $event_name, $name) = @_;
-    my $amount = 0;
+# call the passed callback priority sets.
+sub _call_callbacks {
+    my ($event, $args, %p) = @_;
+    my $ef_props = $event->{$props};
+    my %called;
     
-    # event does not have any callbacks.
-    return unless $eo->{$events}{$event_name};
- 
-    # iterate through callbacks and delete matches.
-    PRIORITY: foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
+    # call each callback.
+    PRIORITY: foreach my $priority (sort { $b <=> $a } keys %p) { 
+    CALLBACK: foreach my $cb       (@{$p{$priority}}) {
     
-        # if a specific callback name is specified, weed it out.
-        if (defined $name) {
-            my @a = @{$eo->{$events}{$event_name}{$priority}};
-            @a = grep { $_->{name} ne $name } @a;
+        # fetch the evented object of this callback.
+        # with the addition of fire_events_together(), this is now necessary.
+        my $eo = $event->{object} = $cb->{object};
+        
+        $ef_props->{callback_i}++;
+        
+        # create info about the call.
+        $ef_props->{callback_name}     = $cb->{name};                          # $event->callback_name
+        $ef_props->{callback_priority} = $priority;                            # $event->callback_priority
+        $ef_props->{callback_data}     = $cb->{data} if defined $cb->{data};   # $event->callback_data
+
+        # this callback has been called already.
+        next CALLBACK if $ef_props->{called}{$cb->{name}};
+        next CALLBACK if $called{$cb};
+
+        # this callback has been cancelled.
+        next CALLBACK if $ef_props->{cancelled}{$cb->{name}};
+
+        # determine callback arguments.
+        
+        my @cb_args = @$args;
+        if ($cb->{no_obj}) {
+            # compat < 3.0: no_obj -> no_fire_obj - fire with only actual arguments.
+            # no_obj is now deprecated.
+        }
+        else {
+            # compat < 2.9: with_obj -> eo_obj
+            # compat < 3.0: eo_obj   -> with_evented_obj
             
-            # none left in this priority.
-            if (scalar @a == 0) {
-                delete $eo->{$events}{$event_name}{$priority};
-                
-                # delete this event because all priorities have been removed.
-                if (scalar keys %{$eo->{$events}{$event_name}} == 0) {
-                    delete $eo->{$events}{$event_name};
-                    return 1;
-                }
-                
-                $amount++;
-                next PRIORITY;
-                
-            }
+            # add event object unless no_obj.
+            unshift @cb_args, $event unless $cb->{no_fire_obj};
             
-            # store the new array.
-            $eo->{$events}{$event_name}{$priority} = \@a;
-            
+            # add evented object if eo_obj.
+            unshift @cb_args, $eo if $cb->{with_evented_obj} || $cb->{eo_obj} || $cb->{with_obj};
+                                                                
         }
         
-        # if no callback is specified, delete all events of this type.
-        else {
-            $amount = scalar keys %{$eo->{$events}{$event_name}};
-            delete $eo->{$events}{$event_name};
+        # set return values.
+        $ef_props->{last_return}               =   # set last return value.
+        $ef_props->{return}{$cb->{name}}       =   # set this callback's return value.
+        
+            # call the callback with proper arguments.
+            $cb->{code}(@cb_args);
+        
+        # set $event->called($cb) true, and set $event->last to the callback's name.
+        $called{$cb}                     =
+        $ef_props->{called}{$cb->{name}} = 1;
+        $ef_props->{last_callback}       = $cb->{name};
+        
+        # if stop is true, $event->stop was called. stop the iteration.
+        if ($ef_props->{stop}) {
+            $ef_props->{stopper} = $cb->{name}; # set $event->stopper.
+            last PRIORITY;
         }
- 
-    }
 
-    return $amount;
+     
+    } } # ew.
+    
+    # dispose of things that are no longer needed.
+    delete $event->{$props}{$_} foreach qw(
+        callback_name callback_priority callback_data
+        priority_i callback_i
+    );
+
+    # return the event object.
+    return $event;
+    
 }
-
-# add an object to listen to events.
-sub add_listener {
-    my ($eo, $obj, $prefix) = @_;
-    
-    # find listeners list.
-    $eo->{$props}{listeners} ||= [];
-    my $listeners = $eo->{$props}{listeners};
-    
-    # store this listener.
-    push @$listeners, [$prefix, $obj];
-    
-    # weaken the reference to the listener.
-    weaken($listeners->[$#$listeners][1]);
-    
-    return 1;
-}
-
-# remove a listener.
-sub delete_listener {
-    my ($eo, $obj) = @_;
-    return 1 unless my $listeners = $eo->{$props}{listeners};
-    @$listeners = grep { ref $_->[1] eq 'ARRAY' and $_->[1] != $obj } @$listeners;
-    return 1;
-}
-
 
 ###############
 ### ALIASES ###
