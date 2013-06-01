@@ -267,7 +267,7 @@ sub _get_callbacks {
             foreach my $priority (keys %{$obj->{$events}{$listener_event_name}}) {
                 $collection{$priority} ||= [];
                 push @{$collection{$priority}}, [
-                    $eo, # TODO: document how $event->object is the real object
+                    $eo,
                     $listener_event_name,
                     $obj->{$events}{$listener_event_name}{$priority},
                     \@args

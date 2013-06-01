@@ -54,7 +54,7 @@ Another important concept of EventedObject is the event fire object. It provides
 to the event being fired, callback being called, and more. Additionally, it provides an interface for modifying the
 evented object and modifying future event callbacks.
 
-### Object listeners
+### Listener objects
 
 Additional evented objects can be registered as "listeners."  
   
@@ -77,6 +77,17 @@ though.
 EventedObject is rather genius when it comes to callback priorities. With object listeners, it is as though
 the callbacks belong to the object being listened to. Referring to the above example, if you attach a callback
 on the farm object with priority 1, it will be called before your callback with priority 0 on the cow object.
+
+#### Fire objects and listener
+
+When an event is fired on an object, the same event fire object is used for callbacks
+belonging to both the evented object and its listening objects. Therefore, callback names
+must be unique not only to the listener object but to the object being listened on as well.  
+  
+You should also note the values of the event fire object:
+
+* __$event->event_name__: the name of the event from the perspective of the listener; i.e. `cow.moo` (NOT `moo`)
+* __$event->object__: the object being listened to; i.e. `$cow` (NOT `$farm`)
 
 ## History
 
@@ -278,7 +289,7 @@ $eo->fire_event(some_event => $some_argument, $some_other_argument);
 
 ### $eo->add_listener($other_eo, $prefix)
 
-Makes the passed evented object a listener of this evented object. See the "object listeners" section
+Makes the passed evented object a listener of this evented object. See the "listener objects" section
 for more information on this feature.
 
 ```perl
@@ -290,7 +301,7 @@ $cow->add_listener($farm, 'cow');
 
 ### $eo->delete_listener($other_eo)
 
-Removes an evented object listener of this evented object. See the "object listeners" section
+Removes a listener of this evented object. See the "listener objects" section
 for more information on this feature.
 
 ```perl
