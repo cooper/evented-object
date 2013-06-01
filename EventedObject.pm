@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use EventedObject::EventFire;
 
-our $VERSION = '3.44';
+our $VERSION = '3.5';
 
 # create a new evented object.
 sub new {
@@ -68,8 +68,9 @@ sub register_event {
     my $callbacks = $eo->{$events}{$event_name}{$priority};
     push @$callbacks, {
         %opts,
-        object => $eo,
-        code   => $code
+        object     => $eo,
+        code       => $code,
+        event_name => $event_name
     };
     
     # weaken the reference to the evented object to prevent
@@ -104,10 +105,10 @@ sub fire_event {
     );
     
     # priority number : array of callbacks.
-    my %p = %{ _get_callbacks(@_) };
+    my %collection = %{ _get_callbacks(@_) };
         
     # call them.
-    return _call_callbacks($event, \@args, %p);
+    return _call_callbacks($event, %collection);
     
 }
 
@@ -189,6 +190,59 @@ sub delete_listener {
     return 1;
 }
 
+#######################
+### CLASS FUNCTIONS ###
+#######################
+
+# fire multiple events on multiple objects as a single event.
+sub fire_events_together {
+    my @collections;
+
+    # create event object.
+    my $event = EventedObject::EventFire->new(
+      # name   => $event_name,  # $event->event_name    # set before called
+      # object => $eo,          # $event->object        # set before called
+        caller => [caller 1],   # $event->caller
+        $props => {}        
+    );
+    
+    # form of [ $object, name => @args ]
+    foreach my $e (@_) {
+
+        # must be an array reference.
+        if (!ref $e || ref $e ne 'ARRAY') {
+            next;
+        }
+
+        my ($eo, $event_name, @args) = @$e;
+        
+        # must be an evented object.
+        if (!blessed $eo || !$eo->isa('EventedObject')) {
+            next;
+        }
+        
+        # add this collection of callbacks to the queue.
+        push @collections, $eo->_get_callbacks($event_name, @args);
+
+    }
+    
+    # organize into a single collection.
+    my %collection;
+    foreach my $c (@collections) {
+
+        # I hate nested loops.
+        foreach my $priority (keys %$c) {
+            $collection{$priority} ||= [];
+            push @{ $collection{$priority} }, @{ $c->{$priority} };
+        }
+        
+    }
+    
+    # call them.
+    return _call_callbacks($event, %collection);
+    
+}
+
 #########################
 ### INTERNAL ROUTINES ###
 #########################
@@ -197,7 +251,7 @@ sub delete_listener {
 # internal use only.
 sub _get_callbacks {
     my ($eo, $event_name, @args) = @_;
-    my %p;
+    my %collection;
     
     # if there are any listening objects, call its callbacks of this priority.
     if ($eo->{$props}{listeners}) {
@@ -217,8 +271,8 @@ sub _get_callbacks {
             
             # add the callbacks from this priority.
             foreach my $priority (keys %{$obj->{$events}{$listener_event_name}}) {
-                $p{$priority} ||= [];
-                push @{$p{$priority}}, @{$obj->{$events}{$listener_event_name}{$priority}};
+                $collection{$priority} ||= [];
+                push @{$collection{$priority}}, [ $obj->{$events}{$listener_event_name}{$priority}, \@args ];
             }
             
         }
@@ -238,27 +292,31 @@ sub _get_callbacks {
     # add the local callbacks from this priority.
     if ($eo->{$events}{$event_name}) {
         foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
-            $p{$priority} ||= [];
-            push @{$p{$priority}}, @{$eo->{$events}{$event_name}{$priority}};
+            $collection{$priority} ||= [];
+            push @{ $collection{$priority} }, [ $eo->{$events}{$event_name}{$priority}, \@args ];
         }
     }
     
-    return \%p;
+    return \%collection;
 }
 
 # call the passed callback priority sets.
 sub _call_callbacks {
-    my ($event, $args, %p) = @_;
+    my ($event, %collection) = @_;
     my $ef_props = $event->{$props};
     my %called;
     
     # call each callback.
-    PRIORITY: foreach my $priority (sort { $b <=> $a } keys %p) { 
-    CALLBACK: foreach my $cb       (@{$p{$priority}}) {
+    PRIORITY:   foreach my $priority (sort { $b <=> $a } keys %collection)  { 
+    COLLECTION: foreach my $col      (@{ $collection{$priority} }        )  {
+    CALLBACK:   foreach my $cb       (@{ $col->[0] }                     )  {
     
         # fetch the evented object of this callback.
+        # fetch the event name of this callback.
         # with the addition of fire_events_together(), this is now necessary.
-        my $eo = $event->{object} = $cb->{object};
+        my $eo = $ef_props->{object} = $cb->{object};
+        $ef_props->{name}            = $cb->{event_name};
+        
         
         $ef_props->{callback_i}++;
         
@@ -276,7 +334,7 @@ sub _call_callbacks {
 
         # determine callback arguments.
         
-        my @cb_args = @$args;
+        my @cb_args = @{ $col->[1] };
         if ($cb->{no_obj}) {
             # compat < 3.0: no_obj -> no_fire_obj - fire with only actual arguments.
             # no_obj is now deprecated.
@@ -312,7 +370,7 @@ sub _call_callbacks {
         }
 
      
-    } } # ew.
+    } } } # ew.
     
     # dispose of things that are no longer needed.
     delete $event->{$props}{$_} foreach qw(
