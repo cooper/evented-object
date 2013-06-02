@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use EventedObject::EventFire;
 
-our $VERSION = '3.52';
+our $VERSION = '3.53';
 
 # create a new evented object.
 sub new {
@@ -340,7 +340,7 @@ sub _call_callbacks {
         
         # set the evented object of this callback.
         # set the event name of this callback.
-        $ef_props->{object} = $eo;
+        $ef_props->{object} = $eo; weaken($ef_props->{object});
         $ef_props->{name}   = $event_name;
         
         # create info about the call.
@@ -398,7 +398,7 @@ sub _call_callbacks {
     # dispose of things that are no longer needed.
     delete $event->{$props}{$_} foreach qw(
         callback_name callback_priority callback_data
-        priority_i callback_i
+        priority_i callback_i object
     );
 
     # return the event object.
