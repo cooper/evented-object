@@ -1,0 +1,9 @@
+Build.PL
+lib/Evented/Object.pm
+lib/Evented/Object/EventFire.pm
+LICENSE
+MANIFEST			This list of files
+README.md
+Makefile.PL
+META.yml
+META.json
