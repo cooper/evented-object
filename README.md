@@ -1,38 +1,38 @@
-# EventedObject
+# Evented::Object
 
 **I doubt your objects have ever been this evented.** This concept is so incredible that we're using a noun
 as a verb without being arrested by the grammar police.  
   
-EventedObject started as a basic class for registering event handlers and firing events. After many improvements
-throughout several projects, EventedObject has become far more complex and quite featureful.  
+Evented::Object started as a basic class for registering event handlers and firing events. After many improvements
+throughout several projects, Evented::Object has become far more complex and quite featureful.  
   
-EventedObject supplies an (obviously objective) interface to store and manage callbacks for events, fire events
+Evented::Object supplies an (obviously objective) interface to store and manage callbacks for events, fire events
 upon objects, and more. It provides several methods for convenience and simplicity.
 
 ## Introduction
 
-First and foremost, the goal of EventedObject is to make your objects more evented than ever before.  
+First and foremost, the goal of Evented::Object is to make your objects more evented than ever before.  
 Allow us to explain what exactly it means for an object to be evented.
 
 ### Naming confusion
 
 To clear some things up...  
   
-'EventedObject' refers to the EventedObject package, but 'evented object' refers to an object
-which is a member of the EventedObject class or a class which inherits from the EventedObject class.
+'Evented::Object' refers to the Evented::Object package, but 'evented object' refers to an object
+which is a member of the Evented::Object class or a class which inherits from the Evented::Object class.
 'Event fire object' refers to an object representing an event fire.  
 
-* __EventedObject__: the class that provides methods for managing events.
-* __Evented object__: an object that uses EventedObject for event management.
+* __Evented::Object__: the class that provides methods for managing events.
+* __Evented object__: an object that uses Evented::Object for event management.
 * __Event fire object__: an object that represents an event fire.
 * __Listener object__: another evented object that receives event notifications.
 
-EventedObject and its core packages are prefixed with `EventedObject`.  
-Packages which are specifically designed for use with EventedObject are prefixed with `Evented::`.
+Evented::Object and its core packages are prefixed with `Evented::Object`.  
+Packages which are specifically designed for use with Evented::Object are prefixed with `Evented::`.
 
-### Purpose of EventedObject
+### Purpose of Evented::Object
 
-In short, EventedObject allows you to attach event callbacks to an object (also known as a blessed hash reference)
+In short, Evented::Object allows you to attach event callbacks to an object (also known as a blessed hash reference)
 and then fire events on that object. To relate, event fires are much like method calls. However, there can be many
 handlers, many return values, and many responses rather than just one of each of these.
 
@@ -44,13 +44,13 @@ modify the evented object itself, and much more.
 
 ### Objective approach
 
-Whereas many event systems involve globally unique event names, EventedObject allows you to attach events to a specific
+Whereas many event systems involve globally unique event names, Evented::Object allows you to attach events to a specific
 object. The event callbacks, information, and other data are stored secretly within the object itself. This is quite
 comparable to the JavaScript event systems often found in browsers.
 
 ### Event fire objects
   
-Another important concept of EventedObject is the event fire object. It provides methods for fetching information relating
+Another important concept of Evented::Object is the event fire object. It provides methods for fetching information relating
 to the event being fired, callback being called, and more. Additionally, it provides an interface for modifying the
 evented object and modifying future event callbacks.
 
@@ -74,7 +74,7 @@ though.
 
 #### Priorities
 
-EventedObject is rather genius when it comes to callback priorities. With object listeners, it is as though
+Evented::Object is rather genius when it comes to callback priorities. With object listeners, it is as though
 the callbacks belong to the object being listened to. Referring to the above example, if you attach a callback
 on the farm object with priority 1, it will be called before your callback with priority 0 on the cow object.
 
@@ -94,33 +94,33 @@ callbacks, including those belonging to the evented object.
 
 ## History
 
-EventedObject has evolved throughout the history of multiple projects, improving in each project it passed through.
-It originated as IRC::EventedObject in NoTrollPlzDev's [libirc](https://github.com/cooper/libirc). From then on,
+Evented::Object has evolved throughout the history of multiple projects, improving in each project it passed through.
+It originated as IRC::Evented::Object in NoTrollPlzDev's [libirc](https://github.com/cooper/libirc). From then on,
 it was found in the [ntirc](https://github.com/cooper/ntirc) IRC client,
 [Arinity](https://github.com/cooper/arinity) IRC Services, and
 [foxy-java](https://github.com/cooper/foxy-java) IRC client. The Arinity IRC Services package was the first to use a standalone
-EventedObject; before then, it was only packaged with libirc.  
+Evented::Object; before then, it was only packaged with libirc.  
   
-Today, EventedObject is found in many different projects, usually included as a git submodule. A variety
-of classes have been written specifically for the EventedObject framework, including an evented configuration class,
+Today, Evented::Object is found in many different projects, usually included as a git submodule. A variety
+of classes have been written specifically for the Evented::Object framework, including an evented configuration class,
 an evented database interface, an event-driven socket protocol, and more.
 
-### Classes designed upon EventedObject
+### Classes designed upon Evented::Object
 
-This is a list of classes designed exclusively upon EventedObject.
+This is a list of classes designed exclusively upon Evented::Object.
 
 * [__Evented::Configuration__](https://github.com/cooper/evented-configuration) - an event-driven configuration class that notifies when configuration values are modified.
 * [__Evented::Database__](https://github.com/cooper/evented-database) - a package providing a database mechanism built upon Evented::Configuration.
 * [__Evented::Query__](https://github.com/cooper/evented-query) - an evented database interface wrapping around DBI.
 * [__Evented::Socket__](https://github.com/cooper/evented-socket) - an event-driven TCP socket protocol for networked programming.
 
-This is a list of classes and frameworks which make major use of EventedObject.
+This is a list of classes and frameworks which make major use of Evented::Object.
 
 * [__Net::Async::Omegle__](https://github.com/cooper/net-async-omegle) - a complete, evented, and objective Perl interface to Omegle.com.
 * [__libirc__](https://github.com/cooper/libirc) - an evented and objective Internet Relay Chat framework.
 * [__libuic__](https://github.com/cooper/libirc) - an evented and objective Universal Internet Chat framework.
 
-### Event-driven applications powered by EventedObject
+### Event-driven applications powered by Evented::Object
 
 * [__kedler__](https://github.com/cooper/kedler) - an event-driven, modular, and excessively flexible IRC daemon written in Perl.
 * [__uicd__](https://github.com/cooper/uicd) - daemon of the Univseral Internet Chat protocol based upon the libuic UIC library.
@@ -143,26 +143,26 @@ Comments, complaints, and recommendations are accepted. IRC is my preferred comm
 
 ## Compatibility notes
 
-EventedObject versions 0.0 to 0.7 are entirely compatible - anything that worked in
-version 0.0 or even compies of EventedObject before it was versioned also work in
+Evented::Object versions 0.0 to 0.7 are entirely compatible - anything that worked in
+version 0.0 or even compies of Evented::Object before it was versioned also work in
 version 0.7; however, some recent changes break the compatibility with these previous
 versions in many cases.  
 
 ### Asynchronous improvements 1.0+
   
-EventedObject 1.* series and above are incompatible with the former versions.
-EventedObject 1.8+ is designed to be more thread-friendly and work well in asyncrhonous
+Evented::Object 1.* series and above are incompatible with the former versions.
+Evented::Object 1.8+ is designed to be more thread-friendly and work well in asyncrhonous
 programs, whereas the previous versions were not suitable for such uses.  
   
 The main comptability issue is the arguments passed to the callbacks. In the earlier
 versions, the evented object was *always* the first argument of *all* events,
-until EventedObject 0.6 added the ability to pass a parameter to `->attach_event()` that
-would tell EventedObject to omit the object from the callback's argument list.  
+until Evented::Object 0.6 added the ability to pass a parameter to `->attach_event()` that
+would tell Evented::Object to omit the object from the callback's argument list.  
   
 ### Introduction of event fire objects 1.8+
   
-The EventedObject series 1.8+ passes a hash reference `$event` instead of the
-EventedObject as the first argument. `$event` contains information that was formerly held within the object
+The Evented::Object series 1.8+ passes a hash reference `$event` instead of the
+Evented::Object as the first argument. `$event` contains information that was formerly held within the object
 itself, such as `event_info`, `event_return`, and `event_data`. These are now accessible
 through this new hash reference as `$event->{info}`, `$event->{return}`, `$event->{data}`,
 etc. The object is now accessible with `$event->{object}`. (this has since been changed; see below.)  
@@ -171,7 +171,7 @@ Events are now stored in the `eventedObject.events` hash key instead of `events`
 `events` was a tad bit too broad and could conflict with other libraries.  
   
 In addition to these changes, the `attach_event()` method was deprecated in version 1.8
-in favor of the new `register_event()`; however, it will remain in EventedObject until at
+in favor of the new `register_event()`; however, it will remain in Evented::Object until at
 least the late 2.* series.  
   
 ### Alias changes 2.0+
@@ -181,7 +181,7 @@ rather than the former deprecated `->attach_event()`.
   
 ### Introduction of event methods 2.2+
 
-Version 2.2+ introduces a new class, EventedObject::Event, which provides several methods for
+Version 2.2+ introduces a new class, Evented::Object::Event, which provides several methods for
 event fire objects. These methods such as `$event->return` and `$event->object` replace the former hash keys
 `$event->{return}`, `$event->{object}`, etc. The former hash interface is no longer supported and will lead to error.
 
@@ -193,15 +193,15 @@ use of `->attach_event()`.
 
 ## Evented object methods
 
-The EventedObject package provides several convenient methods for managing an event-driven object.
+The Evented::Object package provides several convenient methods for managing an event-driven object.
 
-### EventedObject->new()
+### Evented::Object->new()
 
-Creates a new EventedObject. Typically, this method is overriden by a child class of EventedObject. It is unncessary
-to call `SUPER::new()`, as `EventedObject->new()` returns nothing more than an empty hash reference blessed to EventedObject.
+Creates a new Evented::Object. Typically, this method is overriden by a child class of Evented::Object. It is unncessary
+to call `SUPER::new()`, as `Evented::Object->new()` returns nothing more than an empty hash reference blessed to Evented::Object.
 
 ```perl
-my $eo = EventedObject->new();
+my $eo = Evented::Object->new();
 ```
 
 ### $eo->register_event($event_name => \\&callback, %options)
@@ -335,9 +335,9 @@ Do not use this. It is likely to removed in the near future.
 
 **Removed** in version 2.9. Use `->register_event()` instead.
 
-## EventedObject procedural functions
+## Evented::Object procedural functions
 
-The EventedObject package provides some functions for use. These functions typically are
+The Evented::Object package provides some functions for use. These functions typically are
 associated with more than one evented object or none at all.
 
 ### fire_events_together(@events)
@@ -359,7 +359,7 @@ The function takes a list of array references in the form of:
 `[ $evented_object, event_name => @arguments ]`
 
 ```perl
-EventedObject::fire_events_together(
+Evented::Object::fire_events_together(
     [ $server,  user_joined_channel => $user, $channel ],
     [ $channel, user_joined         => $user           ],
     [ $user,    joined_channel      => $channel        ]
@@ -370,11 +370,11 @@ EventedObject::fire_events_together(
 
 ## Event fire object methods
 
-Event fire objects are passed to all callbacks of an EventedObject (unless the `silent` parameter
+Event fire objects are passed to all callbacks of an Evented::Object (unless the `silent` parameter
 was specified.) Event fire objects contain information about the event itself, the callback, the caller
 of the event, event data, and more.  
   
-Event fire objects replace the former values stored within the EventedObject itself. This new method
+Event fire objects replace the former values stored within the Evented::Object itself. This new method
 promotes asynchronous event firing.  
   
 Event fire objects are specific to each firing. If you fire the same event twice in a row, the event
@@ -546,7 +546,7 @@ say 'my data is ', $event->callback_data;
 
 ## Example
 
-This example demonstrates basic EventedObject subclasses,
+This example demonstrates basic Evented::Object subclasses,
 priorities of event callbacks, as well as event fire objects and their methods.
 
 ```perl
@@ -555,12 +555,12 @@ package Person;
 use warnings;
 use strict;
 use feature 'say';
-use parent 'EventedObject';
+use parent 'Evented::Object';
 
-use EventedObject;
+use Evented::Object;
 ```
 
-Creates a new person object. This is nothing special. EventedObject does not require any specific constructor to be called.
+Creates a new person object. This is nothing special. Evented::Object does not require any specific constructor to be called.
 
 ```perl
 sub new {
