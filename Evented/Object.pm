@@ -1,21 +1,21 @@
 #
 # Copyright (c) 2011-13, Mitchell Cooper
 #
-# EventedObject: a simple yet featureful base class event framework.
+# Evented::Object: a simple yet featureful base class event framework.
 #
-# EventedObject 0.2+ is based on the libuic UIC::EventedObject:
-# an event system based on the EventedObject class from foxy-java IRC Bot,
-# ... which is based on EventedObject from Arinity IRC Services,
-# ... which is based on EventedObject from ntirc IRC Client,
-# ... which is based on IRC::EventedObject from libirc IRC Library.
+# Evented::Object 0.2+ is based on the libuic UIC::Evented::Object:
+# an event system based on the Evented::Object class from foxy-java IRC Bot,
+# ... which is based on Evented::Object from Arinity IRC Services,
+# ... which is based on Evented::Object from ntirc IRC Client,
+# ... which is based on IRC::Evented::Object from libirc IRC Library.
 #
-# EventedObject can be found in its latest version at https://github.com/cooper/eventedobject.
+# Evented::Object can be found in its latest version at https://github.com/cooper/eventedobject.
 #
 # COMPATIBILITY NOTES:
 #   See README.md.
 #
 
-package EventedObject;
+package Evented::Object;
  
 use warnings;
 use strict;
@@ -31,9 +31,9 @@ BEGIN {
 
 use Scalar::Util qw(weaken blessed);
 
-use EventedObject::EventFire;
+use Evented::Object::EventFire;
 
-our $VERSION = '3.53';
+our $VERSION = '3.54';
 
 # create a new evented object.
 sub new {
@@ -91,7 +91,7 @@ sub fire_event {
     my ($eo, $event_name, @args) = @_;
     
     # create event object.
-    my $event = EventedObject::EventFire->new(
+    my $event = Evented::Object::EventFire->new(
         name   => $event_name,  # $event->event_name
         object => $eo,          # $event->object
         caller => [caller 1],   # $event->caller
@@ -193,7 +193,7 @@ sub fire_events_together {
     my @collections;
 
     # create event object.
-    my $event = EventedObject::EventFire->new(
+    my $event = Evented::Object::EventFire->new(
       # name   => $event_name,  # $event->event_name    # set before called
       # object => $eo,          # $event->object        # set before called
         caller => [caller 1],   # $event->caller
@@ -211,7 +211,7 @@ sub fire_events_together {
         my ($eo, $event_name, @args) = @$e;
         
         # must be an evented object.
-        if (!blessed $eo || !$eo->isa('EventedObject')) {
+        if (!blessed $eo || !$eo->isa('Evented::Object')) {
             next;
         }
         

@@ -1,6 +1,6 @@
 # Copyright (c) 2011-13, Mitchell Cooper
-# EventedObject: a simple yet featureful base class event framework.
-package EventedObject::EventFire;
+# Evented::Object: a simple yet featureful base class event framework.
+package Evented::Object::EventFire;
  
 use warnings;
 use strict;
@@ -11,10 +11,10 @@ use 5.010;
 ### EVENT FIRE OBJECTS ###
 ##########################
 
-our $VERSION = $EventedObject::VERSION;
+our $VERSION = $Evented::Object::VERSION;
 
-our $events  = $EventedObject::events;
-our $props   = $EventedObject::props;
+our $events  = $Evented::Object::events;
+our $props   = $Evented::Object::props;
 
 # create a new event object.
 sub new {
