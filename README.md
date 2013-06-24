@@ -52,7 +52,7 @@ comparable to the JavaScript event systems often found in browsers.
   
 Another important concept of Evented::Object is the event fire object. It provides methods for fetching information relating
 to the event being fired, callback being called, and more. Additionally, it provides an interface for modifying the
-evented object and modifying future event callbacks.
+evented object and modifying future event callbacks. Event fire objects belong to the Evented::Object::EventFire class.
 
 ### Listener objects
 
@@ -72,7 +72,7 @@ The cow holds a weak reference to the farm, so you do not need to worry about de
 your listener object must also be referred to in another location in order for this to work. I doubt that will be a problem,
 though.
 
-#### Priorities and listeners::
+#### Priorities and listeners
 
 Evented::Object is rather genius when it comes to callback priorities. With object listeners, it is as though
 the callbacks belong to the object being listened to. Referring to the above example, if you attach a callback
@@ -133,11 +133,11 @@ This is a list of classes and frameworks which make major use of Evented::Object
 
 ## Author
 
-[Mitchell Cooper](http://github.com/cooper), "cooper" <mitchell@notroll.net>  
-Copyright © 2011-2013. See LICENSE file.  
+[Mitchell Cooper](http://github.com/cooper), "cooper" <cooper@cpan.org>  
+Copyright &copy; 2011-2013. See LICENSE file.  
   
-* __IRC channel__: [irc.mac-mini.org #k](irc://irc.mac-mini.org/#k)
-* __Email__: <mitchell@notroll.net>
+* __IRC channel__: [irc.notroll.net #k](irc://irc.mac-mini.org/#k)
+* __Email__: <cooper@cpan.org>
 
 Comments, complaints, and recommendations are accepted. IRC is my preferred communication medium.
 
@@ -236,13 +236,15 @@ $eo->register_event(myEvent => sub {
 Note: the order of objects will always be `$eo`, `$event`, `@args`, regardless of omissions.  
 By default, the argument list is `$event`, `@args`.
 
+<!---
 #### Differences from ->attach_event()
 
 Note: `->attach_event()` by default fires the callback with the evented object as its first argument unless told not to do so.
 `->register_event()`, however, functions in the opposite sense and *never* passes the evented object as the first argument unless the `with_evented_obj` option is passed.  
   
 In the 1.* series and above, the event fire object is passed as the first argument unless the `no_fire_obj` option is passed. The 
-evented object itself is now accessible from `$event->object`.  
+evented object itself is now accessible from `$event->object`. 
+--> 
 
 ### $eo->register_events(@events)
 
