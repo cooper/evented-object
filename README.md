@@ -72,7 +72,7 @@ The cow holds a weak reference to the farm, so you do not need to worry about de
 your listener object must also be referred to in another location in order for this to work. I doubt that will be a problem,
 though.
 
-#### Priorities
+#### Priorities and listeners::
 
 Evented::Object is rather genius when it comes to callback priorities. With object listeners, it is as though
 the callbacks belong to the object being listened to. Referring to the above example, if you attach a callback
@@ -181,7 +181,7 @@ rather than the former deprecated `->attach_event()`.
   
 ### Introduction of event methods 2.2+
 
-Version 2.2+ introduces a new class, Evented::Object::Event, which provides several methods for
+Version 2.2+ introduces a new class, Evented::Object::EventFire, which provides several methods for
 event fire objects. These methods such as `$event->return` and `$event->object` replace the former hash keys
 `$event->{return}`, `$event->{object}`, etc. The former hash interface is no longer supported and will lead to error.
 
@@ -279,7 +279,7 @@ $eo->delete_event('myEvent');
 
 ### $eo->fire_event($event_name => @arguments)
 
-Fires the specified event, calling each callback that was registered with `->attach_event()` in descending order of
+Fires the specified event, calling each callback that was registered with `->register_event()` in descending order of
 their priorities.
 
 ```perl
@@ -320,7 +320,7 @@ $cow->delete_listener($farm, 'cow');
 
 ### $eo->on($event_name => \\&callback, %options)
 
-Alias for `->attach_event()`.
+Alias for `->register_event()`.
 
 ### $eo->fire($event_name => @arguments)
 
@@ -370,9 +370,9 @@ Evented::Object::fire_events_together(
 
 ## Event fire object methods
 
-Event fire objects are passed to all callbacks of an Evented::Object (unless the `silent` parameter
-was specified.) Event fire objects contain information about the event itself, the callback, the caller
-of the event, event data, and more.  
+Event fire objects are passed to all callbacks of an Evented::Object. Event fire objects
+contain information about the event itself, the callback, the caller of the event, event
+data, and more.  
   
 Event fire objects replace the former values stored within the Evented::Object itself. This new method
 promotes asynchronous event firing.  
