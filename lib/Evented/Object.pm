@@ -9,7 +9,7 @@
 # ... which is based on Evented::Object from ntirc IRC Client,
 # ... which is based on IRC::Evented::Object from libirc IRC Library.
 #
-# Evented::Object can be found in its latest version at https://github.com/cooper/eventedobject.
+# Evented::Object can be found in its latest version at https://github.com/cooper/evented-object.
 #
 # COMPATIBILITY NOTES:
 #   See README.md.
@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.54';
+our $VERSION = '3.55';
 
 # create a new evented object.
 sub new {
