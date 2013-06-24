@@ -721,7 +721,7 @@ B<options>: I<optional>, a hash (not hash reference) of any of the below options
 
 B<%options - event handler options>
 
-B<All of these options are optional>, but the use of a callback name is B<highly
+All of these options are B<optional>, but the use of a callback name is B<highly
 recommended>.
 
 =over 4
@@ -1037,6 +1037,8 @@ Cancels the supplied callback once.
      $event->cancel('send.hearts');
  }
 
+B<Parameters>
+
 =over 4
 
 =item *
@@ -1052,6 +1054,8 @@ Returns the return value of the supplied callback.
  if ($event->return('my.callback')) {
      say 'my.callback returned a true value';
  }
+
+B<Parameters>
 
 =over 4
 

@@ -222,7 +222,7 @@ $eo->register_event(myEvent => sub {
 
 #### %options - event handler options
 
-**All of these options are optional**, but the use of a callback name is **highly recommended**.
+All of these options are **optional**, but the use of a callback name is **highly recommended**.
 
 * __name__: the name of the callback being registered. must be unique to this particular event.
 * __priority__: a numerical priority of the callback.
