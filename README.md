@@ -7,7 +7,9 @@ Evented::Object started as a basic class for registering event handlers and firi
 throughout several projects, Evented::Object has become far more complex and quite featureful.  
   
 Evented::Object supplies an (obviously objective) interface to store and manage callbacks for events, fire events
-upon objects, and more. It provides several methods for convenience and simplicity.
+upon objects, and more. It provides several methods for convenience and simplicity.  
+  
+Evented::Object is now available on [CPAN](http://search.cpan.org/perldoc?Evented::Object).
 
 ## Introduction
 
