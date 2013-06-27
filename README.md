@@ -191,6 +191,12 @@ Version 2.9 removes the long-deprecated `->attach_event()` method in favor of th
 flexible `->register_event()`. This will break compatibility with any package still making
 use of `->attach_event()`.
 
+## Rename to Evented::Object 3.54+
+
+In order to correspond with other 'Evented' packages, EventedObject was renamed to
+Evented::Object. All packages making use of EventedObject will need to be modified to use
+Evented::Object instead. This change was made pre-CPAN.
+
 ## Evented object methods
 
 The Evented::Object package provides several convenient methods for managing an event-driven object.

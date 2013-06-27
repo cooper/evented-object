@@ -676,6 +676,12 @@ Version 2.9 removes the long-deprecated C<-E<gt>attach_event()> method in favor 
 more flexible C<-E<gt>register_event()>. This will break compatibility with any package
 still making use of C<-E<gt>attach_event()>.
 
+=head2 Rename to Evented::Object 3.54+
+
+In order to correspond with other 'Evented' packages, EventedObject was renamed to
+Evented::Object. All packages making use of EventedObject will need to be modified to use
+Evented::Object instead. This change was made pre-CPAN.
+
 =head1 EVENTED OBJECT METHODS
 
 The Evented::Object package provides several convenient methods for managing an
