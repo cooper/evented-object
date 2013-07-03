@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.55';
+our $VERSION = '3.6';
 
 # create a new evented object.
 sub new {
@@ -45,11 +45,11 @@ sub new {
 ##########################
 
 # attach an event callback.
-# $eo->register_event(myEvent => sub {
+# $eo->register_callback(myEvent => sub {
 #     ...
 # }, name => 'some.callback', priority => 200, eo_obj => 1);
-# note: no_obj fires callback without $event as first argument.
-sub register_event {
+# note: no_obj fires callback without $fire as first argument.
+sub register_callback {
     my ($eo, $event_name, $code, %opts) = @_;
     
     # no name was provided, so we shall construct
@@ -76,25 +76,23 @@ sub register_event {
 }
 
 # attach several event callbacks.
-sub register_events {
+sub register_callbacks {
     my ($eo, @events) = @_;
     my @return;
-    foreach my $event (@events) {
-        push @return, $eo->register_event(%$event);
-    }
+    push @return, $eo->register_callback(%$_) foreach @events;
     return @return;
 }
  
 # fire an event.
-# returns $event.
+# returns $fire.
 sub fire_event {
     my ($eo, $event_name, @args) = @_;
     
     # create event object.
-    my $event = Evented::Object::EventFire->new(
-        name   => $event_name,  # $event->event_name
-        object => $eo,          # $event->object
-        caller => [caller 1],   # $event->caller
+    my $fire = Evented::Object::EventFire->new(
+        name   => $event_name,  # $fire->event_name
+        object => $eo,          # $fire->object
+        caller => [caller 1],   # $fire->caller
         $props => {}        
     );
     
@@ -102,14 +100,13 @@ sub fire_event {
     my %collection = %{ _get_callbacks(@_) };
         
     # call them.
-    return _call_callbacks($event, %collection);
+    return _call_callbacks($fire, %collection);
     
 }
 
-
 # delete an event callback or all callbacks of an event.
 # returns a true value if any events were deleted, false otherwise.
-sub delete_event {
+sub delete_callback {
     my ($eo, $event_name, $name) = @_;
     my $amount = 0;
     
@@ -193,10 +190,10 @@ sub fire_events_together {
     my @collections;
 
     # create event object.
-    my $event = Evented::Object::EventFire->new(
-      # name   => $event_name,  # $event->event_name    # set before called
-      # object => $eo,          # $event->object        # set before called
-        caller => [caller 1],   # $event->caller
+    my $fire = Evented::Object::EventFire->new(
+      # name   => $event_name,  # $fire->event_name    # set before called
+      # object => $eo,          # $fire->object        # set before called
+        caller => [caller 1],   # $fire->caller
         $props => {}        
     );
     
@@ -233,7 +230,7 @@ sub fire_events_together {
     }
     
     # call them.
-    return _call_callbacks($event, %collection);
+    return _call_callbacks($fire, %collection);
     
 }
 
@@ -328,8 +325,8 @@ sub _get_callbacks {
 
 # call the passed callback priority sets.
 sub _call_callbacks {
-    my ($event, %collection) = @_;
-    my $ef_props = $event->{$props};
+    my ($fire, %collection) = @_;
+    my $ef_props = $fire->{$props};
     my %called;
     
     # call each callback.
@@ -344,9 +341,9 @@ sub _call_callbacks {
         $ef_props->{name}   = $event_name;
         
         # create info about the call.
-        $ef_props->{callback_name}     = $cb->{name};                          # $event->callback_name
-        $ef_props->{callback_priority} = $priority;                            # $event->callback_priority
-        $ef_props->{callback_data}     = $cb->{data} if defined $cb->{data};   # $event->callback_data
+        $ef_props->{callback_name}     = $cb->{name};                          # $fire->callback_name
+        $ef_props->{callback_priority} = $priority;                            # $fire->callback_priority
+        $ef_props->{callback_data}     = $cb->{data} if defined $cb->{data};   # $fire->callback_data
 
         # this callback has been called already.
         next CALLBACK if $ef_props->{called}{$cb->{name}};
@@ -367,7 +364,7 @@ sub _call_callbacks {
             # compat < 3.0: eo_obj   -> with_evented_obj
             
             # add event object unless no_obj.
-            unshift @cb_args, $event unless $cb->{no_fire_obj};
+            unshift @cb_args, $fire unless $cb->{no_fire_obj};
             
             # add evented object if eo_obj.
             unshift @cb_args, $eo if $cb->{with_evented_obj} || $cb->{eo_obj} || $cb->{with_obj};
@@ -381,14 +378,14 @@ sub _call_callbacks {
             # call the callback with proper arguments.
             $cb->{code}(@cb_args);
         
-        # set $event->called($cb) true, and set $event->last to the callback's name.
+        # set $fire->called($cb) true, and set $fire->last to the callback's name.
         $called{$cb}                     =
         $ef_props->{called}{$cb->{name}} = 1;
         $ef_props->{last_callback}       = $cb->{name};
         
-        # if stop is true, $event->stop was called. stop the iteration.
+        # if stop is true, $fire->stop was called. stop the iteration.
         if ($ef_props->{stop}) {
-            $ef_props->{stopper} = $cb->{name}; # set $event->stopper.
+            $ef_props->{stopper} = $cb->{name}; # set $fire->stopper.
             last PRIORITY;
         }
 
@@ -396,13 +393,13 @@ sub _call_callbacks {
     } } } # ew.
     
     # dispose of things that are no longer needed.
-    delete $event->{$props}{$_} foreach qw(
+    delete $fire->{$props}{$_} foreach qw(
         callback_name callback_priority callback_data
         priority_i callback_i object
     );
 
     # return the event object.
-    return $event;
+    return $fire;
     
 }
 
@@ -413,9 +410,12 @@ sub _call_callbacks {
 sub on; sub del; sub fire;
 
 BEGIN {
-    *on   = *register_event;
-    *del  = *delete_event;
-    *fire = *fire_event;
+    *register_event     = *register_callback;
+    *register_events    = *register_callbacks;
+    *on                 = *register_callback;
+    *delete_event       = *delete_callback;
+    *del                = *delete_callback;
+    *fire               = *fire_event;
 }
  
 1;
@@ -428,7 +428,7 @@ and then fire events on that object.
 =head1 SYNOPSIS
  
 Demonstrates basic Evented::Object subclasses, priorities of event callbacks,
-and event fire objects and their methods.
+and fire objects and their methods.
  
  package Person;
  
@@ -461,7 +461,7 @@ In some other package...
 
  # Add an event callback that assumes Jake is under 21.
  $jake->on(birthday => sub {
-     my ($event, $new_age) = @_;
+     my ($fire, $new_age) = @_;
  
      say 'not quite 21 yet...';
  
@@ -469,11 +469,11 @@ In some other package...
  
  # Add an event callback that checks if Jake is 21 and cancels the above callback if he is.
  $jake->on(birthday => sub {
-     my ($event, $new_age) =  @_;
+     my ($fire, $new_age) =  @_;
  
      if ($new_age == 21) {
          say 'time to get drunk!';
-         $event->cancel('21-soon');
+         $fire->cancel('21-soon');
      }
  
  }, name => 'finally-21', priority => 1);
@@ -518,7 +518,7 @@ To clear some things up...
 
 'Evented::Object' refers to the Evented::Object package, but 'evented object' refers to an
 object which is a member of the Evented::Object class or a class which inherits from the
-Evented::Object class. 'Event fire object' refers to an object representing an event fire.
+Evented::Object class. 'Fire object' refers to an object representing an event fire.
 
 =over 4
 
@@ -528,11 +528,11 @@ B<Evented::Object>: the class that provides methods for managing events.
 
 =item *
 
-B<Evented object>: an object that uses Evented::Object for event management.
+B<Evented object>: C<$eo> - an object that uses Evented::Object for event management.
 
 =item *
 
-B<Event fire object>: an object that represents an event fire.
+B<Fire object>: C<$fire> - an object that represents an event fire.
 
 =item *
 
@@ -565,12 +565,12 @@ you to attach events to a specific object. The event callbacks, information, and
 data are stored secretly within the object itself. This is quite comparable to the
 JavaScript event systems often found in browsers.
 
-=head2 Event fire objects
+=head2 Fire objects
 
-Another important concept of Evented::Object is the event fire object. It provides methods
+Another important concept of Evented::Object is the fire object. It provides methods
 for fetching information relating to the event being fired, callback being called, and
 more. Additionally, it provides an interface for modifying the evented object and
-modifying future event callbacks. Event fire objects belong to the
+modifying future event callbacks. Fire objects belong to the
 Evented::Object::EventFire class.
 
 =head2 Listener objects
@@ -600,23 +600,23 @@ be called before your callback with priority 0 on the cow object.
 
 =head3 Fire objects and listeners
 
-When an event is fired on an object, the same event fire object is used for callbacks
+When an event is fired on an object, the same fire object is used for callbacks
 belonging to both the evented object and its listening objects. Therefore, callback names
 must be unique not only to the listener object but to the object being listened on as
 well.
 
-You should also note the values of the event fire object:
+You should also note the values of the fire object:
 
 =over 4
 
 =item *
 
-B<$event-E<gt>event_name>: the name of the event from the perspective of the listener;
+B<$fire-E<gt>event_name>: the name of the event from the perspective of the listener;
 i.e. C<cow.moo> (NOT C<moo>)
 
 =item *
 
-B<$event-E<gt>object>: the object being listened to; i.e. C<$cow> (NOT C<$farm>)
+B<$fire-E<gt>object>: the object being listened to; i.e. C<$cow> (NOT C<$farm>)
 
 =back
 
@@ -641,39 +641,39 @@ versions, the evented object was always the first argument of all events, until
 Evented::Object 0.6 added the ability to pass a parameter to C<-E<gt>attach_event()> that
 would tell Evented::Object to omit the object from the callback's argument list.
 
-=head2 Introduction of event fire objects 1.8+
+=head2 Introduction of fire objects 1.8+
 
-The Evented::Object series 1.8+ passes a hash reference C<$event> instead of the
-Evented::Object as the first argument. C<$event> contains information that was formerly
+The Evented::Object series 1.8+ passes a hash reference C<$fire> instead of the
+Evented::Object as the first argument. C<$fire> contains information that was formerly
 held within the object itself, such as C<event_info>, C<event_return>, and C<event_data>.
-These are now accessible through this new hash reference as C<$event-E<gt>{info}>,
-C<$event-E<gt>{return}>, C<$event-E<gt>{data}>, etc. The object is now accessible with
-C<$event-E<gt>{object}>. (this has since been changed; see below.)
+These are now accessible through this new hash reference as C<$fire-E<gt>{info}>,
+C<$fire-E<gt>{return}>, C<$fire-E<gt>{data}>, etc. The object is now accessible with
+C<$fire-E<gt>{object}>. (this has since been changed; see below.)
 
 Events are now stored in the C<eventedObject.events> hash key instead of C<events>, as
 C<events> was a tad bit too broad and could conflict with other libraries.
 
 In addition to these changes, the C<-E<gt>attach_event()> method was deprecated in version
-1.8 in favor of the new C<-E<gt>register_event()>; however, it will remain in
+1.8 in favor of the new C<-E<gt>register_callback()>; however, it will remain in
 Evented::Object until at least the late 2.* series.
 
 =head2 Alias changes 2.0+
 
 Version 2.0 breaks things even more because C<-E<gt>on()> is now an alias for
-C<-E<gt>register_event()> rather than the former deprecated C<-E<gt>attach_event()>.
+C<-E<gt>register_callback()> rather than the former deprecated C<-E<gt>attach_event()>.
 
 =head2 Introduction of event methods 2.2+
 
 Version 2.2+ introduces a new class, Evented::Object::EventFire, which provides several
-methods for event fire objects. These methods such as C<$event-E<gt>return> and
-C<$event-E<gt>object> replace the former hash keys C<$event-E<gt>{return}>,
-C<$event-E<gt>{object}>, etc. The former hash interface is no longer supported and will
+methods for fire objects. These methods such as C<$fire-E<gt>return> and
+C<$fire-E<gt>object> replace the former hash keys C<$fire-E<gt>{return}>,
+C<$fire-E<gt>{object}>, etc. The former hash interface is no longer supported and will
 lead to error.
 
 =head2 Removal of ->attach_event() 2.9+
 
 Version 2.9 removes the long-deprecated C<-E<gt>attach_event()> method in favor of the
-more flexible C<-E<gt>register_event()>. This will break compatibility with any package
+more flexible C<-E<gt>register_callback()>. This will break compatibility with any package
 still making use of C<-E<gt>attach_event()>.
 
 =head2 Rename to Evented::Object 3.54+
@@ -696,14 +696,14 @@ Evented::Object.
 
  my $eo = Evented::Object->new();
 
-=head2 $eo->register_event($event_name => \&callback, %options)
+=head2 $eo->register_callback($event_name => \&callback, %options)
 
 Intended to be a replacement for the former C<-E<gt>attach_event()>. Attaches an event
 callback the object. When the specified event is fired, each of the callbacks registered
 using this method will be called by descending priority order (higher priority numbers are
 called first.)
 
- $eo->register_event(myEvent => sub {
+ $eo->register_callback(myEvent => sub {
      ...
  }, name => 'some.callback', priority => 200);
 
@@ -743,12 +743,12 @@ B<priority>: a numerical priority of the callback.
 
 =item *
 
-B<data>: any data that will be stored as C<$event-E<gt>event_data> as the callback is
+B<data>: any data that will be stored as C<$fire-E<gt>event_data> as the callback is
 fired.
 
 =item *
 
-B<no_fire_obj>: if true, the event fire object will not be prepended to the argument list.
+B<no_fire_obj>: if true, the fire object will not be prepended to the argument list.
 
 =item *
 
@@ -768,16 +768,16 @@ B<with_obj>: I<Deprecated>. Use C<with_evented_obj> instead.
 
 =back
 
-Note: the order of objects will always be C<$eo>, C<$event>, C<@args>, regardless of
-omissions. By default, the argument list is C<$event>, C<@args>.
+Note: the order of objects will always be C<$eo>, C<$fire>, C<@args>, regardless of
+omissions. By default, the argument list is C<$fire>, C<@args>.
 
-=head2 $eo->register_events(@events)
+=head2 $eo->register_callbacks(@events)
 
 Registers several events at once. The arguments should be a list of hash references. These
-references take the same options as C<-E<gt>register_event()>. Returns a list of return
+references take the same options as C<-E<gt>register_callback()>. Returns a list of return
 values in the order that the events were specified.
 
- $eo->register_events(
+ $eo->register_callbacks(
      { myEvent => \&my_event_1, name => 'cb.1', priority => 200 },
      { myEvent => \&my_event_2, name => 'cb.2', priority => 100 }
  );
@@ -788,22 +788,35 @@ B<Parameters>
 
 =item *
 
-B<events>: an array of hash references to pass to C<-E<gt>register_event()>.
+B<events>: an array of hash references to pass to C<-E<gt>register_callback()>.
 
 =back
 
-=head2 $eo->delete_event($event_name => $callback_name)
+=head2 $eo->delete_event($event_name)
 
-Deletes an event callback from the object with the given callback name. If no callback
-name is specified, deletes all callbacks of this event.
+Deletes all callbacks registered for the supplied event.
 
 Returns a true value if any events were deleted, false otherwise.
 
- # delete a single callback.
- $eo->delete_event(myEvent => 'my.callback');
- 
- # delete all callbacks.
  $eo->delete_event('myEvent');
+
+B<Parameters>
+
+=over 4
+
+=item *
+
+B<event_name>: the name of the event.
+
+=back
+
+=head2 $eo->delete_callback($event_name => $callback_name)
+
+Deletes an event callback from the object with the given callback name.
+
+Returns a true value if any events were deleted, false otherwise.
+
+ $eo->delete_callback(myEvent => 'my.callback');
 
 B<Parameters>
 
@@ -815,14 +828,14 @@ B<event_name>: the name of the event.
 
 =item *
 
-B<callback_name>: I<optional>, the name of the callback being removed.
+B<callback_name>: the name of the callback being removed.
 
 =back
 
 =head2 $eo->fire_event($event_name => @arguments)
 
 Fires the specified event, calling each callback that was registered with
-C<-E<gt>register_event()> in descending order of their priorities.
+C<-E<gt>register_callback()> in descending order of their priorities.
 
  $eo->fire_event('some_event');
 
@@ -886,7 +899,7 @@ B<prefix>: a string that event names will be prefixed with on the listener.
 
 =head2 $eo->on($event_name => \&callback, %options)
 
-Alias for C<-E<gt>register_event()>.
+Alias for C<-E<gt>register_callback()>.
 
 =head2 $eo->fire($event_name => @arguments)
 
@@ -899,7 +912,7 @@ Do not use this. It is likely to removed in the near future.
 
 =head2 $eo->attach_event(...)
 
-B<Removed> in version 2.9. Use C<-E<gt>register_event()> instead.
+B<Removed> in version 2.9. Use C<-E<gt>register_callback()> instead.
 
 =head1 EVENTED::OBJECT PROCEDURAL FUNCTIONS
 
@@ -915,7 +928,7 @@ all for the same event and all on the same object.
 It follows priorities throughout all of the events and all of the objects, so it is ideal
 for firing similar or identical events on multiple objects.
 
-The same event fire object is used throughout this entire routine. This means that
+The same fire object is used throughout this entire routine. This means that
 callback names must unique among all of these objects and events. It also means that
 stopping an event from any callback will cancel all remaining callbacks, regardless to
 which event or which object they belong.
@@ -939,66 +952,66 @@ B<events>: an array of events in the form of C<[$eo, event_name =E<gt> @argument
 
 =back
 
-=head1 EVENT FIRE OBJECT METHODS
+=head1 FIRE OBJECT METHODS
 
-Event fire objects are passed to all callbacks of an Evented::Object (unless the silent
-parameter was specified.) Event fire objects contain information about the event itself,
+Fire objects are passed to all callbacks of an Evented::Object (unless the silent
+parameter was specified.) Fire objects contain information about the event itself,
 the callback, the caller of the event, event data, and more.
 
-Event fire objects replace the former values stored within the Evented::Object itself.
+Fire objects replace the former values stored within the Evented::Object itself.
 This new method promotes asynchronous event firing.
 
-Event fire objects are specific to each firing. If you fire the same event twice in a row,
+Fire objects are specific to each firing. If you fire the same event twice in a row,
 the event object passed to the callbacks the first time will not be the same as the second
-time. Therefore, all modifications made by the event fire object's methods apply only to
+time. Therefore, all modifications made by the fire object's methods apply only to
 the callbacks remaining in this particular fire. For example,
-C<$event-E<gt>cancel($callback)> will only cancel the supplied callback once. The next
+C<$fire-E<gt>cancel($callback)> will only cancel the supplied callback once. The next
 time the event is fired, that cancelled callback will be called regardless.
 
-=head2 $event->object
+=head2 $fire->object
 
 Returns the evented object.
 
- $event->object->delete_event('myEvent');
+ $fire->object->delete_event('myEvent');
 
-=head2 $event->caller
+=head2 $fire->caller
 
 Returns the value of C<caller(1)> from within the C<-E<gt>fire()> method. This allows you
 to determine from where the event was fired.
 
- my $name   = $event->event_name;
- my @caller = $event->caller;
+ my $name   = $fire->event_name;
+ my @caller = $fire->caller;
  say "Package $caller[0] line $caller[2] called event $name";
 
-=head2 $event->stop
+=head2 $fire->stop
 
 Cancels all remaining callbacks. This stops the rest of the event firing. After a callback
-calls $event->stop, it is stored as C<$event-E<gt>stopper>.
+calls $fire->stop, it is stored as C<$fire-E<gt>stopper>.
 
  # ignore messages from trolls
  if ($user eq 'noah') {
      # user is a troll.
      # stop further callbacks.
-     return $event->stop;
+     return $fire->stop;
  }
 
-=head2 $event->stopper
+=head2 $fire->stopper
 
-Returns the callback which called C<$event-E<gt>stop>.
+Returns the callback which called C<$fire-E<gt>stop>.
 
- if ($event->stopper) {
-     say 'Event was stopped by '.$event->stopper;
+ if ($fire->stopper) {
+     say 'Event was stopped by '.$fire->stopper;
  }
 
-=head2 $event->called($callback)
+=head2 $fire->called($callback)
 
 If no argument is supplied, returns the number of callbacks called so far, including the
 current one. If a callback argument is supplied, returns whether that particular callback
 has been called.
 
- say $event->called, 'callbacks have been called so far.';
+ say $fire->called, 'callbacks have been called so far.';
  
- if ($event->called('some.callback')) {
+ if ($fire->called('some.callback')) {
      say 'some.callback has been called already.';
  }
  
@@ -1012,15 +1025,15 @@ B<callback>: I<optional>, the callback being checked.
 
 =back
 
-=head2 $event->pending($callback)
+=head2 $fire->pending($callback)
 
 If no argument is supplied, returns the number of callbacks pending to be called,
 excluding the current one. If a callback  argument is supplied, returns whether that
 particular callback is pending for being called.
  
- say $event->pending, 'callbacks are left.';
+ say $fire->pending, 'callbacks are left.';
  
- if ($event->pending('some.callback')) {
+ if ($fire->pending('some.callback')) {
      say 'some.callback will be called soon.';
  }
 
@@ -1034,13 +1047,13 @@ B<callback>: I<optional>, the callback being checked.
 
 =back
 
-=head2 $event->cancel($callback)
+=head2 $fire->cancel($callback)
 
 Cancels the supplied callback once.
 
  if ($user eq 'noah') {
      # we don't love noah!
-     $event->cancel('send.hearts');
+     $fire->cancel('send.hearts');
  }
 
 B<Parameters>
@@ -1053,11 +1066,11 @@ B<callback>: the callback to be cancelled.
 
 =back
 
-=head2 $event->return_of($callback)
+=head2 $fire->return_of($callback)
 
 Returns the return value of the supplied callback.
 
- if ($event->return('my.callback')) {
+ if ($fire->return('my.callback')) {
      say 'my.callback returned a true value';
  }
 
@@ -1071,50 +1084,50 @@ B<callback>: the desired callback.
 
 =back
 
-=head2 $event->last
+=head2 $fire->last
 
 Returns the most recent previous callback called.
 This is also useful for determining which callback was the last to be called.
 
- say $event->last, ' was called before this one.';
+ say $fire->last, ' was called before this one.';
  
- my $event = $eo->fire_event('myEvent');
- say $event->last, ' was the last callback called.';
+ my $fire = $eo->fire_event('myEvent');
+ say $fire->last, ' was the last callback called.';
 
-=head2 $event->last_return
+=head2 $fire->last_return
 
 Returns the last callback's return value.
 
- if ($event->last_return) {
+ if ($fire->last_return) {
      say 'the callback before this one returned a true value.';
  }
  else {
      die 'the last callback returned a false value.';
  }
 
-=head2 $event->event_name
+=head2 $fire->event_name
 
 Returns the name of the event.
 
- say 'the event being fired is ', $event->event_name;
+ say 'the event being fired is ', $fire->event_name;
 
-=head2 $event->callback_name
+=head2 $fire->callback_name
 
 Returns the name of the current callback.
 
- say 'the current callback being called is ', $event->callback_name;
+ say 'the current callback being called is ', $fire->callback_name;
 
-=head2 $event->callback_priority
+=head2 $fire->callback_priority
 
 Returns the priority of the current callback.
 
- say 'the priority of the current callback is ', $event->callback_priority;
+ say 'the priority of the current callback is ', $fire->callback_priority;
 
-=head2 $event->callback_data
+=head2 $fire->callback_data
 
 Returns the data supplied to the callback when it was registered, if any.
 
- say 'my data is ', $event->callback_data;
+ say 'my data is ', $fire->callback_data;
  
 =head1 AUTHOR
 

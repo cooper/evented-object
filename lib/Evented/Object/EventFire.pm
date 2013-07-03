@@ -1,6 +1,6 @@
 # Copyright (c) 2011-13, Mitchell Cooper
 # Evented::Object: a simple yet featureful base class event framework.
-package Evented::Object::EventFire;
+package Evented::Object::EventFire; # leave this package name the same FOREVER.
  
 use warnings;
 use strict;
