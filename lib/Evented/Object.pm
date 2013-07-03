@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.6';
+our $VERSION = '3.61';
 
 # create a new evented object.
 sub new {
@@ -407,13 +407,19 @@ sub _call_callbacks {
 ### ALIASES ###
 ###############
 
-sub on; sub del; sub fire;
+sub register_event;
+sub register_events;
+sub delete_event;
+
+sub on;
+sub del;
+sub fire; 
 
 BEGIN {
     *register_event     = *register_callback;
     *register_events    = *register_callbacks;
-    *on                 = *register_callback;
     *delete_event       = *delete_callback;
+    *on                 = *register_callback;
     *del                = *delete_callback;
     *fire               = *fire_event;
 }
@@ -1000,7 +1006,7 @@ calls $fire->stop, it is stored as C<$fire-E<gt>stopper>.
 Returns the callback which called C<$fire-E<gt>stop>.
 
  if ($fire->stopper) {
-     say 'Event was stopped by '.$fire->stopper;
+     say 'Fire was stopped by '.$fire->stopper;
  }
 
 =head2 $fire->called($callback)
@@ -1070,7 +1076,7 @@ B<callback>: the callback to be cancelled.
 
 Returns the return value of the supplied callback.
 
- if ($fire->return('my.callback')) {
+ if ($fire->return_of('my.callback')) {
      say 'my.callback returned a true value';
  }
 
@@ -1128,6 +1134,10 @@ Returns the priority of the current callback.
 Returns the data supplied to the callback when it was registered, if any.
 
  say 'my data is ', $fire->callback_data;
+
+=head2 $fire->eo
+
+Alias for C<-E<gt>object()>.
  
 =head1 AUTHOR
 

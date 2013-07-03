@@ -154,4 +154,14 @@ sub _pending_callbacks {
     
 }
 
-1
+###############
+### ALIASES ###
+###############
+
+sub object;
+
+BEGIN {
+    *eo = *object;
+}
+
+1;

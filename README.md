@@ -447,7 +447,7 @@ Returns the callback which called `$fire->stop`.
 
 ```perl
 if ($fire->stopper) {
-    say 'Event was stopped by '.$fire->stopper;
+    say 'Fire was stopped by '.$fire->stopper;
 }
 ```
 
@@ -503,7 +503,7 @@ if ($user eq 'noah') {
 Returns the return value of the supplied callback.
 
 ```perl
-if ($fire->return('my.callback')) {
+if ($fire->return_of('my.callback')) {
     say 'my.callback returned a true value';
 }
 ```
@@ -568,6 +568,10 @@ Returns the data supplied to the callback when it was registered, if any.
 ```perl
 say 'my data is ', $fire->callback_data;
 ```
+
+### $fire->eo
+
+Alias for `->object`.
 
 ## Example
 
