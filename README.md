@@ -269,7 +269,7 @@ $eo->register_callbacks(
 
 * __events__: an array of hash references to pass to `->register_callback()`.
 
-### $eo->delete_event($event_name => $callback_name)
+### $eo->delete_event($event_name)
 
 Deletes all callbacks registered for the supplied event.  
 Returns a true value if any events were deleted, false otherwise.

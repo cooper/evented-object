@@ -816,7 +816,7 @@ B<event_name>: the name of the event.
 
 =back
 
-=head2 $eo->delete_callback($event_name => $callback_name)
+=head2 $eo->delete_callback($event_name)
 
 Deletes an event callback from the object with the given callback name.
 
