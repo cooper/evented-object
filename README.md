@@ -1,6 +1,6 @@
 # Evented::Object
 
-**I doubt your objects have ever been this evented.** This concept is so incredible that we're using a noun
+**I honestly doubt your objects have ever been this evented.** This concept is so incredible that we're using a noun
 as a verb without being arrested by the grammar police.  
   
 Evented::Object started as a basic class for registering event handlers and firing events. After many improvements
