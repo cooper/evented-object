@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.61';
+our $VERSION = '3.7';
 
 # create a new evented object.
 sub new {
@@ -232,6 +232,21 @@ sub fire_events_together {
     # call them.
     return _call_callbacks($fire, %collection);
     
+}
+
+# export a subroutine.
+# export_code('My::Package', 'my_sub', \&_my_sub)
+sub export_code {
+    my ($package, $sub_name, $code) = @_;
+    no strict 'refs';
+    *{"${package}::$sub_name"} = $code;
+}
+
+# safely fire an event.
+sub safe_fire {
+    my $obj = shift;
+    return if !blessed $obj || !$obj->isa(__PACKAGE__);
+    return $obj->fire_event(@_);
 }
 
 #########################
@@ -955,6 +970,59 @@ B<Parameters>
 =item *
 
 B<events>: an array of events in the form of C<[$eo, event_name =E<gt> @arguments]>.
+
+=back
+
+=head2 export_code($package, $sub_name, $code)
+
+Exports a code reference to the symbol table of the specified package name.
+
+ my $code = sub { say 'Hello world!' };
+ Evented::Object::export_code('MyPackage', 'hello', $code);
+
+B<Parameters>
+
+=over 4
+
+=item *
+
+B<package>: name of package.
+
+=item *
+
+B<sub_name>: name of desired symbol.
+
+=item *
+
+B<code>: code reference to export.
+
+=back
+
+=head2 safe_fire($eo, $event_name, @args)
+
+Safely fires an event. In other words, if the `$eo` is not an evented object or is not blessed at all, the call will be ignored. This eliminates the need to use C<blessed()> and C<-E<gt>isa()> on a value for testing whether it is an evented object.
+
+ Evented::Object::safe_fire($eo, myEvent => 'my argument');
+
+B<Parameters>
+
+=over 4
+
+=item *
+
+B<eo>: the evented object.
+
+=back
+
+=item *
+
+B<event_name>: the name of the event. 
+
+=back
+
+=item *
+
+B<args>: the arguments for the event fire.
 
 =back
 

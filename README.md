@@ -393,6 +393,27 @@ Evented::Object::fire_events_together(
 
 * __events__: an array of events in the form of `[$eo, event_name => @arguments]`.
 
+### export_code($package, $sub_name, $code)
+
+Exports a code reference to the symbol table of the specified package name.
+
+```perl
+my $code = sub { say 'Hello world!' };
+Evented::Object::export_code('MyPackage', 'hello', $code);
+```
+
+* __package__: name of package.
+* __sub_name__: name of desired symbol.
+* __code__: code reference to export.
+
+### safe_fire($eo, $event_name, @args)
+
+Safely fires an event. In other words, if the `$eo` is not an evented object or is not blessed at all, the call will be ignored. This eliminates the need to use `blessed()` and `->isa()` on a value for testing whether it is an evented object.
+
+```perl
+Evented::Object::safe_fire($eo, myEvent => 'my argument');
+```
+
 ## Fire object methods
 
 Fire objects are passed to all callbacks of an Evented::Object. Fire objects
