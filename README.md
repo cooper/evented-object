@@ -414,6 +414,10 @@ Safely fires an event. In other words, if the `$eo` is not an evented object or 
 Evented::Object::safe_fire($eo, myEvent => 'my argument');
 ```
 
+* __eo__: the evented object.
+* __event_name__: the name of the event.
+* __args__: the arguments for the event fire.
+
 ## Fire object methods
 
 Fire objects are passed to all callbacks of an Evented::Object. Fire objects
