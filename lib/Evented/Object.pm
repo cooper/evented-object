@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.82';
+our $VERSION = '3.83';
 
 # create a new evented object.
 sub new {
@@ -62,10 +62,7 @@ sub register_callback {
     }
     
     # determine the event store.
-    my $event_store;
-    my $store = _package_storage($eo);
-    $event_store = $eo->{$events}   ||= {} if blessed $eo;
-    $event_store = $store->{events} ||= {} if not blessed $eo;
+    my $event_store = _event_store($eo);
     
     # add this callback.
     my $priority = $opts{priority} || 0;
@@ -112,26 +109,27 @@ sub fire_event {
 # returns a true value if any events were deleted, false otherwise.
 sub delete_callback {
     my ($eo, $event_name, $name) = @_;
-    my $amount = 0;
+    my $amount      = 0;
+    my $event_store = _event_store($eo);
     
     # event does not have any callbacks.
-    return unless $eo->{$events}{$event_name};
+    return unless $event_store->{$event_name};
  
     # iterate through callbacks and delete matches.
-    PRIORITY: foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
+    PRIORITY: foreach my $priority (keys %{$event_store->{$event_name}}) {
     
         # if a specific callback name is specified, weed it out.
         if (defined $name) {
-            my @a = @{$eo->{$events}{$event_name}{$priority}};
+            my @a = @{$event_store->{$event_name}{$priority}};
             @a = grep { $_->{name} ne $name } @a;
             
             # none left in this priority.
             if (scalar @a == 0) {
-                delete $eo->{$events}{$event_name}{$priority};
+                delete $event_store->{$event_name}{$priority};
                 
                 # delete this event because all priorities have been removed.
-                if (scalar keys %{$eo->{$events}{$event_name}} == 0) {
-                    delete $eo->{$events}{$event_name};
+                if (scalar keys %{$event_store->{$event_name}} == 0) {
+                    delete $event_store->{$event_name};
                     return 1;
                 }
                 
@@ -141,14 +139,14 @@ sub delete_callback {
             }
             
             # store the new array.
-            $eo->{$events}{$event_name}{$priority} = \@a;
+            $event_store->{$event_name}{$priority} = \@a;
             
         }
         
         # if no callback is specified, delete all events of this type.
         else {
-            $amount = scalar keys %{$eo->{$events}{$event_name}};
-            delete $eo->{$events}{$event_name};
+            $amount = scalar keys %{$event_store->{$event_name}};
+            delete $event_store->{$event_name};
         }
  
     }
@@ -257,6 +255,14 @@ sub safe_fire {
 ### INTERNAL ROUTINES ###
 #########################
 
+# fetch the event store of object or package.
+sub _event_store {
+    my $eo    = shift;
+    my $store = _package_storage($eo);
+    return $eo->{$events}   ||= {} if blessed $eo;
+    return $store->{events} ||= {} if not blessed $eo;
+}
+    
 # fetches callbacks of an event.
 # internal use only.
 sub _get_callbacks {
