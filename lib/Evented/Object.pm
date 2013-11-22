@@ -418,6 +418,19 @@ sub _call_callbacks {
     
 }
 
+
+# access package storage.
+sub _package_storage {
+    my $package = shift;
+    no strict 'refs';
+    my $ref = "${package}::__EO__";
+    if (!keys %$ref) {
+        %$ref = ();
+    }
+    return *$ref{HASH};
+}
+
+
 ###############
 ### ALIASES ###
 ###############
