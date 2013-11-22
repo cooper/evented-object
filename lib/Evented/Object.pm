@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.81';
+our $VERSION = '3.82';
 
 # create a new evented object.
 sub new {
@@ -62,17 +62,14 @@ sub register_callback {
     }
     
     # determine the event store.
-    my %event_store;
+    my $event_store;
     my $store = _package_storage($eo);
-    %event_store = %{ $eo->{$events}   ||= {} } if blessed $eo;
-    %event_store = %{ $store->{events} ||= {} } if not blessed $eo;
+    $event_store = $eo->{$events}   ||= {} if blessed $eo;
+    $event_store = $store->{events} ||= {} if not blessed $eo;
     
-    # determine priority and callback list.
+    # add this callback.
     my $priority = $opts{priority} || 0;
-    $event_store{$event_name}{$priority} ||= [];
-    
-    # add this event.
-    my $callbacks = $event_store{$event_name}{$priority};
+    my $callbacks = $event_store->{$event_name}{$priority} ||= [];
     push @$callbacks, {
         %opts,
         code => $code
