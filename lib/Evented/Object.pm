@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.7';
+our $VERSION = '3.8';
 
 # create a new evented object.
 sub new {
@@ -61,11 +61,15 @@ sub register_callback {
         $opts{name} = "$event_name.$caller[0]($caller[2], ".$c++.q[)];
     }
     
-    my $priority = $opts{priority} || 0; # priority does not matter.
-    $eo->{$events}{$event_name}{$priority} ||= [];
+    # determine the event store.
+    my %event_store = %{ blessed $eo ? $eo->{$events} ||= {} : _package_storage($eo) };
+    
+    # determine priority and callback list.
+    my $priority = $opts{priority} || 0;
+    $event_store{$event_name}{$priority} ||= [];
     
     # add this event.
-    my $callbacks = $eo->{$events}{$event_name}{$priority};
+    my $callbacks = $event_store{$event_name}{$priority};
     push @$callbacks, {
         %opts,
         code => $code
@@ -308,6 +312,20 @@ sub _get_callbacks {
                 $eo,
                 $event_name,
                 $eo->{$events}{$event_name}{$priority},
+                \@args
+            ];
+        }
+    }
+    
+    # add the package callbacks for this priority.
+    my %event_store = %{ _package_storage(blessed $eo) };
+    if ($event_store{$event_name}) {
+        foreach my $priority (keys %{$event_store{$event_name}}) {
+            $collection{$priority} ||= [];
+            push @{ $collection{$priority} }, [
+                $eo,
+                $event_name,
+                $event_store{$event_name}{$priority},
                 \@args
             ];
         }
