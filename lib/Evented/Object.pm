@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.91';
+our $VERSION = '3.92';
 
 # create a new evented object.
 sub new {
@@ -244,7 +244,7 @@ sub safe_fire {
 #########################
 
 # access package storage.
-sub _package_storage {
+sub _package_store {
     my $package = shift;
     no strict 'refs';
     my $ref = "${package}::__EO__";
@@ -257,7 +257,7 @@ sub _package_storage {
 # fetch the event store of object or package.
 sub _event_store {
     my $eo    = shift;
-    my $store = _package_storage($eo);
+    my $store = _package_store($eo);
     return $eo->{$events}   ||= {} if blessed $eo;
     return $store->{events} ||= {} if not blessed $eo;
 }
@@ -265,7 +265,7 @@ sub _event_store {
 # fetch the property store of object or package.
 sub _prop_store {
     my $eo    = shift;
-    my $store = _package_storage($eo);
+    my $store = _package_store($eo);
     return $eo->{$props}   ||= {} if blessed $eo;
     return $store->{props} ||= {} if not blessed $eo;
 }
