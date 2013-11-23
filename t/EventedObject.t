@@ -3,11 +3,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 21;
+use Test::More tests => 22;
 use Evented::Object;
 
-##################
-### Basic test ###
+################## Tests basic priorities.
+### Basic test ### 
 ##################
 
 my $eo = Evented::Object->new;
@@ -47,8 +47,8 @@ $eo->fire_event('hi');
 
 is(scalar @results, 0, 'deleting entire event');
 
-##################################
-### Deleting a single callback ###
+################################## Tests deleting a single callback.
+### Deleting a single callback ### Ensures only that specific callback is deleted.
 ##################################
 
 my ($lost, $won);
@@ -67,9 +67,9 @@ $eo->fire_event('hi');
 isnt($lost, 1, 'deleted single callback');
 is($won, 1, 'other callback still called');
 
-#################################################
-### Cancelling a callback from within another ###
-#################################################
+################################################# Cancels a callback inside another.
+### Cancelling a callback from within another ### Ensures the canceled callback is not pending.
+################################################# Ensures other callbacks are pending & called.
 
 ($lost, $won) = (undef, undef);
 my ($pending_bad, $pending_good);
@@ -134,9 +134,9 @@ is($results[1], 'l100', '100 priority should be called second');
 is($results[2], 50,     '50 priority should be called third');
 is($results[3], -100,   '-100 priority should be called fourth');
 
-############################
-### Callback information ###
-############################
+############################ Ensures callback information is correct.
+### Callback information ### Tests with listener objects where the event name
+############################ and other properties sometimes vary.
 
 $farm->delete_event('cow.moo');
 $cow->delete_event('moo');
@@ -156,3 +156,23 @@ $farm->on('cow.moo' => sub {
 }, priority => -100, name => 'yes');
 
 $cow->fire_event('moo');
+
+############################################ Tests event stopping.
+### Stopping fire from within a callback ### Uses listener object for more complexity.
+############################################ The second callback should not be called.
+
+$farm->delete_event('cow.moo');
+$cow->delete_event('moo');
+
+$cow->on(moo => sub {
+    my $fire = shift;
+    $fire->stop;
+}, priority => 200, name => 'no');
+
+$farm->on('cow.moo' => sub {
+    my $fire = shift;
+    fail('event stopped');
+}, priority => -100, name => 'yes');
+
+$cow->fire_event('moo');
+pass('event stopped');

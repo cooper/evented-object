@@ -713,6 +713,28 @@ B<$fire-E<gt>object>: the object being listened to; i.e. C<$cow> (NOT C<$farm>)
 This also means that stopping the event from a listener object will cancel all remaining
 callbacks, including those belonging to the evented object.
 
+=head2 Registering callbacks to classes
+
+Evented::Object 3.9 adds the ability to register event callbacks to a subclass of Evented::Object.
+The methods C<-E<gt>register_callback()>, C<-E<gt>delete_event()>, C<-E<gt>delete_callback>, etc. can be called in
+the form of C<MyClass-E<gt>method()>. Evented::Object will store these callbacks in a special hash hidden
+in the package's symbol table.  
+  
+Any object of this class will borrow these callbacks from the class. They will be incorporated into the callback collection as though they were registered directly on the object.
+
+Note: Events cannot be fired on a class.
+
+=head3 Prioritizing
+
+When firing an event, any callbacks on the class will sorted by priority just as if they were registered on the object. Whether registered on the class or the object, a callback with a
+higher priority will be called before one of a lower priority.
+
+=head3 Subclassing
+
+If an evented object is blessed to a subclass of a class with callbacks registered to it,
+the object will NOT inherit the callbacks associated with the parent class. Callbacks registered
+to classes ONLY apply to objects directly blessed to the class.
+
 =head1 COMPATIBILITY
 
 Evented::Object versions 0.0 to 0.7 are entirely compatible - anything that worked in

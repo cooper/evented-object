@@ -94,6 +94,28 @@ You should also note the values of the fire object:
 This also means that stopping the event from a listener object will cancel all remaining
 callbacks, including those belonging to the evented object.
 
+### Registering callbacks to classes
+
+Evented::Object 3.9 adds the ability to register event callbacks to a subclass of Evented::Object.
+The methods `->register_callback()`, `->delete_event()`, `->delete_callback`, etc. can be called in
+the form of `MyClass->method()`. Evented::Object will store these callbacks in a special hash hidden
+in the package's symbol table.  
+  
+Any object of this class will borrow these callbacks from the class. They will be incorporated into the callback collection as though they were registered directly on the object.
+  
+Note: Events cannot be fired on a class.
+
+#### Prioritizing
+
+When firing an event, any callbacks on the class will sorted by priority just as if they were registered on the object. Whether registered on the class or the object, a callback with a
+higher priority will be called before one of a lower priority.
+
+#### Subclassing
+
+If an evented object is blessed to a subclass of a class with callbacks registered to it,
+the object will NOT inherit the callbacks associated with the parent class. Callbacks registered
+to classes ONLY apply to objects directly blessed to the class.
+
 ## History
 
 Evented::Object has evolved throughout the history of multiple projects, improving in each project it passed through.
