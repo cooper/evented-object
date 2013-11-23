@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.83';
+our $VERSION = '3.9';
 
 # create a new evented object.
 sub new {
@@ -98,10 +98,10 @@ sub fire_event {
     );
     
     # priority number : array of callbacks.
-    my %collection = %{ _get_callbacks(@_) };
+    my @collection = @{ _get_callbacks(@_) };
         
     # call them.
-    return _call_callbacks($fire, %collection);
+    return _call_callbacks($fire, @collection);
     
 }
 
@@ -189,7 +189,7 @@ sub delete_listener {
 
 # fire multiple events on multiple objects as a single event.
 sub fire_events_together {
-    my @collections;
+    my @collection;
 
     # create event object.
     my $fire = Evented::Object::EventFire->new(
@@ -208,31 +208,19 @@ sub fire_events_together {
         }
 
         my ($eo, $event_name, @args) = @$e;
-        
+       
         # must be an evented object.
         if (!blessed $eo || !$eo->isa('Evented::Object')) {
             next;
         }
         
         # add this collection of callbacks to the queue.
-        push @collections, $eo->_get_callbacks($event_name, @args);
+        push @collection, @{ $eo->_get_callbacks($event_name, @args) || [] };
 
-    }
-    
-    # organize into a single collection.
-    my %collection;
-    foreach my $c (@collections) {
-
-        # I hate nested loops.
-        foreach my $priority (keys %$c) {
-            $collection{$priority} ||= [];
-            push @{ $collection{$priority} }, @{ $c->{$priority} };
-        }
-        
     }
     
     # call them.
-    return _call_callbacks($fire, %collection);
+    return _call_callbacks($fire, @collection);
     
 }
 
@@ -255,6 +243,17 @@ sub safe_fire {
 ### INTERNAL ROUTINES ###
 #########################
 
+# access package storage.
+sub _package_storage {
+    my $package = shift;
+    no strict 'refs';
+    my $ref = "${package}::__EO__";
+    if (!keys %$ref) {
+        %$ref = ();
+    }
+    return *$ref{HASH};
+}
+
 # fetch the event store of object or package.
 sub _event_store {
     my $eo    = shift;
@@ -262,12 +261,20 @@ sub _event_store {
     return $eo->{$events}   ||= {} if blessed $eo;
     return $store->{events} ||= {} if not blessed $eo;
 }
-    
+ 
+# fetch the property store of object or package.
+sub _prop_store {
+    my $eo    = shift;
+    my $store = _package_storage($eo);
+    return $eo->{$props}   ||= {} if blessed $eo;
+    return $store->{props} ||= {} if not blessed $eo;
+}
+ 
 # fetches callbacks of an event.
 # internal use only.
 sub _get_callbacks {
     my ($eo, $event_name, @args) = @_;
-    my %collection;
+    my @collection;
     
     # if there are any listening objects, call its callbacks of this priority.
     if ($eo->{$props}{listeners}) {
@@ -287,13 +294,15 @@ sub _get_callbacks {
             
             # add the callbacks from this priority.
             foreach my $priority (keys %{$obj->{$events}{$listener_event_name}}) {
-                $collection{$priority} ||= [];
-                push @{$collection{$priority}}, [
-                    $eo,
-                    $listener_event_name,
-                    $obj->{$events}{$listener_event_name}{$priority},
-                    \@args
-                ];
+
+                # create a group reference.
+                my $group = [ $eo, $listener_event_name, \@args]; # XXX: $eo or $obj?
+                
+                # add each callback.
+                foreach my $cb (@{$obj->{$events}{$listener_event_name}{$priority}}) {
+                    push @collection, [ $priority, $group, $cb ];
+                }
+                
             }
             
         }
@@ -313,34 +322,46 @@ sub _get_callbacks {
     # add the local callbacks from this priority.
     if ($eo->{$events}{$event_name}) {
         foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
-            $collection{$priority} ||= [];
-            push @{ $collection{$priority} }, [
-                $eo,
-                $event_name,
-                $eo->{$events}{$event_name}{$priority},
-                \@args
-            ];
+        
+            # create a group reference.
+            my $group = [ $eo, $event_name, \@args];
+            
+            # add each callback.
+            foreach my $cb (@{$eo->{$events}{$event_name}{$priority}}) {
+                push @collection, [ $priority, $group, $cb ];
+            }
+            
         }
+        
     }
     
     # add the package callbacks for this priority.
-    my $event_store = _package_storage(blessed $eo)->{events};
+    my $event_store = _event_store(blessed $eo);
     if ($event_store && $event_store->{$event_name}) {
         foreach my $priority (keys %{$event_store->{$event_name}}) {
-            $collection{$priority} ||= [];
-            push @{ $collection{$priority} }, [
-                $eo,
-                $event_name,
-                $event_store->{$event_name}{$priority},
-                \@args
-            ];
+        
+            # create a group reference.
+            my $group = [ $eo, $event_name, \@args];
+            
+            # add each callback.
+            foreach my $cb (@{$event_store->{$event_name}{$priority}}) {
+                push @collection, [ $priority, $group, $cb ];
+            }
+            
         }
     }
     
-    return \%collection;
+    return \@collection;
 }
 
-# This is the structure of a collection:
+# Nov. 22, 2013 revision:
+# -----------------------
+#
+# OK, here's the deal. We used to have a hash collection with numerical
+# priority keys. The values of those keys were arrays of of arrays. Those
+# inner arrays consisted of (evented object, event name, callbacks, arguments).
+# From there, the cb array is iterated through each callback individually.
+#
 #   %collection = (
 #
 #       # priorities are keys.
@@ -361,17 +382,35 @@ sub _get_callbacks {
 #       ]
 #
 #   )
+#
+# This revision eliminates all of these nested structures by reworking the way
+# a callback collection works. A collection should be an array of callbacks.
+# This array, unlike before, will contain an additional element: an array
+# reference representing the "group."
+#
+#   @collection = (
+#       [ $priority, $group, $cb ]
+#   )
+#
+# where $group is
+#   [ $eo, $event_name, $args ]
+#
+# This format has several major advantages over the former one. Specifically,
+# it makes it very simple to determine which callbacks will be called in the
+# future, which ones have been called already, how many are left, etc.
+#
 
 # call the passed callback priority sets.
 sub _call_callbacks {
-    my ($fire, %collection) = @_;
+    my ($fire, @collection) = @_;
     my $ef_props = $fire->{$props};
     my %called;
     
     # call each callback.
-    PRIORITY:   foreach my $priority (sort { $b <=> $a } keys %collection)  { 
-    COLLECTION: foreach my $col      (@{ $collection{$priority} }        )  { my ($eo, $event_name, $callbacks, $args) = @$col;
-    CALLBACK:   foreach my $cb       (@$callbacks                        )  {
+    foreach my $callback (sort { $b->[0] <=> $a->[0] } @collection) {
+        my ($priority, $group, $cb)  = @$callback;
+        my ($eo, $event_name, $args) = @$group;
+        
         $ef_props->{callback_i}++;
         
         # set the evented object of this callback.
@@ -385,11 +424,11 @@ sub _call_callbacks {
         $ef_props->{callback_data}     = $cb->{data} if defined $cb->{data};   # $fire->callback_data
 
         # this callback has been called already.
-        next CALLBACK if $ef_props->{called}{$cb->{name}};
-        next CALLBACK if $called{$cb};
+        next if $ef_props->{called}{$cb->{name}};
+        next if $called{$cb};
 
         # this callback has been cancelled.
-        next CALLBACK if $ef_props->{cancelled}{$cb->{name}};
+        next if $ef_props->{cancelled}{$cb->{name}};
 
         # determine callback arguments.
         
@@ -425,35 +464,22 @@ sub _call_callbacks {
         # if stop is true, $fire->stop was called. stop the iteration.
         if ($ef_props->{stop}) {
             $ef_props->{stopper} = $cb->{name}; # set $fire->stopper.
-            last PRIORITY;
+            last;
         }
 
      
-    } } } # ew.
+    }
     
     # dispose of things that are no longer needed.
     delete $fire->{$props}{$_} foreach qw(
-        callback_name callback_priority callback_data
-        priority_i callback_i object
+        callback_name callback_priority
+        callback_data callback_i object
     );
 
     # return the event object.
     return $fire;
     
 }
-
-
-# access package storage.
-sub _package_storage {
-    my $package = shift;
-    no strict 'refs';
-    my $ref = "${package}::__EO__";
-    if (!keys %$ref) {
-        %$ref = ();
-    }
-    return *$ref{HASH};
-}
-
 
 ###############
 ### ALIASES ###
