@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.9';
+our $VERSION = '3.91';
 
 # create a new evented object.
 sub new {
@@ -406,8 +406,14 @@ sub _call_callbacks {
     my $ef_props = $fire->{$props};
     my %called;
     
+    # sort by priority.
+    @collection = sort { $b->[0] <=> $a->[0] } @collection;
+    
+    # store the collection.
+    $ef_props->{collection} = \@collection;
+    
     # call each callback.
-    foreach my $callback (sort { $b->[0] <=> $a->[0] } @collection) {
+    foreach my $callback (@collection) {
         my ($priority, $group, $cb)  = @$callback;
         my ($eo, $event_name, $args) = @$group;
         

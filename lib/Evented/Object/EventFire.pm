@@ -47,16 +47,19 @@ sub called {
 # returns a true value if the given callback will be called soon.
 # with no argument, returns number of callbacks pending.
 sub pending {
-    my ($fire, $callback) = @_;
+    my ($fire, $cb_name) = @_;
     
     # return number of callbacks remaining.
-    if (!defined $callback) {
+    if (!defined $cb_name) {
         return scalar $fire->_pending_callbacks;
     }
 
     # return whether the specified callback is pending.
-    return scalar grep { $_->callback_name eq $callback } $fire->_pending_callbacks;
+    foreach my $callback ($fire->_pending_callbacks) {
+        return 1 if $callback->[2]{name} eq $cb_name;
+    }
     
+    return;
 }
 
 # cancels a future callback once.
