@@ -257,16 +257,16 @@ sub _package_store {
 # fetch the event store of object or package.
 sub _event_store {
     my $eo    = shift;
-    my $store = _package_store($eo);
     return $eo->{$events}   ||= {} if blessed $eo;
+    my $store = _package_store($eo);
     return $store->{events} ||= {} if not blessed $eo;
 }
  
 # fetch the property store of object or package.
 sub _prop_store {
     my $eo    = shift;
-    my $store = _package_store($eo);
     return $eo->{$props}   ||= {} if blessed $eo;
+    my $store = _package_store($eo);
     return $store->{props} ||= {} if not blessed $eo;
 }
  
