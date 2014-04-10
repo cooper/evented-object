@@ -256,6 +256,8 @@ All of these options are **optional**, but the use of a callback name is **highl
 
 * __name__: the name of the callback being registered. must be unique to this particular event.
 * __priority__: a numerical priority of the callback.
+* __before__: the name of a callback to precede.
+* __after__: the name of a callback to succeed.
 * __data__: any data that will be stored as `$fire->event_data` as the callback is fired.
 * __no_fire_obj__: if true, the fire object will not be prepended to the argument list.
 * __with_evented_obj__: if true, the evented object will prepended to the argument list.

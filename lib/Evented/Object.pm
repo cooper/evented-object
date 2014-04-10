@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.93';
+our $VERSION = '3.94';
 
 # create a new evented object.
 sub new {
@@ -63,14 +63,22 @@ sub register_callback {
     
     # determine the event store.
     my $event_store = _event_store($eo);
+        
+    # before/after a callback.
+    my $priority   = delete $opts{priority} || 0;
+    if (my $before = defined $opts{before} or defined $opts{after}) {
+        my $add   = $before ? 1 : -1;
+        my $res   = $eo->_get_callback_named($event_name, $opts{before} // $opts{after});
+        $priority = $res->[0] + $add if defined $res;
+    }
     
-    # add this callback.
-    my $priority = $opts{priority} || 0;
+    # add the callback.
     my $callbacks = $event_store->{$event_name}{$priority} ||= [];
     push @$callbacks, {
         %opts,
-        code   => $code,
-        caller => [caller]
+        priority => $priority,
+        code     => $code,
+        caller   => [caller]
     };
         
     return 1;
@@ -270,7 +278,16 @@ sub _prop_store {
     my $store = _package_store($eo);
     return $store->{props} ||= {} if not blessed $eo;
 }
- 
+
+# fetch a callback from its name.
+sub _get_callback_named {
+    my ($eo, $event_name, $callback_name) = @_;
+    foreach my $callback (@{ _get_callbacks($eo, $event_name) }) {
+        return $callback if $callback->[2]{name} eq $callback_name;
+    }
+    return [];
+}
+
 # fetches callbacks of an event.
 # internal use only.
 sub _get_callbacks {
@@ -854,6 +871,14 @@ event.
 
 B<priority>: a numerical priority of the callback.
 
+=item *
+
+B<before>: the name of a callback to precede.
+ 
+=item *
+
+B<after>: the name of a callback to succeed.
+ 
 =item *
 
 B<data>: any data that will be stored as C<$fire-E<gt>event_data> as the callback is

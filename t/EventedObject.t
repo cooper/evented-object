@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 22;
+use Test::More tests => 24;
 use Evented::Object;
 
 ################## Tests basic priorities.
@@ -176,3 +176,26 @@ $farm->on('cow.moo' => sub {
 
 $cow->fire_event('moo');
 pass('event stopped');
+
+########################
+### BEFORE AND AFTER ###
+########################
+
+$eo = Evented::Object->new;
+my ($first, $second);
+$eo->register_callback(hi => sub {
+    $first = 1;
+    print "first called\n";
+}, priority => 50, name => 'main');
+
+$eo->register_callback(hi => sub {
+    ok(!$first, 'before callback should be called first');
+    $second = 1;
+    print "second called\n";
+}, before => 'main');
+
+$eo->register_callback(hi => sub {
+    ok($first, 'after callback should be called after');
+}, after => 'main');
+
+$eo->fire_event('hi');
