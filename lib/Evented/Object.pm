@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.94';
+our $VERSION = '3.95';
 
 # create a new evented object.
 sub new {
@@ -76,9 +76,8 @@ sub register_callback {
     my $callbacks = $event_store->{$event_name}{$priority} ||= [];
     push @$callbacks, {
         %opts,
-        priority => $priority,
-        code     => $code,
-        caller   => [caller]
+        code   => $code,
+        caller => [caller]
     };
         
     return 1;
@@ -285,7 +284,7 @@ sub _get_callback_named {
     foreach my $callback (@{ _get_callbacks($eo, $event_name) }) {
         return $callback if $callback->[2]{name} eq $callback_name;
     }
-    return [];
+    return;
 }
 
 # fetches callbacks of an event.
