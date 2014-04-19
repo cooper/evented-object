@@ -138,7 +138,7 @@ This is a list of classes designed exclusively upon Evented::Object.
 * [__Evented::Database__](https://github.com/cooper/evented-database) - a package providing a database mechanism built upon Evented::Configuration.
 * [__Evented::Query__](https://github.com/cooper/evented-query) - an evented database interface wrapping around DBI.
 * [__Evented::Socket__](https://github.com/cooper/evented-socket) - an event-driven TCP socket protocol for networked programming.
-* [__Evented::API::Engine__](https://github.com/cooper/evented-api-engine) - successor to the [API Engine](https://github.com/cooper/api-engine) with event-driven management of modules and such.
+* [__Evented::API::Engine__](https://github.com/cooper/evented-api-engine) - successor to the [API Engine](https://github.com/cooper/api-engine) with event-driven management of modules.
 * [__Evented::IRC__](https://github.com/cooper/evented-irc) - successor to [libirc](https://github.com/cooper/libirc-classic) with an improved event system around Evented::Object.
 
 This is a list of classes and frameworks which make major use of Evented::Object.

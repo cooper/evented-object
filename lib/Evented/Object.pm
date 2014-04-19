@@ -33,7 +33,7 @@ use Scalar::Util qw(weaken blessed);
 
 use Evented::Object::EventFire;
 
-our $VERSION = '3.95';
+our $VERSION = '3.96';
 
 # create a new evented object.
 sub new {
@@ -95,22 +95,7 @@ sub register_callbacks {
 # fire an event.
 # returns $fire.
 sub fire_event {
-    my ($eo, $event_name, @args) = @_;
-    
-    # create event object.
-    my $fire = Evented::Object::EventFire->new(
-        name   => $event_name,  # $fire->event_name
-        object => $eo,          # $fire->object
-        caller => [caller 1],   # $fire->caller
-        $props => {}        
-    );
-    
-    # priority number : array of callbacks.
-    my @collection = @{ _get_callbacks(@_) };
-        
-    # call them.
-    return _call_callbacks($fire, @collection);
-    
+    _fire_event(shift, shift, [caller 1], @_);
 }
 
 # delete an event callback or all callbacks of an event.
@@ -250,6 +235,26 @@ sub safe_fire {
 #########################
 ### INTERNAL ROUTINES ###
 #########################
+
+# fire an event with a specified caller.
+sub _fire_event {
+    my ($eo, $event_name, $caller, @args) = @_;
+    
+    # create event object.
+    my $fire = Evented::Object::EventFire->new(
+        name   => $event_name,  # $fire->event_name
+        object => $eo,          # $fire->object
+        caller => $caller,      # $fire->caller
+        $props => {}        
+    );
+    
+    # priority number : array of callbacks.
+    my @collection = @{ _get_callbacks(@_) };
+    
+    # call them.
+    return _call_callbacks($fire, @collection);
+    
+}
 
 # access package storage.
 sub _package_store {
