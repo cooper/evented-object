@@ -23,17 +23,16 @@ use utf8;
 use 5.010;
 
 # these must be set before loading EventFire.
-our ($events, $props);
+our ($events, $props, %monitors);
 BEGIN {
     $events = 'eventedObject.events';
     $props  = 'eventedObject.props';
 }
 
 use Scalar::Util qw(weaken blessed);
-
 use Evented::Object::EventFire;
 
-our $VERSION = '3.97';
+our $VERSION = '4.0';
 
 # create a new evented object.
 sub new {
@@ -55,8 +54,8 @@ sub register_callback {
     # no name was provided, so we shall construct
     # one using the power of pure hackery.
     # this is one of the most criminal things I've ever done.
+    my @caller = caller;
     if (!defined $opts{name}) {
-        my @caller  = caller;
         state $c    = 0;
         $opts{name} = "$event_name.$caller[0]($caller[2], ".$c++.q[)];
     }
@@ -74,12 +73,15 @@ sub register_callback {
     
     # add the callback.
     my $callbacks = $event_store->{$event_name}{$priority} ||= [];
-    push @$callbacks, {
+    push @$callbacks, my $cb = {
         %opts,
         code   => $code,
-        caller => [caller]
+        caller => \@caller
     };
-        
+    
+    # tell class monitor.
+    _monitor_fire($caller[0], register_callback => $eo, $event_name, $cb);
+    
     return 1;
 
 }
@@ -203,7 +205,7 @@ sub fire_events_together {
         my ($eo, $event_name, @args) = @$e;
        
         # must be an evented object.
-        if (!blessed $eo || !$eo->isa('Evented::Object')) {
+        if (!blessed $eo || !$eo->isa(__PACKAGE__)) {
             next;
         }
         
@@ -230,6 +232,28 @@ sub safe_fire {
     my $obj = shift;
     return if !blessed $obj || !$obj->isa(__PACKAGE__);
     return $obj->fire_event(@_);
+}
+
+# set the monitor object of a class.
+sub add_class_monitor {
+    my ($pkg, $obj) = @_;
+    
+    # ensure it's an evented object.
+    return unless $obj->isa(__PACKAGE__);
+    
+    # hold a weak reference to the monitor.
+    my $m = $monitors{$pkg} ||= [];
+    push @$m, $obj;
+    weaken($monitors{$pkg}[$#$m]);
+    
+    return 1;
+}
+
+# remove a class monitor.
+sub delete_class_monitor {
+    my ($pkg, $obj) = @_;
+    my $m = $monitors{$pkg} or return;
+    @$m   = grep { $_ != $obj } @$m;
 }
 
 #########################
@@ -507,6 +531,13 @@ sub _call_callbacks {
     # return the event object.
     return $fire;
     
+}
+
+# fire a class monitor event.
+sub _monitor_fire {
+    my ($pkg, $event_name, @args) = @_;
+    my $m = $monitors{$pkg} or return;
+    safe_fire($_, "monitor:$event_name" => @args) foreach @$m;
 }
 
 ###############
@@ -1094,34 +1125,11 @@ B<events>: an array of events in the form of C<[$eo, event_name =E<gt> @argument
 
 =back
 
-=head2 export_code($package, $sub_name, $code)
-
-Exports a code reference to the symbol table of the specified package name.
-
- my $code = sub { say 'Hello world!' };
- Evented::Object::export_code('MyPackage', 'hello', $code);
-
-B<Parameters>
-
-=over 4
-
-=item *
-
-B<package>: name of package.
-
-=item *
-
-B<sub_name>: name of desired symbol.
-
-=item *
-
-B<code>: code reference to export.
-
-=back
-
 =head2 safe_fire($eo, $event_name, @args)
 
-Safely fires an event. In other words, if the `$eo` is not an evented object or is not blessed at all, the call will be ignored. This eliminates the need to use C<blessed()> and C<-E<gt>isa()> on a value for testing whether it is an evented object.
+Safely fires an event. In other words, if the `$eo` is not an evented object or is not
+blessed at all, the call will be ignored. This eliminates the need to use C<blessed()>
+and C<-E<gt>isa()> on a value for testing whether it is an evented object.
 
  Evented::Object::safe_fire($eo, myEvent => 'my argument');
 
@@ -1144,6 +1152,83 @@ B<event_name>: the name of the event.
 =item *
 
 B<args>: the arguments for the event fire.
+
+=back
+ 
+=head2 add_class_monitor($pkg, $some_eo)
+
+Registers an evented object as the class monitor for a specific package. See the
+section above for more details on class monitors and their purpose.
+
+ my $some_eo  = Evented::Object->new;
+ my $other_eo = Evented::Object->new;
+ 
+ $some_eo->on('monitor:register_callback', sub {
+     my ($event, $eo, $event_name, $cb) = @_;
+     # $eo         == $other_eo
+     # $event_name == "blah"
+     # $cb         == callback hash from ->register_callback()
+     say "Registered $$cb{name} to $eo for $event_name\n"; 
+ });
+ 
+ Evented::Object::add_class_monitor('Some::Class', $some_eo);
+ 
+ package Some::Class;
+ $other_eo->on(blah => sub{}); # will trigger the callback above
+
+=over 4
+
+=item *
+ 
+B<pkg>: a package whose event activity you wish to monitor.
+ 
+=item *
+ 
+B<__some_eo__>: some arbitrary event object that will respond to that activity.
+
+=back
+ 
+=head2 delete_class_monitor($pkg, $some_eo)
+
+Removes an evented object from its current position as a monitor for a specific package.
+See the section above for more details on class monitors and their purpose.
+
+ Evented::Object::delete_class_monitor('Some::Class', $some_eo)
+
+=over 4
+
+=item *
+
+B<__pkg__>: a package whose event activity you're monitoring.
+
+=item *
+
+B<__some_eo__>: some arbitrary event object that is responding to that activity.
+
+=back
+
+=head2 export_code($package, $sub_name, $code)
+
+Exports a code reference to the symbol table of the specified package name.
+
+ my $code = sub { say 'Hello world!' };
+ Evented::Object::export_code('MyPackage', 'hello', $code);
+
+B<Parameters>
+
+=over 4
+
+=item *
+
+B<package>: name of package.
+
+=item *
+
+B<sub_name>: name of desired symbol.
+
+=item *
+
+B<code>: code reference to export.
 
 =back
 

@@ -117,6 +117,16 @@ If an evented object is blessed to a subclass of a class with callbacks register
 the object will NOT inherit the callbacks associated with the parent class. Callbacks registered
 to classes ONLY apply to objects directly blessed to the class.
 
+### Class monitors
+
+Evented::Object 4.0 introduces a "class monitor" feature. This allows an evented object to be registered
+as a "monitor" of a specific class/package. Any event callbacks that are added from that class to any
+evented object of any type will trigger an event on the monitor object - in other words, the `caller` of
+`->register_callback()`, regardless of the object.
+  
+An example scenario of when this might be useful is an evented object for debugging all events being
+registered by a certain package. It would log all them, making it easier to find a problem.
+
 ## History
 
 Evented::Object has evolved throughout the history of multiple projects, improving in each project it passed through.
@@ -359,7 +369,6 @@ $cow->delete_listener($farm, 'cow');
 * __other_eo__: the evented object that will listen.
 * __prefix__: a string that event names will be prefixed with on the listener.
 
-
 ### $eo->on($event_name => \\&callback, %options)
 
 Alias for `->register_callback()`.
@@ -420,6 +429,59 @@ Evented::Object::fire_events_together(
 
 * __events__: an array of events in the form of `[$eo, event_name => @arguments]`.
 
+### safe_fire($eo, $event_name, @args)
+
+Safely fires an event. In other words, if the `$eo` is not an evented object or is not
+blessed at all, the call will be ignored. This eliminates the need to use `blessed()` and
+`->isa()` on a value for testing whether it is an evented object.
+
+```perl
+Evented::Object::safe_fire($eo, myEvent => 'my argument');
+```
+
+* __eo__: the evented object.
+* __event_name__: the name of the event.
+* __args__: the arguments for the event fire.
+
+### add_class_monitor($pkg, $some_eo)
+
+Registers an evented object as the class monitor for a specific package. See the
+section above for more details on class monitors and their purpose.
+
+```perl
+my $some_eo  = Evented::Object->new;
+my $other_eo = Evented::Object->new;
+
+$some_eo->on('monitor:register_callback', sub {
+    my ($event, $eo, $event_name, $cb) = @_;
+    # $eo         == $other_eo
+    # $event_name == "blah"
+    # $cb         == callback hash from ->register_callback()
+    say "Registered $$cb{name} to $eo for $event_name\n"; 
+});
+
+Evented::Object::add_class_monitor('Some::Class', $some_eo);
+
+package Some::Class;
+$other_eo->on(blah => sub{}); # will trigger the callback above
+
+```
+
+* __pkg__: a package whose event activity you wish to monitor.
+* __some_eo__: some arbitrary event object that will respond to that activity.
+
+### delete_class_monitor($pkg, $some_eo)
+
+Removes an evented object from its current position as a monitor for a specific package.
+See the section above for more details on class monitors and their purpose.
+
+```perl
+Evented::Object::delete_class_monitor('Some::Class', $some_eo)
+```
+
+* __pkg__: a package whose event activity you're monitoring.
+* __some_eo__: some arbitrary event object that is responding to that activity.
+
 ### export_code($package, $sub_name, $code)
 
 Exports a code reference to the symbol table of the specified package name.
@@ -432,18 +494,6 @@ Evented::Object::export_code('MyPackage', 'hello', $code);
 * __package__: name of package.
 * __sub_name__: name of desired symbol.
 * __code__: code reference to export.
-
-### safe_fire($eo, $event_name, @args)
-
-Safely fires an event. In other words, if the `$eo` is not an evented object or is not blessed at all, the call will be ignored. This eliminates the need to use `blessed()` and `->isa()` on a value for testing whether it is an evented object.
-
-```perl
-Evented::Object::safe_fire($eo, myEvent => 'my argument');
-```
-
-* __eo__: the evented object.
-* __event_name__: the name of the event.
-* __args__: the arguments for the event fire.
 
 ## Fire object methods
 
