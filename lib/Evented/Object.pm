@@ -32,7 +32,7 @@ BEGIN {
 use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 
-our $VERSION = '4.1';
+our $VERSION = '4.11';
 
 # create a new evented object.
 sub new {
@@ -56,8 +56,8 @@ sub register_callback {
     # this is one of the most criminal things I've ever done.
     my @caller = caller;
     if (!defined $opts{name}) {
-        state $c    = 0;
-        $opts{name} = "$event_name.$caller[0]($caller[2], ".$c++.q[)];
+        state $c    = -1; $c++; 
+        $opts{name} = "$caller[0]($caller[2],$c)";
     }
     
     # determine the event store.
