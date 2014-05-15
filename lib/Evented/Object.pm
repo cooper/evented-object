@@ -32,7 +32,7 @@ BEGIN {
 use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 
-our $VERSION = '4.0';
+our $VERSION = '4.1';
 
 # create a new evented object.
 sub new {
@@ -82,8 +82,7 @@ sub register_callback {
     # tell class monitor.
     _monitor_fire($caller[0], register_callback => $eo, $event_name, $cb);
     
-    return 1;
-
+    return $cb;
 }
 
 # attach several event callbacks.
@@ -217,6 +216,11 @@ sub fire_events_together {
     # call them.
     return _call_callbacks($fire, @collection);
     
+}
+
+# register a temporary callback before firing an event.
+sub fire_with_callback {
+    # TODO: finish this idea.
 }
 
 # export a subroutine.
@@ -787,6 +791,16 @@ higher priority will be called before one of a lower priority.
 If an evented object is blessed to a subclass of a class with callbacks registered to it,
 the object will NOT inherit the callbacks associated with the parent class. Callbacks registered
 to classes ONLY apply to objects directly blessed to the class.
+
+=head2 Class monitors
+
+Evented::Object 4.0 introduces a "class monitor" feature. This allows an evented object to be registered
+as a "monitor" of a specific class/package. Any event callbacks that are added from that class to any
+evented object of any type will trigger an event on the monitor object - in other words, the `caller` of
+`->register_callback()`, regardless of the object.
+
+An example scenario of when this might be useful is an evented object for debugging all events being
+registered by a certain package. It would log all of them, making it easier to find a problem.
 
 =head1 COMPATIBILITY
 

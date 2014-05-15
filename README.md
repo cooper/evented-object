@@ -125,7 +125,7 @@ evented object of any type will trigger an event on the monitor object - in othe
 `->register_callback()`, regardless of the object.
   
 An example scenario of when this might be useful is an evented object for debugging all events being
-registered by a certain package. It would log all them, making it easier to find a problem.
+registered by a certain package. It would log all of them, making it easier to find a problem.
 
 ## History
 
