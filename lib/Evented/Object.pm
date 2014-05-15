@@ -32,7 +32,7 @@ BEGIN {
 use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 
-our $VERSION = '4.11';
+our $VERSION = '4.2';
 
 # create a new evented object.
 sub new {
@@ -103,6 +103,7 @@ sub fire_event {
 # returns a true value if any events were deleted, false otherwise.
 sub delete_callback {
     my ($eo, $event_name, $name) = @_;
+    my @caller      = caller;
     my $amount      = 0;
     my $event_store = _event_store($eo);
     
@@ -134,6 +135,7 @@ sub delete_callback {
             
             # store the new array.
             $event_store->{$event_name}{$priority} = \@a;
+            _monitor_fire($caller[0], delete_callback => $eo, $event_name, $name);
             
         }
         
@@ -141,6 +143,7 @@ sub delete_callback {
         else {
             $amount = scalar keys %{$event_store->{$event_name}};
             delete $event_store->{$event_name};
+            _monitor_fire($caller[0], delete_event => $eo, $event_name);
         }
  
     }
