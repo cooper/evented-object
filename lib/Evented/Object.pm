@@ -32,7 +32,7 @@ BEGIN {
 use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 
-our $VERSION = '4.3';
+our $VERSION = '4.4';
 
 # create a new evented object.
 sub new {
@@ -249,10 +249,10 @@ sub add_class_monitor {
     return unless $obj->isa(__PACKAGE__);
     
     # it's already in the list.
-    return if grep { $_ == $obj } @{ $monitors{$pkg} };
+    my $m = $monitors{$pkg} ||= [];
+    return if grep { $_ == $obj } @$m = grep { defined } @$m;
     
     # hold a weak reference to the monitor.
-    my $m = $monitors{$pkg} ||= [];
     push @$m, $obj;
     weaken($monitors{$pkg}[$#$m]);
     
@@ -263,7 +263,7 @@ sub add_class_monitor {
 sub delete_class_monitor {
     my ($pkg, $obj) = @_;
     my $m = $monitors{$pkg} or return;
-    @$m   = grep { $_ != $obj } @$m;
+    @$m   = grep { defined && $_ != $obj } @$m;
 }
 
 #########################
