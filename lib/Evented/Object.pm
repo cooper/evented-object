@@ -32,7 +32,7 @@ BEGIN {
 use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 
-our $VERSION = '4.4';
+our $VERSION = '4.5';
 
 # create a new evented object.
 sub new {
@@ -148,6 +148,26 @@ sub delete_callback {
  
     }
 
+    return $amount;
+}
+
+# delete all the callbacks of every event.
+# TODO: not documented.
+sub delete_all_events {
+    my ($eo, $event_name, $name) = @_;
+    my $amount      = 0;
+    my $event_store = _event_store($eo);
+    
+    # delete one-by-one.
+    # we can't simply set an empty list because monitor events must be fired.
+    foreach my $event_name (keys %$event_store) {
+        $eo->delete_event($event_name);
+        $amount++;
+    }
+    
+    # just clear it to be safe.
+    %$event_store = ();
+    
     return $amount;
 }
 
