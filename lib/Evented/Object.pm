@@ -32,7 +32,7 @@ BEGIN {
 use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 
-our $VERSION = '4.5';
+our $VERSION = '4.6';
 
 # create a new evented object.
 sub new {
@@ -99,6 +99,20 @@ sub fire_event {
     _fire_event(shift, shift, [caller 1], @_);
 }
 
+# fire an event; then delete it.
+# TODO: document this.
+sub fire_once {
+    my ($eo, $event_name, @args) = @_;
+    my $fire = $eo->_fire_event($event_name, [caller 1], @args);
+    $eo->delete_event($event_name);
+    return $fire;
+}
+
+# register a temporary callback before firing an event.
+sub fire_with_callback {
+    # TODO: finish this idea.
+}
+
 # delete an event callback or all callbacks of an event.
 # returns a true value if any events were deleted, false otherwise.
 sub delete_callback {
@@ -154,7 +168,7 @@ sub delete_callback {
 # delete all the callbacks of every event.
 # TODO: not documented.
 sub delete_all_events {
-    my ($eo, $event_name, $name) = @_;
+    my ($eo, $event_name) = @_;
     my $amount      = 0;
     my $event_store = _event_store($eo);
     
@@ -239,11 +253,6 @@ sub fire_events_together {
     # call them.
     return _call_callbacks($fire, @collection);
     
-}
-
-# register a temporary callback before firing an event.
-sub fire_with_callback {
-    # TODO: finish this idea.
 }
 
 # export a subroutine.
@@ -1208,7 +1217,7 @@ section above for more details on class monitors and their purpose.
      # $eo         == $other_eo
      # $event_name == "blah"
      # $cb         == callback hash from ->register_callback()
-     say "Registered $$cb{name} to $eo for $event_name\n"; 
+     say "Registered $$cb{name} to $eo for $event_name"; 
  });
  
  Evented::Object::add_class_monitor('Some::Class', $some_eo);

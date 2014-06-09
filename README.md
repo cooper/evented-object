@@ -457,7 +457,7 @@ $some_eo->on('monitor:register_callback', sub {
     # $eo         == $other_eo
     # $event_name == "blah"
     # $cb         == callback hash from ->register_callback()
-    say "Registered $$cb{name} to $eo for $event_name\n"; 
+    say "Registered $$cb{name} to $eo for $event_name"; 
 });
 
 Evented::Object::add_class_monitor('Some::Class', $some_eo);
