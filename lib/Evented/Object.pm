@@ -32,7 +32,7 @@ BEGIN {
 use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 
-our $VERSION = '4.6';
+our $VERSION = '4.7';
 
 # create a new evented object.
 sub new {
@@ -54,7 +54,7 @@ sub register_callback {
     # no name was provided, so we shall construct
     # one using the power of pure hackery.
     # this is one of the most criminal things I've ever done.
-    my @caller = caller;
+    my @caller = $opts{caller} ? @{ $opts{_caller} } : caller;
     if (!defined $opts{name}) {
         state $c    = -1; $c++; 
         $opts{name} = "$caller[0]($caller[2],$c)";
