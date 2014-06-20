@@ -32,7 +32,7 @@ BEGIN {
 use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 
-our $VERSION = '4.72';
+our $VERSION = '4.73';
 
 # create a new evented object.
 sub new {
@@ -80,7 +80,6 @@ sub register_callback {
     };
     
     # tell class monitor.
-    print "REGISTERED $event_name to $caller[0]\n";
     _monitor_fire($opts{_caller} // $caller[0], register_callback => $eo, $event_name, $cb);
     
     return $cb;
