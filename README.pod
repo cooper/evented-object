@@ -151,6 +151,15 @@ more. Additionally, it provides an interface for modifying the evented object an
 modifying future event callbacks. Fire objects belong to the
 Evented::Object::EventFire class.
 
+Fire objects are specific to each firing. If you fire the same event twice in a row,
+the event object passed to the callbacks the first time will not be the same as the second
+time. Therefore, all modifications made by the fire object's methods apply only to
+the callbacks remaining in this particular fire. For example,
+C<$fire-E<gt>cancel($callback)> will only cancel the supplied callback once. The next
+time the event is fired, that cancelled callback will be called regardless.
+
+See L</"Fire object methods"> for more information.
+
 =head2 Listener objects
 
 Additional evented objects can be registered as "listeners."
@@ -239,6 +248,19 @@ An example scenario of when this might be useful is an evented object for debugg
 events being registered by a certain package. It would log all of them, making it easier
 to find a problem.
 
+=head2 Collections
+
+Sometimes it is useful to prepare an event fire before actually calling it. The group
+of callbacks that are about to be called are represented by a collection object.
+Collections are returned by the 'prepare' methods.
+
+Collections are especially useful for firing events with special options. This usually
+looks something like:
+
+ $eo->prepare(event_name => @args)->fire(some_fire_option => $value);
+
+See L</"Collection methods"> for more information.
+
 =head1 COMPATIBILITY
 
 Evented::Object versions 0.0 to 0.7 are entirely compatible - anything that worked in
@@ -257,7 +279,7 @@ versions, the evented object was always the first argument of all events, until
 Evented::Object 0.6 added the ability to pass a parameter to C<-E<gt>attach_event()> that
 would tell Evented::Object to omit the object from the callback's argument list.
 
-=head2 Introduction of fire objects 1.8+
+=head2 Introduction of fire info 1.8+
 
 The Evented::Object series 1.8+ passes a hash reference C<$fire> instead of the
 Evented::Object as the first argument. C<$fire> contains information that was formerly
@@ -278,7 +300,7 @@ Evented::Object until at least the late 2.* series.
 Version 2.0 breaks things even more because C<-E<gt>on()> is now an alias for
 C<-E<gt>register_callback()> rather than the former deprecated C<-E<gt>attach_event()>.
 
-=head2 Introduction of event methods 2.2+
+=head2 Introduction of fire objects 2.2+
 
 Version 2.2+ introduces a new class, Evented::Object::EventFire, which provides several
 methods for fire objects. These methods such as C<$fire-E<gt>return> and
@@ -713,21 +735,66 @@ B<__some_eo__>: some arbitrary event object that is responding to that activity.
 
 =back
 
+=head1 Collection methods
+
+L</Collections> are returned by the 'prepare' methods. They represent a group of callbacks
+that are about to be fired.
+
+=head2 $col->fire(@options)
+
+Fires the pending callbacks with the specified options, if any. If the callbacks have not
+yet been sorted, they are sorted before the event is fired.
+
+ $eo->prepare(some_event => @arguments)->fire('safe');
+ 
+B<Parameters>
+
+=over 4
+
+=item *
+
+B<@options>: I<optional>, a mixture of boolean and key:value options for the event fire.
+
+=back
+
+B<@options>
+
+=over 4
+
+=item *
+
+B<caller>: I<requires value>, use an alternate C<[caller 1]> value for the event fire.
+This is typically only used internally.
+
+=item *
+
+B<return_check>: I<boolean>, if true, the event will yield that it was stopped if any
+of the callbacks return a false value. Note however that if one callbacks returns false,
+the rest will still be called. The fire object will only yield stopped status after all
+callbacks have been called and any number of them returned false.
+
+=item *
+
+B<safe>: I<boolean>, wrap all callback calls in eval for safety. if any of them fail,
+the event will be stopped at that point with the error.
+
+=item *
+
+B<fail_continue>: I<boolean>, if C<safe> above is enabled, this tells the fire to continue
+even if one of the callbacks fails. This could be dangerous if any of the callbacks
+expected a previous callback to be done when it actually failed.
+
+=back
+
+=head2 $col->sort_callbacks
+
+Sorts the callbacks according to C<priority>, C<before>, and C<after> options.
+
 =head1 Fire object methods
 
-Fire objects are passed to all callbacks of an Evented::Object (unless the silent
+L</"Fire objects"> are passed to all callbacks of an Evented::Object (unless the silent
 parameter was specified.) Fire objects contain information about the event itself,
 the callback, the caller of the event, event data, and more.
-
-Fire objects replace the former values stored within the Evented::Object itself.
-This new method promotes asynchronous event firing.
-
-Fire objects are specific to each firing. If you fire the same event twice in a row,
-the event object passed to the callbacks the first time will not be the same as the second
-time. Therefore, all modifications made by the fire object's methods apply only to
-the callbacks remaining in this particular fire. For example,
-C<$fire-E<gt>cancel($callback)> will only cancel the supplied callback once. The next
-time the event is fired, that cancelled callback will be called regardless.
 
 =head2 $fire->object
 
