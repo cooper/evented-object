@@ -1,4 +1,4 @@
-# Copyright (c) 2011-13, Mitchell Cooper
+# Copyright (c) 2011-14, Mitchell Cooper
 # Evented::Object: a simple yet featureful base class event framework.
 package Evented::Object::EventFire; # leave this package name the same FOREVER.
  
@@ -12,7 +12,6 @@ use 5.010;
 ##########################
 
 our $VERSION = $Evented::Object::VERSION;
-
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 

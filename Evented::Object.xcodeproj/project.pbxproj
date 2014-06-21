@@ -11,6 +11,7 @@
 		BC2C929E18F61DC5000A8517 /* EventFire.pm */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; name = EventFire.pm; path = lib/Evented/Object/EventFire.pm; sourceTree = "<group>"; };
 		BC2C929F18F62140000A8517 /* EventedObject.t */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; name = EventedObject.t; path = t/EventedObject.t; sourceTree = "<group>"; };
 		BC2C92A018F62540000A8517 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
+		BCD615491954F9DA00E1B0FE /* Collection.pm */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; name = Collection.pm; path = lib/Evented/Object/Collection.pm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -18,6 +19,7 @@
 			isa = PBXGroup;
 			children = (
 				BC2C929D18F61DC0000A8517 /* Object.pm */,
+				BCD615491954F9DA00E1B0FE /* Collection.pm */,
 				BC2C929E18F61DC5000A8517 /* EventFire.pm */,
 				BC2C929F18F62140000A8517 /* EventedObject.t */,
 				BC2C92A018F62540000A8517 /* README.md */,
@@ -30,7 +32,7 @@
 		BC2C929718F61D7C000A8517 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0510;
+				LastUpgradeCheck = 0600;
 			};
 			buildConfigurationList = BC2C929A18F61D7C000A8517 /* Build configuration list for PBXProject "Evented::Object" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -51,6 +53,7 @@
 		BC2C929B18F61D7C000A8517 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ONLY_ACTIVE_ARCH = YES;
 			};
 			name = Debug;
 		};

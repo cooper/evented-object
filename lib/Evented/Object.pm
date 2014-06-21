@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011-13, Mitchell Cooper
+# Copyright (c) 2011-14, Mitchell Cooper
 #
 # Evented::Object: a simple yet featureful base class event framework.
 #
@@ -31,8 +31,9 @@ BEGIN {
 
 use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
+use Evented::Object::Collection;
 
-our $VERSION = '4.73';
+our $VERSION = '5';
 
 # create a new evented object.
 sub new {
@@ -87,25 +88,28 @@ sub register_callback {
 
 # attach several event callbacks.
 sub register_callbacks {
-    my ($eo, @events) = @_;
-    my @return;
-    push @return, $eo->register_callback(%$_) foreach @events;
-    return @return;
+    my $eo = shift;
+    return map { $eo->register_callback(%$_, _caller => caller) } @_;
 }
  
 # fire an event.
 # returns $fire.
 sub fire_event {
-    _fire_event(shift, shift, [caller 1], @_);
+    shift->prepare_event(shift, @_)->fire(caller => [caller 1]);
 }
 
 # fire an event; then delete it.
 # TODO: document this.
 sub fire_once {
     my ($eo, $event_name, @args) = @_;
-    my $fire = $eo->_fire_event($event_name, [caller 1], @args);
+    
+    # fire with this caller.
+    my $fire = $eo->prepare_event($event_name, @args)->fire(caller => [caller 1]);
+
+    # delete the event.
     $eo->delete_event($event_name);
     return $fire;
+    
 }
 
 # register a temporary callback before firing an event.
@@ -220,39 +224,7 @@ sub delete_listener {
 
 # fire multiple events on multiple objects as a single event.
 sub fire_events_together {
-    my @collection;
-
-    # create event object.
-    my $fire = Evented::Object::EventFire->new(
-      # name   => $event_name,  # $fire->event_name    # set before called
-      # object => $eo,          # $fire->object        # set before called
-        caller => [caller 1],   # $fire->caller
-        $props => {}        
-    );
-    
-    # form of [ $object, name => @args ]
-    foreach my $e (@_) {
-
-        # must be an array reference.
-        if (!ref $e || ref $e ne 'ARRAY') {
-            next;
-        }
-
-        my ($eo, $event_name, @args) = @$e;
-       
-        # must be an evented object.
-        if (!blessed $eo || !$eo->isa(__PACKAGE__)) {
-            next;
-        }
-        
-        # add this collection of callbacks to the queue.
-        push @collection, @{ $eo->_get_callbacks($event_name, @args) || [] };
-
-    }
-    
-    # call them.
-    return _call_callbacks($fire, @collection);
-    
+    prepare_together(@_)->fire;
 }
 
 # export a subroutine.
@@ -299,24 +271,44 @@ sub delete_class_monitor {
 ### INTERNAL ROUTINES ###
 #########################
 
-# fire an event with a specified caller.
-sub _fire_event {
-    my ($eo, $event_name, $caller, @args) = @_;
+sub prepare_event {
+    my ($eo, $event_name, @args) = @_;
+    return $eo->prepare_together([ $event_name, @args ]);
+}
+
+sub prepare_together {
+    my ($obj, @collection);
+    foreach my $set (@_) {
+        my $eo;
+
+        # called with evented object.
+        if (blessed $set) {
+            $set->isa(__PACKAGE__) or return;
+            $obj = $set;
+            next;
+        }
     
-    # create event object.
-    my $fire = Evented::Object::EventFire->new(
-        name   => $event_name,  # $fire->event_name
-        object => $eo,          # $fire->object
-        caller => $caller,      # $fire->caller
-        $props => {}        
-    );
+        # okay, it's an array ref of
+        # [ $eo (optional), $event_name => @args ]
+        ref $set eq 'ARRAY' or next;
+        my ($eo_maybe, $event_name, @args) = @$set;
+
+        # determine the object.
+        if (blessed $eo_maybe && $eo_maybe->isa(__PACKAGE__)) {
+            $eo = $eo_maybe;
+        }
+        else {
+            $eo = $obj or return;
+            @args = ($event_name, @args);
+            $event_name = $eo_maybe;
+        }
+        
+        # add to the collection.
+        push @collection, @{ _get_callbacks($eo, $event_name, @args) };
+        
+    }
     
-    # priority number : array of callbacks.
-    my @collection = @{ _get_callbacks($eo, $event_name, @args) };
-    
-    # call them.
-    return _call_callbacks($fire, @collection);
-    
+    return bless { pending => \@collection }, 'Evented::Object::Collection';
 }
 
 # access package storage.
@@ -437,139 +429,6 @@ sub _get_callbacks {
     }
     
     return \@collection;
-}
-
-# Nov. 22, 2013 revision:
-# -----------------------
-#
-# OK, here's the deal. We used to have a hash collection with numerical
-# priority keys. The values of those keys were arrays of of arrays. Those
-# inner arrays consisted of (evented object, event name, callbacks, arguments).
-# From there, the cb array is iterated through each callback individually.
-#
-#   %collection = (
-#
-#       # priorities are keys.
-#
-#       # priority 0
-#       0 => [
-#           
-#           $eo,                                            # evented object
-#           'my_event_name',                                # event name
-#           [ \&some_callback, \&some_other_callback ],     # callbacks
-#           [ 'my_argument', 'my_other_argument'     ]      # arguments
-#
-#       ],
-#
-#       # priority 1
-#       1 => [
-#           ...
-#       ]
-#
-#   )
-#
-# This revision eliminates all of these nested structures by reworking the way
-# a callback collection works. A collection should be an array of callbacks.
-# This array, unlike before, will contain an additional element: an array
-# reference representing the "group."
-#
-#   @collection = (
-#       [ $priority, $group, $cb ]
-#   )
-#
-# where $group is
-#   [ $eo, $event_name, $args ]
-#
-# This format has several major advantages over the former one. Specifically,
-# it makes it very simple to determine which callbacks will be called in the
-# future, which ones have been called already, how many are left, etc.
-#
-
-# call the passed callback priority sets.
-sub _call_callbacks {
-    my ($fire, @collection) = @_;
-    my $ef_props = $fire->{$props};
-    my %called;
-    
-    # sort by priority.
-    @collection = sort { $b->[0] <=> $a->[0] } @collection;
-    
-    # store the collection.
-    $ef_props->{collection} = \@collection;
-    
-    # call each callback.
-    foreach my $callback (@collection) {
-        my ($priority, $group, $cb)  = @$callback;
-        my ($eo, $event_name, $args) = @$group;
-        
-        $ef_props->{callback_i}++;
-        
-        # set the evented object of this callback.
-        # set the event name of this callback.
-        $ef_props->{object} = $eo; weaken($ef_props->{object});
-        $ef_props->{name}   = $event_name;
-        
-        # create info about the call.
-        $ef_props->{callback_name}     = $cb->{name};                          # $fire->callback_name
-        $ef_props->{callback_priority} = $priority;                            # $fire->callback_priority
-        $ef_props->{callback_data}     = $cb->{data} if defined $cb->{data};   # $fire->callback_data
-
-        # this callback has been called already.
-        next if $ef_props->{called}{$cb->{name}};
-        next if $called{$cb};
-
-        # this callback has been cancelled.
-        next if $ef_props->{cancelled}{$cb->{name}};
-
-        # determine callback arguments.
-        
-        my @cb_args = @$args;
-        if ($cb->{no_obj}) {
-            # compat < 3.0: no_obj -> no_fire_obj - fire with only actual arguments.
-            # no_obj is now deprecated.
-        }
-        else {
-            # compat < 2.9: with_obj -> eo_obj
-            # compat < 3.0: eo_obj   -> with_evented_obj
-            
-            # add event object unless no_obj.
-            unshift @cb_args, $fire unless $cb->{no_fire_obj};
-            
-            # add evented object if eo_obj.
-            unshift @cb_args, $eo if $cb->{with_evented_obj} || $cb->{eo_obj} || $cb->{with_obj};
-                                                                
-        }
-        
-        # set return values.
-        $ef_props->{last_return}               =   # set last return value.
-        $ef_props->{return}{$cb->{name}}       =   # set this callback's return value.
-        
-            # call the callback with proper arguments.
-            $cb->{code}(@cb_args);
-        
-        # set $fire->called($cb) true, and set $fire->last to the callback's name.
-        $called{$cb}                     =
-        $ef_props->{called}{$cb->{name}} = 1;
-        $ef_props->{last_callback}       = $cb->{name};
-        
-        # if stop is true, $fire->stop was called. stop the iteration.
-        if ($ef_props->{stop}) {
-            $ef_props->{stopper} = $cb->{name}; # set $fire->stopper.
-            last;
-        }
-
-     
-    }
-    
-    # dispose of things that are no longer needed.
-    delete $fire->{$props}{$_} foreach qw(
-        callback_name callback_priority
-        callback_data callback_i object
-    );
-
-    # return the event object.
-    return $fire;
-    
 }
 
 # fire a class monitor event.
