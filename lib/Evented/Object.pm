@@ -1051,14 +1051,6 @@ B<prefix>: a string that event names will be prefixed with on the listener.
 
 =back
 
-=head2 $eo->on($event_name => \&callback, %options)
-
-Alias for C<-E<gt>register_callback()>.
-
-=head2 $eo->fire($event_name => @arguments)
-
-Alias for C<-E<gt>fire_event()>.
-
 =head1 Preparation methods
 
 Evented::Object 5.0 introduces a means by which callbacks can be prepared before being
@@ -1463,10 +1455,38 @@ Returns the data supplied to the callback when it was registered, if any.
 
  say 'my data is ', $fire->callback_data;
 
+=head1 Aliases
+
+A number of aliases exist for convenience, but some of the names are rather broad. For
+that reason, they are only recommended for use when you are sure that other subclassing
+will not interfere.
+
+=head2 $eo->on(...)
+
+Alias for C<$eo-E<gt>register_callback()>.
+
+=head2 $eo->del(...)
+
+If one argument provided, alias for C<$eo-E<gt>delete_event>.
+
+If two arguments provided, alias for C<$eo-E<gt>delete_callback>.
+
+=head2 $eo->fire(...)
+
+Alias for C<$eo-E<gt>fire_event()>.
+
+=head2 $eo->register_event(...)
+
+Alias for C<$eo-E<gt>register_callback()>.
+
+=head2 $eo->register_events(...)
+
+Alias for C<$eo-E<gt>register_callbacks()>.
+
 =head2 $fire->eo
 
-Alias for C<-E<gt>object()>.
- 
+Alias for C<$fire-E<gt>object()>.
+
 =head1 AUTHOR
 
 L<Mitchell Cooper|https://github.com/cooper> <cooper@cpan.org>
