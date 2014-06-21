@@ -1,5 +1,9 @@
+#
 # Copyright (c) 2011-14, Mitchell Cooper
+#
 # Evented::Object: a simple yet featureful base class event framework.
+# https://github.com/cooper/evented-object
+#
 package Evented::Object::Collection; # leave this package name the same FOREVER.
  
 use warnings;
@@ -7,7 +11,6 @@ use strict;
 use utf8;
 use 5.010;
 use Scalar::Util 'weaken';
-use List::Util   'any';
 
 our $VERSION = $Evented::Object::VERSION;
 our $events  = $Evented::Object::events;
@@ -148,7 +151,7 @@ sub _call_callbacks {
         # compat: all later version had a variety of with_obj-like-options below.
         #
         my @cb_args = @$args;
-        my $include_obj = any { $cb->{$_} } qw(with_eo with_obj with_evented_obj eo_obj);
+        my $include_obj = grep { $cb->{$_} } qw(with_eo with_obj with_evented_obj eo_obj);
         unshift @cb_args, $fire unless $cb->{no_fire_obj};
         unshift @cb_args, $eo   if $include_obj;
         

@@ -1,5 +1,9 @@
+#
 # Copyright (c) 2011-14, Mitchell Cooper
+#
 # Evented::Object: a simple yet featureful base class event framework.
+# https://github.com/cooper/evented-object
+#
 package Evented::Object::EventFire; # leave this package name the same FOREVER.
  
 use warnings;
@@ -25,7 +29,7 @@ sub new {
 # cancel all future callbacks once.
 # if stopped already, returns the reason. TODO: document that.
 sub stop {
-    my ($fire, $reason) = @_; # this has to be this way; idk why.
+    my ($fire, $reason) = @_;
     $fire->{$props}{stop} ||= $reason || 'unspecified';
 }
 
