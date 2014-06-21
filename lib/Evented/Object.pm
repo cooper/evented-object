@@ -1025,6 +1025,11 @@ B<prefix>: a string that event names will be prefixed with on the listener.
 
 =back
 
+=head2 $eo->fire_events_together(@events)
+
+Since Evented::Object 5.0, the C<fire_events_together()> function can be used as a method
+on evented objects. See the documentation for the function in L</"Procedural functions">.
+
 =head2 $eo->delete_listener($other_eo)
 
 Removes a listener of this evented object. See the "listener objects" section for more
