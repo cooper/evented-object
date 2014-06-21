@@ -2,6 +2,7 @@ Build.PL
 lib/Evented/Object.pm
 lib/Evented/Object/Collection.pm
 lib/Evented/Object/EventFire.pm
+lib/Evented/Object/Hax.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files

@@ -10,7 +10,7 @@ use warnings;
 use strict;
 use 5.010;
 
-our $VERSION = $Evented::Object::VERSION;
+our $VERSION = '5.4';
 
 # exported import subroutine.
 sub import {
