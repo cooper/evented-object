@@ -15,7 +15,7 @@ use 5.010;
 ### EVENT FIRE OBJECTS ###
 ##########################
 
-our $VERSION = '5.4';
+our $VERSION = '5.41';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -27,7 +27,7 @@ sub new {
 }
 
 # cancel all future callbacks once.
-# if stopped already, returns the reason. TODO: document that.
+# if stopped already, returns the reason.
 sub stop {
     my ($fire, $reason) = @_;
     $fire->{$props}{stop} ||= $reason || 'unspecified';

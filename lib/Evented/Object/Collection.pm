@@ -12,7 +12,7 @@ use utf8;
 use 5.010;
 use Scalar::Util 'weaken';
 
-our $VERSION = '5.4';
+our $VERSION = '5.41';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -74,10 +74,56 @@ sub fire {
     
 }
 
+# sorts the callbacks, trying its best to listen to before and after.
+# perhaps one day this could be done more efficiently - it currently must
+# loop through twice: once for before and after, once for numerical sort.
 sub sort_callbacks {
     my $collection = shift;
-    my $pending_cb = $collection->{pending};
-    @$pending_cb = sort { $b->[0] <=> $a->[0] } @$pending_cb;
+    my @remaining  = @{ $collection->{pending} };
+    my @sorted;
+    
+    # sort by before/after.
+    my (%waited, %done);
+    while (@remaining) {
+        my $item = shift @remaining;
+        my $cb   = $item->[2];
+        next if defined $done{ $cb->{name} };
+                
+        # there is no defined priority, but there is before/after.
+        if ($item->[0] eq 'nan' and my $ref_cb_name = $cb->{before} // $cb->{after}) {
+        
+            # have we dealt with the referred callback already?
+            if (defined(my $ref_priority = $done{$ref_cb_name})) {
+                $item->[0] = ++$ref_priority if $cb->{before};
+                $item->[0] = --$ref_priority if $cb->{after};
+            }
+            
+            # no, the referred callback is probably pending. maybe.
+            else {
+            
+                # if we've not waited on this callback already, append it to remaining.
+                # then maybe by the next time we get around to it, the callback will exist.
+                if (!$waited{ $cb->{name} }) {
+                    $waited{ $cb->{name} } = 1;
+                    push @remaining, $item;
+                    next;
+                }
+                
+                # if we have waited on the callback, this is the point at which we give up.
+                $item->[0] = 0;
+                                
+            }
+        }
+        
+        # if we have a priority, we're done with this one.
+        $done{ $cb->{name} } = $item->[0];
+        push @sorted, $item;
+        
+    }
+
+    # the final sort by numerical priority.
+    @{ $collection->{pending} } = sort { $b->[0] <=> $a->[0] } @sorted;
+    
     $collection->{sorted} = 1;
 }
 
@@ -171,6 +217,7 @@ sub _call_callbacks {
         # stop if eval failed.
         if ($collection->{safe} and my $err = $@) {
             chomp $err;
+            $ef_props->{error}{ $cb->{name} } = $@;
             $fire->stop($err) unless $collection->{fail_continue};
         }
         
