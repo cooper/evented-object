@@ -30,7 +30,7 @@ use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
-our $VERSION = '5.3';
+our $VERSION = '5.4';
 
 # create a new evented object.
 sub new {
