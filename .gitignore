@@ -48,3 +48,5 @@ dev/
 *~
 *.old
 db/*.db
+
+*.tar.gz

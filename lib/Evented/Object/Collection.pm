@@ -12,7 +12,7 @@ use utf8;
 use 5.010;
 use Scalar::Util 'weaken';
 
-our $VERSION = '5.41';
+our $VERSION = '5.42';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 

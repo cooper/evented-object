@@ -31,7 +31,7 @@ use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
 # always using 2 decimals now. change other packages too.
-our $VERSION = '5.41';
+our $VERSION = '5.42';
 
 # create a new evented object.
 sub new {
@@ -122,7 +122,7 @@ sub delete_callback {
         
         my $i = -1;
         CALLBACK: foreach my $cb (@$callbacks) { $i++;
-            next unless $_->{name} eq $name;
+            next unless $cb->{name} eq $name;
             
             # it matches; remove it.
             $amount++;
@@ -220,7 +220,7 @@ sub prepare_together {
             $eo = $eo_maybe;
         }
         else {
-            $eo = $obj or return;
+            $eo   = $obj or return;
             @args = ($event_name, @args);
             $event_name = $eo_maybe;
         }
@@ -1199,7 +1199,7 @@ B<pkg>: a package whose event activity you wish to monitor.
  
 =item *
  
-B<__some_eo__>: some arbitrary event object that will respond to that activity.
+B<some_eo>: some arbitrary event object that will respond to that activity.
 
 =back
  
@@ -1214,11 +1214,11 @@ See the section above for more details on class monitors and their purpose.
 
 =item *
 
-B<__pkg__>: a package whose event activity you're monitoring.
+B<pkg>: a package whose event activity you're monitoring.
 
 =item *
 
-B<__some_eo__>: some arbitrary event object that is responding to that activity.
+B<some_eo>: some arbitrary event object that is responding to that activity.
 
 =back
 
@@ -1240,7 +1240,7 @@ B<Parameters>
 
 =item *
 
-B<@options>: I<optional>, a mixture of boolean and key:value options for the event fire.
+B<options>: I<optional>, a mixture of boolean and key:value options for the event fire.
 
 =back
 
@@ -1262,7 +1262,7 @@ callbacks have been called and any number of them returned false.
 
 =item *
 
-B<safe>: I<boolean>, wrap all callback calls in eval for safety. if any of them fail,
+B<safe>: I<boolean>, wrap all callback calls in C<eval> for safety. if any of them fail,
 the event will be stopped at that point with the error.
 
 =item *
@@ -1485,7 +1485,7 @@ Alias for C<$eo-E<gt>register_callbacks()>.
 
 =head2 $fire->eo
 
-Alias for C<$fire-E<gt>object()>.
+Alias for C<$fire-E<gt>object>.
 
 =head1 AUTHOR
 

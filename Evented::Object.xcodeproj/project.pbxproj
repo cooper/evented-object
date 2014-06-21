@@ -12,7 +12,6 @@
 		BC2C929F18F62140000A8517 /* EventedObject.t */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; name = EventedObject.t; path = t/EventedObject.t; sourceTree = "<group>"; };
 		BC51553419555DA800110EBE /* Build.PL */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; path = Build.PL; sourceTree = "<group>"; };
 		BC5155351955627800110EBE /* Hax.pm */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; name = Hax.pm; path = lib/Evented/Object/Hax.pm; sourceTree = "<group>"; };
-		BC5155371955FA4D00110EBE /* README.pod */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.pod; sourceTree = "<group>"; };
 		BCD615491954F9DA00E1B0FE /* Collection.pm */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; name = Collection.pm; path = lib/Evented/Object/Collection.pm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -26,7 +25,6 @@
 				BC5155351955627800110EBE /* Hax.pm */,
 				BC2C929F18F62140000A8517 /* EventedObject.t */,
 				BC51553419555DA800110EBE /* Build.PL */,
-				BC5155371955FA4D00110EBE /* README.pod */,
 			);
 			sourceTree = "<group>";
 		};
