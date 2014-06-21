@@ -788,7 +788,7 @@ In order to correspond with other 'Evented' packages, EventedObject was renamed 
 Evented::Object. All packages making use of EventedObject will need to be modified to use
 Evented::Object instead. This change was made pre-CPAN.
 
-=head1 SIMPLE EVENTED OBJECT METHODS
+=head1 Evented object methods
 
 The Evented::Object package provides several convenient methods for managing an
 event-driven object.
@@ -1032,7 +1032,7 @@ Alias for C<-E<gt>register_callback()>.
 
 Alias for C<-E<gt>fire_event()>.
 
-=head1 EVENT PREPARATION METHODS
+=head1 Preparation methods
 
 Evented::Object 5.0 introduces a means by which callbacks can be prepared before being
 fired. This is most useful for firing events with special fire options.
@@ -1063,7 +1063,7 @@ C<-E<gt>prepare_together>.
     [ some_other => @other_arg ]
  );
 
-=head1 EVENTED::OBJECT PROCEDURAL FUNCTIONS
+=head1 Procedural functions
 
 The Evented::Object package provides some functions for use. These functions typically are
 associated with more than one evented object or none at all.
@@ -1203,7 +1203,7 @@ B<__some_eo__>: some arbitrary event object that is responding to that activity.
 
 =back
 
-=head1 FIRE OBJECT METHODS
+=head1 Fire object methods
 
 Fire objects are passed to all callbacks of an Evented::Object (unless the silent
 parameter was specified.) Fire objects contain information about the event itself,
@@ -1405,15 +1405,15 @@ Copyright E<copy> 2011-2013. Released under BSD license.
 
 =item *
 
-B<IRC channel>: L<irc.notroll.net #k|irc://irc.notroll.net/k>
+B<IRC>: L<irc.notroll.net #k|irc://irc.notroll.net/k>
 
 =item *
 
-B<Email>: cooper@cpan.org
+B<Email>: L<cooper@cpan.org|mailto:cooper@cpan.org>
 
 =item *
 
-B<PAUSE/CPAN>: L<COOPER|http://search.cpan.org/~cooper/>
+B<CPAN>: L<COOPER|http://search.cpan.org/~cooper/>
 
 =item *
 
