@@ -30,7 +30,7 @@ use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
-our $VERSION = '5.2';
+our $VERSION = '5.3';
 
 # create a new evented object.
 sub new {
@@ -95,51 +95,61 @@ sub register_callbacks {
 
 # delete an event callback or all callbacks of an event.
 # returns a true value if any events were deleted, false otherwise.
+# more specifically, it returns the number of callbacks deleted.
 sub delete_callback {
-    my ($eo, $event_name, $name) = @_;
-    my @caller      = caller;
+    my ($eo, $event_name, $name, $caller) = @_;
+    my @caller      = $caller && ref $caller eq 'ARRAY' ? @$caller : caller;
     my $amount      = 0;
     my $event_store = _event_store($eo);
     
     # event does not have any callbacks.
-    return unless $event_store->{$event_name};
+    return 0 unless $event_store->{$event_name};
  
+     # if no callback is specified, delete all events of this type.
+    if (!$name) {
+        $amount = scalar keys %{ $event_store->{$event_name} };
+        delete $event_store->{$event_name};
+        _monitor_fire($caller[0], delete_event => $eo, $event_name);
+        return $amount;
+    }
+
     # iterate through callbacks and delete matches.
-    PRIORITY: foreach my $priority (keys %{$event_store->{$event_name}}) {
-    
-        # if a specific callback name is specified, weed it out.
-        if (defined $name) {
-            my @a = @{$event_store->{$event_name}{$priority}};
-            @a = grep { $_->{name} ne $name } @a;
+    PRIORITY: foreach my $priority (keys %{ $event_store->{$event_name} }) {
+        my $callbacks = $event_store->{$event_name}{$priority};
+        my @a = grep { $_->{name} ne $name } @$callbacks;
+        
+        my $i = -1;
+        CALLBACK: foreach my $cb (@$callbacks) { $i++;
+            next unless $_->{name} eq $name;
             
-            # none left in this priority.
-            if (scalar @a == 0) {
-                delete $event_store->{$event_name}{$priority};
-                
-                # delete this event because all priorities have been removed.
-                if (scalar keys %{$event_store->{$event_name}} == 0) {
-                    delete $event_store->{$event_name};
-                    return 1;
-                }
-                
-                $amount++;
-                next PRIORITY;
-                
+            # it matches; remove it.
+            $amount++;
+            splice @$callbacks, $i, 1;
+            
+            # tell monitors.
+            _monitor_fire($caller[0], delete_callback => $eo, $event_name, $name);
+            
+            last CALLBACK;
+        }
+        
+        # none left in this priority.
+        if (scalar @a == 0) {
+            delete $event_store->{$event_name}{$priority};
+            
+            # delete this event because all priorities have been removed.
+            if (!keys %{ $event_store->{$event_name} }) {
+                delete $event_store->{$event_name};
+                return 1;
             }
             
-            # store the new array.
-            $event_store->{$event_name}{$priority} = \@a;
-            _monitor_fire($caller[0], delete_callback => $eo, $event_name, $name);
+            last PRIORITY if $amount;
+            next PRIORITY;
             
         }
         
-        # if no callback is specified, delete all events of this type.
-        else {
-            $amount = scalar keys %{$event_store->{$event_name}};
-            delete $event_store->{$event_name};
-            _monitor_fire($caller[0], delete_event => $eo, $event_name);
-        }
- 
+        # store the new array.
+        @$callbacks = \@a;
+
     }
 
     return $amount;
@@ -148,9 +158,9 @@ sub delete_callback {
 # delete all the callbacks of every event.
 # TODO: not documented.
 sub delete_all_events {
-    my ($eo, $event_name) = @_;
-    my $amount      = 0;
-    my $event_store = _event_store($eo);
+    my ($eo, $amount) = (shift, 0);
+    my $event_store   = _event_store($eo) or return;
+    ref $event_store eq 'HASH'            or return;
     
     # delete one-by-one.
     # we can't simply set an empty list because monitor events must be fired.
@@ -161,7 +171,7 @@ sub delete_all_events {
     
     # just clear it to be safe.
     %$event_store = ();
-    
+
     return $amount;
 }
  
@@ -299,6 +309,11 @@ sub safe_fire {
 }
 
 # set the monitor object of a class.
+#
+# TODO: honestly class monitors need to track individual callbacks so that the monitor is
+# notified of all deletes of callbacks added by the class being monitored even if the
+# delete action was not committed by that package.
+#
 sub add_class_monitor {
     my ($pkg, $obj) = @_;
     
@@ -386,13 +401,13 @@ sub _get_callbacks {
             }
             
             # add the callbacks from this priority.
-            foreach my $priority (keys %{$obj->{$events}{$listener_event_name}}) {
+            foreach my $priority (keys %{ $obj->{$events}{$listener_event_name} }) {
 
                 # create a group reference.
                 my $group = [ $eo, $listener_event_name, \@args]; # XXX: $eo or $obj?
                 
                 # add each callback.
-                foreach my $cb (@{$obj->{$events}{$listener_event_name}{$priority}}) {
+                foreach my $cb (@{ $obj->{$events}{$listener_event_name}{$priority} }) {
                     push @collection, [ $priority, $group, $cb ];
                 }
                 
@@ -414,13 +429,13 @@ sub _get_callbacks {
 
     # add the local callbacks from this priority.
     if ($eo->{$events}{$event_name}) {
-        foreach my $priority (keys %{$eo->{$events}{$event_name}}) {
+        foreach my $priority (keys %{ $eo->{$events}{$event_name} }) {
         
             # create a group reference.
             my $group = [ $eo, $event_name, \@args];
             
             # add each callback.
-            foreach my $cb (@{$eo->{$events}{$event_name}{$priority}}) {
+            foreach my $cb (@{ $eo->{$events}{$event_name}{$priority} }) {
                 push @collection, [ $priority, $group, $cb ];
             }
             
@@ -431,13 +446,13 @@ sub _get_callbacks {
     # add the package callbacks for this priority.
     my $event_store = _event_store(blessed $eo);
     if ($event_store && $event_store->{$event_name}) {
-        foreach my $priority (keys %{$event_store->{$event_name}}) {
+        foreach my $priority (keys %{ $event_store->{$event_name} }) {
         
             # create a group reference.
             my $group = [ $eo, $event_name, \@args];
             
             # add each callback.
-            foreach my $cb (@{$event_store->{$event_name}{$priority}}) {
+            foreach my $cb (@{ $event_store->{$event_name}{$priority} }) {
                 push @collection, [ $priority, $group, $cb ];
             }
             
@@ -454,9 +469,7 @@ sub _monitor_fire {
     safe_fire($_, "monitor:$event_name" => @args) foreach @$m;
 }
 
-sub DESTROY {
-    # TODO: tell monitors about events/callbacks to be deleted.
-}
+sub DESTROY { shift->delete_all_events }
 
 ###############
 ### ALIASES ###

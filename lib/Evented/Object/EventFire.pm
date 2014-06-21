@@ -113,7 +113,7 @@ sub callback_name {
 
 # returns the caller(1) value of ->fire_event().
 sub caller {
-    @{shift->{$props}{caller}};
+    @{ shift->{$props}{caller} };
 }
 
 # returns the priority of the callback being called.
@@ -136,7 +136,7 @@ sub object {
 sub _pending_callbacks {
     my ($fire, @pending) = shift;
     my $ef_props   = $fire->{$props};
-    my @collection = @{$ef_props->{collection}};
+    my @collection = @{ $ef_props->{collection} };
     
     # this is the last callback.
     return @pending if $ef_props->{callback_i} >= $#collection;
