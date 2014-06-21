@@ -652,13 +652,9 @@ B<Parameters>
 
 B<eo>: the evented object.
 
-=back
-
 =item *
 
 B<event_name>: the name of the event. 
-
-=back
 
 =item *
 
