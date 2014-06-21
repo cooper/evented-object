@@ -23,8 +23,10 @@ sub new {
 }
 
 # cancel all future callbacks once.
+# if stopped already, returns the reason. TODO: document that.
 sub stop {
-    shift->{$props}{stop} = 1;
+    my ($fire, $reason) = @_; # this has to be this way; idk why.
+    $fire->{$props}{stop} ||= $reason || 'unspecified';
 }
 
 # returns a true value if the given callback has been called.
@@ -35,7 +37,9 @@ sub called {
     # return the number of callbacks called.
     # this includes the current callback.
     if (!defined $callback) {
-        return scalar(keys %{$fire->{$props}{called}}) + 1;
+        my $called = scalar keys %{ $fire->{$props}{called} };
+        $called++ unless $fire->{$props}{complete};
+        return $called;
     }
     
     # return whether the specified callback was called.

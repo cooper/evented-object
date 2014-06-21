@@ -33,16 +33,16 @@ use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
-our $VERSION = '5';
+our $VERSION = '5.1';
 
 # create a new evented object.
 sub new {
     bless {}, shift;
 }
 
-##########################
-### MANAGING CALLBACKS ###
-##########################
+#############################
+### REGISTERING CALLBACKS ###
+#############################
 
 # attach an event callback.
 # $eo->register_callback(myEvent => sub {
@@ -91,31 +91,10 @@ sub register_callbacks {
     my $eo = shift;
     return map { $eo->register_callback(%$_, _caller => caller) } @_;
 }
- 
-# fire an event.
-# returns $fire.
-sub fire_event {
-    shift->prepare_event(shift, @_)->fire(caller => [caller 1]);
-}
 
-# fire an event; then delete it.
-# TODO: document this.
-sub fire_once {
-    my ($eo, $event_name, @args) = @_;
-    
-    # fire with this caller.
-    my $fire = $eo->prepare_event($event_name, @args)->fire(caller => [caller 1]);
-
-    # delete the event.
-    $eo->delete_event($event_name);
-    return $fire;
-    
-}
-
-# register a temporary callback before firing an event.
-sub fire_with_callback {
-    # TODO: finish this idea.
-}
+##########################
+### DELETING CALLBACKS ###
+##########################
 
 # delete an event callback or all callbacks of an event.
 # returns a true value if any events were deleted, false otherwise.
@@ -188,6 +167,91 @@ sub delete_all_events {
     
     return $amount;
 }
+ 
+########################
+### PREPARING EVENTS ###
+########################
+
+# smart prepare.
+sub prepare {
+    my ($eo_maybe, $eo) = $_[0];
+    $eo = shift if blessed $eo_maybe && $eo_maybe->isa(__PACKAGE__);
+    if (ref $_[0] && ref $_[0] eq 'ARRAY') {
+        return $eo->prepare_together(@_);
+    }
+    return $eo->prepare_event(@_);
+}
+
+# prepare a single event fire.
+sub prepare_event {
+    my ($eo, $event_name, @args) = @_;
+    return $eo->prepare_together([ $event_name, @args ]);
+}
+
+# prepare a fire of one or more events.
+sub prepare_together {
+    my ($obj, @collection);
+    foreach my $set (@_) {
+        my $eo;
+
+        # called with evented object.
+        if (blessed $set) {
+            $set->isa(__PACKAGE__) or return;
+            $obj = $set;
+            next;
+        }
+    
+        # okay, it's an array ref of
+        # [ $eo (optional), $event_name => @args ]
+        ref $set eq 'ARRAY' or next;
+        my ($eo_maybe, $event_name, @args) = @$set;
+
+        # determine the object.
+        if (blessed $eo_maybe && $eo_maybe->isa(__PACKAGE__)) {
+            $eo = $eo_maybe;
+        }
+        else {
+            $eo = $obj or return;
+            @args = ($event_name, @args);
+            $event_name = $eo_maybe;
+        }
+        
+        # add to the collection.
+        push @collection, @{ _get_callbacks($eo, $event_name, @args) };
+        
+    }
+
+    return bless { pending => \@collection }, 'Evented::Object::Collection';
+}
+
+#####################
+### FIRING EVENTS ###
+#####################
+
+# fire an event.
+# returns $fire.
+sub fire_event {
+    shift->prepare_event(shift, @_)->fire(caller => [caller 1]);
+}
+
+# fire multiple events on multiple objects as a single event.
+sub fire_events_together {
+    prepare_together(@_)->fire;
+}
+
+# fire an event; then delete it.
+# TODO: document this.
+sub fire_once {
+    my ($eo, $event_name, @args) = @_;
+    
+    # fire with this caller.
+    my $fire = $eo->prepare_event($event_name, @args)->fire(caller => [caller 1]);
+
+    # delete the event.
+    $eo->delete_event($event_name);
+    return $fire;
+    
+}
 
 ########################
 ### LISTENER OBJECTS ###
@@ -221,11 +285,6 @@ sub delete_listener {
 #######################
 ### CLASS FUNCTIONS ###
 #######################
-
-# fire multiple events on multiple objects as a single event.
-sub fire_events_together {
-    prepare_together(@_)->fire;
-}
 
 # export a subroutine.
 # export_code('My::Package', 'my_sub', \&_my_sub)
@@ -270,46 +329,6 @@ sub delete_class_monitor {
 #########################
 ### INTERNAL ROUTINES ###
 #########################
-
-sub prepare_event {
-    my ($eo, $event_name, @args) = @_;
-    return $eo->prepare_together([ $event_name, @args ]);
-}
-
-sub prepare_together {
-    my ($obj, @collection);
-    foreach my $set (@_) {
-        my $eo;
-
-        # called with evented object.
-        if (blessed $set) {
-            $set->isa(__PACKAGE__) or return;
-            $obj = $set;
-            next;
-        }
-    
-        # okay, it's an array ref of
-        # [ $eo (optional), $event_name => @args ]
-        ref $set eq 'ARRAY' or next;
-        my ($eo_maybe, $event_name, @args) = @$set;
-
-        # determine the object.
-        if (blessed $eo_maybe && $eo_maybe->isa(__PACKAGE__)) {
-            $eo = $eo_maybe;
-        }
-        else {
-            $eo = $obj or return;
-            @args = ($event_name, @args);
-            $event_name = $eo_maybe;
-        }
-        
-        # add to the collection.
-        push @collection, @{ _get_callbacks($eo, $event_name, @args) };
-        
-    }
-    
-    return bless { pending => \@collection }, 'Evented::Object::Collection';
-}
 
 # access package storage.
 sub _package_store {
@@ -436,6 +455,10 @@ sub _monitor_fire {
     my ($pkg, $event_name, @args) = @_;
     my $m = $monitors{$pkg} or return;
     safe_fire($_, "monitor:$event_name" => @args) foreach @$m;
+}
+
+sub DESTROY {
+    # TODO: tell monitors about events/callbacks to be deleted.
 }
 
 ###############
