@@ -30,8 +30,9 @@ use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
-# always using 2 decimals now. change other packages too.
-our $VERSION = '5.43';
+# always using 2 decimals now for CPAN releases.
+# change other packages too.
+our $VERSION = '5.431';
 
 # create a new evented object.
 sub new {
@@ -287,16 +288,13 @@ sub delete_listener {
     return 1;
 }
 
-#######################
-### CLASS FUNCTIONS ###
-#######################
+######################
+### CLASS MONITORS ###
+######################
 
-# safely fire an event.
-sub safe_fire {
-    my $obj = shift;
-    return if !blessed $obj || !$obj->isa(__PACKAGE__);
-    return $obj->fire_event(@_);
-}
+# for objective use $eo->monitor_events($pkg)
+sub monitor_events  {    add_class_monitor(reverse @_) }
+sub stop_monitoring { delete_class_monitor(reverse @_) }
 
 # set the monitor object of a class.
 #
@@ -326,6 +324,17 @@ sub delete_class_monitor {
     my ($pkg, $obj) = @_;
     my $m = $monitors{$pkg} or return;
     @$m   = grep { defined && $_ != $obj } @$m;
+}
+
+#######################
+### CLASS FUNCTIONS ###
+#######################
+
+# safely fire an event.
+sub safe_fire {
+    my $obj = shift;
+    return if !blessed $obj || !$obj->isa(__PACKAGE__);
+    return $obj->fire_event(@_);
 }
 
 #########################
@@ -1096,6 +1105,52 @@ C<-E<gt>prepare_together>.
     [ some_other => @other_arg ]
  );
 
+=head1 Class monitors
+
+=head2 $eo->monitor_events($pkg)
+
+Registers an evented object as the class monitor for a specific package. See the
+section above for more details on class monitors and their purpose.
+
+ my $some_eo  = Evented::Object->new;
+ my $other_eo = Evented::Object->new;
+ 
+ $some_eo->on('monitor:register_callback', sub {
+     my ($event, $eo, $event_name, $cb) = @_;
+     # $eo         == $other_eo
+     # $event_name == "blah"
+     # $cb         == callback hash from ->register_callback()
+     say "Registered $$cb{name} to $eo for $event_name"; 
+ });
+ 
+ $some_eo->monitor_events('Some::Class');
+ 
+ package Some::Class;
+ $other_eo->on(blah => sub{}); # will trigger the callback above
+
+=over 4
+
+=item *
+ 
+B<pkg>: a package whose event activity you wish to monitor.
+
+=back
+ 
+=head2 $eo->stop_monitoring($pkg)
+
+Removes an evented object from its current position as a monitor for a specific package.
+See the section above for more details on class monitors and their purpose.
+
+ $some_eo->stop_monitoring('Some::Class');
+
+=over 4
+
+=item *
+
+B<pkg>: a package whose event activity you're monitoring.
+
+=back
+
 =head1 Procedural functions
 
 The Evented::Object package provides some functions for use. These functions typically are
@@ -1181,58 +1236,6 @@ B<event_name>: the name of the event.
 =item *
 
 B<args>: the arguments for the event fire.
-
-=back
- 
-=head2 add_class_monitor($pkg, $some_eo)
-
-Registers an evented object as the class monitor for a specific package. See the
-section above for more details on class monitors and their purpose.
-
- my $some_eo  = Evented::Object->new;
- my $other_eo = Evented::Object->new;
- 
- $some_eo->on('monitor:register_callback', sub {
-     my ($event, $eo, $event_name, $cb) = @_;
-     # $eo         == $other_eo
-     # $event_name == "blah"
-     # $cb         == callback hash from ->register_callback()
-     say "Registered $$cb{name} to $eo for $event_name"; 
- });
- 
- Evented::Object::add_class_monitor('Some::Class', $some_eo);
- 
- package Some::Class;
- $other_eo->on(blah => sub{}); # will trigger the callback above
-
-=over 4
-
-=item *
- 
-B<pkg>: a package whose event activity you wish to monitor.
- 
-=item *
- 
-B<some_eo>: some arbitrary event object that will respond to that activity.
-
-=back
- 
-=head2 delete_class_monitor($pkg, $some_eo)
-
-Removes an evented object from its current position as a monitor for a specific package.
-See the section above for more details on class monitors and their purpose.
-
- Evented::Object::delete_class_monitor('Some::Class', $some_eo)
-
-=over 4
-
-=item *
-
-B<pkg>: a package whose event activity you're monitoring.
-
-=item *
-
-B<some_eo>: some arbitrary event object that is responding to that activity.
 
 =back
 

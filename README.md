@@ -491,6 +491,40 @@ A smart method that uses the best guess between `->prepare_event` and
        [ some_other => @other_arg ]
     );
 
+# Class monitors
+
+## $eo->monitor\_events($pkg)
+
+Registers an evented object as the class monitor for a specific package. See the
+section above for more details on class monitors and their purpose.
+
+    my $some_eo  = Evented::Object->new;
+    my $other_eo = Evented::Object->new;
+    
+    $some_eo->on('monitor:register_callback', sub {
+        my ($event, $eo, $event_name, $cb) = @_;
+        # $eo         == $other_eo
+        # $event_name == "blah"
+        # $cb         == callback hash from ->register_callback()
+        say "Registered $$cb{name} to $eo for $event_name"; 
+    });
+    
+    $some_eo->monitor_events('Some::Class');
+    
+    package Some::Class;
+    $other_eo->on(blah => sub{}); # will trigger the callback above
+
+- **pkg**: a package whose event activity you wish to monitor.
+
+## $eo->stop\_monitoring($pkg)
+
+Removes an evented object from its current position as a monitor for a specific package.
+See the section above for more details on class monitors and their purpose.
+
+    $some_eo->stop_monitoring('Some::Class');
+
+- **pkg**: a package whose event activity you're monitoring.
+
 # Procedural functions
 
 The Evented::Object package provides some functions for use. These functions typically are
@@ -564,40 +598,6 @@ and `->isa()` on a value for testing whether it is an evented object.
 - **eo**: the evented object.
 - **event\_name**: the name of the event. 
 - **args**: the arguments for the event fire.
-
-## add\_class\_monitor($pkg, $some\_eo)
-
-Registers an evented object as the class monitor for a specific package. See the
-section above for more details on class monitors and their purpose.
-
-    my $some_eo  = Evented::Object->new;
-    my $other_eo = Evented::Object->new;
-    
-    $some_eo->on('monitor:register_callback', sub {
-        my ($event, $eo, $event_name, $cb) = @_;
-        # $eo         == $other_eo
-        # $event_name == "blah"
-        # $cb         == callback hash from ->register_callback()
-        say "Registered $$cb{name} to $eo for $event_name"; 
-    });
-    
-    Evented::Object::add_class_monitor('Some::Class', $some_eo);
-    
-    package Some::Class;
-    $other_eo->on(blah => sub{}); # will trigger the callback above
-
-- **pkg**: a package whose event activity you wish to monitor.
-- **some\_eo**: some arbitrary event object that will respond to that activity.
-
-## delete\_class\_monitor($pkg, $some\_eo)
-
-Removes an evented object from its current position as a monitor for a specific package.
-See the section above for more details on class monitors and their purpose.
-
-    Evented::Object::delete_class_monitor('Some::Class', $some_eo)
-
-- **pkg**: a package whose event activity you're monitoring.
-- **some\_eo**: some arbitrary event object that is responding to that activity.
 
 # Collection methods
 
