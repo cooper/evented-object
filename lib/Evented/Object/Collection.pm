@@ -12,7 +12,7 @@ use utf8;
 use 5.010;
 use Scalar::Util 'weaken';
 
-our $VERSION = '5.42';
+our $VERSION = '5.43';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -34,17 +34,19 @@ my %boolopts = map { $_ => 1 } qw(safe return_check fail_continue);
 #   fail_continue   if 'safe' is enabled and a callback raises an exception, it will
 #                   by default ->stop the fire. this option tells it to continue instead.
 #
-
+#   data            some data to fire with the event. esp. good for things that might be
+#                   useful at times but not accessed frequently enough to be an argument.
+#
 sub fire {
     my ($collection, @options) = @_;
     
     # handle options.
-    my $caller = $collection->{caller};
+    my ($caller, $data) = $collection->{caller};
     while (@options) {
         my $opt = shift @options;
         
-        # custom caller.
-        if ($opt eq 'caller') { $caller = shift @options }
+        if ($opt eq 'caller')   { $caller = shift @options } # custom caller
+        if ($opt eq 'data')     { $data   = shift @options } # fire data
         
         # boolean option.
         $collection->{$opt} = 1 if $boolopts{$opt};
@@ -53,8 +55,9 @@ sub fire {
     
     # create fire object.
     my $fire = Evented::Object::EventFire->new(
-        caller => $caller ||= [caller 1], # $fire->caller
-        $props => {}        
+        caller     => $caller ||= [caller 1], # $fire->caller
+        data       => $data,                  # $fire->data
+        collection => $collection
     );
     
     # if it hasn't been sorted, do so.
@@ -163,11 +166,12 @@ sub _call_callbacks {
     my %called;
     
     # store the collection.
-    $ef_props->{collection} = delete $collection->{pending};
+    my $remaining = $collection->{pending} or return;
+    $ef_props->{collection} = $collection;
     
     # call each callback.
-    foreach my $callback (@{ $ef_props->{collection} }) {
-        my ($priority, $group, $cb)  = @$callback;
+    while (my $entry = shift @$remaining) {
+        my ($priority, $group, $cb)  = @$entry;
         my ($eo, $event_name, $args) = @$group;
         
         $ef_props->{callback_i}++;

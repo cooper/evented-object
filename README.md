@@ -294,6 +294,13 @@ In order to correspond with other 'Evented' packages, EventedObject was renamed 
 Evented::Object. All packages making use of EventedObject will need to be modified to use
 Evented::Object instead. This change was made pre-CPAN.
 
+## Removal of deprecated options 5.0+
+
+Long-deprecated callback options may no longer behave as expected in older versions.
+Specifically, Evented::Object used to try to guess whether it should insert the event
+fire object and evented object to the callback arguments. Now, it does not try to guess
+but instead only listens to the explicit options.
+
 # Evented object methods
 
 The Evented::Object package provides several convenient methods for managing an
@@ -341,6 +348,10 @@ fired.
 
 Note: the order of objects will always be `$eo`, `$fire`, `@args`, regardless of
 omissions. By default, the argument list is `$fire`, `@args`.
+
+Note: only one of `priority`, `before`, and `after` will be respected. Although more
+complex prioritization is in the works, Evented::Object is not currently capable of
+resolving priority conflicts with before and after.
 
 ## $eo->register\_callbacks(@events)
 
@@ -441,6 +452,12 @@ information on this feature.
 
 - **other\_eo**: the evented object that will listen.
 - **prefix**: a string that event names will be prefixed with on the listener.
+
+## $eo->delete\_all\_events()
+
+Deletes all events and all callbacks from the object. If you know that an evented object
+will no longer be used in your program, by calling this method you can be sure that no
+cyclical references from within callbacks will cause the object to be leaked.
 
 # Preparation methods
 
@@ -759,11 +776,35 @@ Returns the priority of the current callback.
 
     say 'the priority of the current callback is ', $fire->callback_priority;
 
-## $fire->callback\_data
+## $fire->callback\_data($key)
 
-Returns the data supplied to the callback when it was registered, if any.
+Returns the data supplied to the callback when it was registered, if any. If the data
+is a hash reference, an optional key parameter can specify a which value to fetch.
 
     say 'my data is ', $fire->callback_data;
+    say 'my name is ', $fire->callback_data('name');
+    
+
+> **Parameters**
+>
+> \*
+>
+> **key**: _optional_, a key to fetch a value if the data registered was a hash. 
+
+## $fire->data($key)
+
+Returns the data supplied to the collection when it was fired, if any. If the data
+is a hash reference, an optional key parameter can specify a which value to fetch.
+
+    say 'fire data is ', $fire->data;
+    say 'fire time was ', $fire->data('time');
+    
+
+> **Parameters**
+>
+> \*
+>
+> **key**: _optional_, a key to fetch a value if the data registered was a hash. 
 
 # Aliases
 
@@ -811,3 +852,15 @@ Copyright © 2011-2013. Released under BSD license.
 Comments, complaints, and recommendations are accepted. IRC is my preferred communication
 medium. Bugs may be reported on
 [RT](https://rt.cpan.org/Public/Dist/Display.html?Name=Evented-Object).
+
+# POD ERRORS
+
+Hey! **The above document had some coding errors, which are explained below:**
+
+- Around line 1473:
+
+    You can't have =items (as at line 1477) unless the first thing after the =over is an =item
+
+- Around line 1491:
+
+    You can't have =items (as at line 1495) unless the first thing after the =over is an =item

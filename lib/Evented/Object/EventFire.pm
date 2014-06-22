@@ -15,7 +15,7 @@ use 5.010;
 ### EVENT FIRE OBJECTS ###
 ##########################
 
-our $VERSION = '5.42';
+our $VERSION = '5.43';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -72,6 +72,11 @@ sub pending {
 # cancels a future callback once.
 sub cancel {
     my ($fire, $callback) = @_;
+    
+    # if there is no argument given, we will just
+    # treat this like a ->stop on the event.
+    defined $callback or return $fire->stop;
+    
     $fire->{$props}{cancelled}{$callback} = 1;
     $fire->{$props}{cancellor}{$callback} = $fire->callback_name;
     return 1;
@@ -122,8 +127,27 @@ sub callback_priority {
 }
 
 # returns the value of the 'data' option when the callback was registered.
+# if an argument is provided, it is used as the key to the data hash.
 sub callback_data {
-    shift->{$props}{callback_data};
+    my $data = shift->{$props}{callback_data};
+    my $key_maybe = shift;
+    if (ref $data eq 'HASH') {
+        return $data->{$key_maybe} if defined $key_maybe;
+        return $data->{data} // $data;
+    }
+    return $data;
+}
+
+# returns the value of the 'data' option on the ->fire().
+# if an argument is provided, it is used as the key to the data hash.
+sub data {
+    my $data = shift->{$props}{data};
+    my $key_maybe = shift;
+    if (ref $data eq 'HASH') {
+        return $data->{$key_maybe} if defined $key_maybe;
+        return $data->{data} // $data;
+    }
+    return $data;
 }
 
 # returns the evented object.
@@ -136,24 +160,14 @@ sub object {
 sub _pending_callbacks {
     my ($fire, @pending) = shift;
     my $ef_props   = $fire->{$props};
-    my @collection = @{ $ef_props->{collection} };
+    my $collection = $ef_props->{collection};
+    my @remaining  = @{ $collection->{pending} };
     
     # this is the last callback.
-    return @pending if $ef_props->{callback_i} >= $#collection;
+    return @remaining if !@remaining;
     
-    # get the remaining callbacks.
-    my $next_callback = $ef_props->{callback_i} + 1;
-    my @callbacks     = @collection[$next_callback..$#collection];
-    
-    # filter out any cancelled callbacks.
-    my @filtered;
-    foreach my $callback (@callbacks) {
-        my $name = $callback->[2]{name};
-        push @filtered, $callback unless $ef_props->{cancelled}{$name};
-    }
-    
-    # return the pending callbacks.
-    return @filtered;
+    # return the pending callbacks, filtering out canceled callbacks.
+    return grep { not $ef_props->{cancelled}{ $_->[2]{name} } } @remaining;
     
 }
 
