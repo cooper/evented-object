@@ -352,8 +352,9 @@ Evented object methods
 
     *   after: the name of a callback to succeed.
 
-    *   data: any data that will be stored as `$fire->event_data' as the
-        callback is fired.
+    *   data: any data that will be stored as `$fire->callback_data' as the
+        callback is fired. If `data' is a hash reference, its values can be
+        fetched conveniently with `$fire->callback_data('key')'.
 
     *   with_eo: if true, the evented object will prepended to the argument
         list.
@@ -654,6 +655,12 @@ Collection methods
         fire to continue even if one of the callbacks fails. This could be
         dangerous if any of the callbacks expected a previous callback to be
         done when it actually failed.
+
+    *   data: *requires value*, a scalar value that can be fetched by
+        `$fire->data' from within the callbacks. Good for data that might be
+        useful sometimes but not frequently enough to deserve a spot in the
+        argument list. If `data' is a hash reference, its values can be
+        fetched conveniently with `$fire->data('key')'.
 
   $col->sort_callbacks
     Sorts the callbacks according to `priority', `before', and `after'

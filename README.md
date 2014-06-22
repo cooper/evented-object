@@ -341,8 +341,9 @@ event.
 - **priority**: a numerical priority of the callback.
 - **before**: the name of a callback to precede.
 - **after**: the name of a callback to succeed.
-- **data**: any data that will be stored as `$fire->event_data` as the callback is
-fired.
+- **data**: any data that will be stored as `$fire->callback_data` as the callback is
+fired. If `data` is a hash reference, its values can be fetched conveniently with
+`$fire->callback_data('key')`.
 - **with\_eo**: if true, the evented object will prepended to the argument list.
 - **no\_fire\_obj**: if true, the fire object will not be prepended to the argument list.
 
@@ -628,6 +629,10 @@ the event will be stopped at that point with the error.
 - **fail\_continue**: _boolean_, if `safe` above is enabled, this tells the fire to continue
 even if one of the callbacks fails. This could be dangerous if any of the callbacks
 expected a previous callback to be done when it actually failed.
+- **data**: _requires value_, a scalar value that can be fetched by `$fire->data`
+from within the callbacks. Good for data that might be useful sometimes but not frequently
+enough to deserve a spot in the argument list. If `data` is a hash reference, its 
+values can be fetched conveniently with `$fire->data('key')`.
 
 ## $col->sort\_callbacks
 
