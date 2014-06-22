@@ -783,13 +783,10 @@ is a hash reference, an optional key parameter can specify a which value to fetc
 
     say 'my data is ', $fire->callback_data;
     say 'my name is ', $fire->callback_data('name');
-    
 
-> **Parameters**
->
-> \*
->
-> **key**: _optional_, a key to fetch a value if the data registered was a hash. 
+**Parameters**
+
+- **key**: _optional_, a key to fetch a value if the data registered was a hash. 
 
 ## $fire->data($key)
 
@@ -798,13 +795,10 @@ is a hash reference, an optional key parameter can specify a which value to fetc
 
     say 'fire data is ', $fire->data;
     say 'fire time was ', $fire->data('time');
-    
 
-> **Parameters**
->
-> \*
->
-> **key**: _optional_, a key to fetch a value if the data registered was a hash. 
+**Parameters**
+
+- **key**: _optional_, a key to fetch a value if the data registered was a hash. 
 
 # Aliases
 
@@ -852,15 +846,3 @@ Copyright © 2011-2013. Released under BSD license.
 Comments, complaints, and recommendations are accepted. IRC is my preferred communication
 medium. Bugs may be reported on
 [RT](https://rt.cpan.org/Public/Dist/Display.html?Name=Evented-Object).
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 1473:
-
-    You can't have =items (as at line 1477) unless the first thing after the =over is an =item
-
-- Around line 1491:
-
-    You can't have =items (as at line 1495) unless the first thing after the =over is an =item

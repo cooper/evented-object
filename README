@@ -797,8 +797,8 @@ Fire object methods
 
      say 'my data is ', $fire->callback_data;
      say 'my name is ', $fire->callback_data('name');
- 
-        Parameters
+
+    Parameters
 
     *   key: *optional*, a key to fetch a value if the data registered was a
         hash.
@@ -810,8 +810,8 @@ Fire object methods
 
      say 'fire data is ', $fire->data;
      say 'fire time was ', $fire->data('time');
- 
-        Parameters
+
+    Parameters
 
     *   key: *optional*, a key to fetch a value if the data registered was a
         hash.
