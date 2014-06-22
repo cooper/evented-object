@@ -1469,10 +1469,10 @@ is a hash reference, an optional key parameter can specify a which value to fetc
 
  say 'my data is ', $fire->callback_data;
  say 'my name is ', $fire->callback_data('name');
- 
-=over 4
 
 B<Parameters>
+ 
+=over 4
 
 =item *
 
@@ -1487,10 +1487,10 @@ is a hash reference, an optional key parameter can specify a which value to fetc
 
  say 'fire data is ', $fire->data;
  say 'fire time was ', $fire->data('time');
- 
-=over 4
 
 B<Parameters>
+ 
+=over 4
 
 =item *
 
