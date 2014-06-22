@@ -667,20 +667,20 @@ Rather than attaching an event callback to every cow, you can instead make the f
 listener of the cow. Then, you can attach a single callback to your farm. If your cow's
 event for mooing is C<moo>, your farm's event for mooing is C<cow.moo>.
 
-=head3 Potential looping references
+B<Potential looping references>
 
 The cow holds a weak reference to the farm, so you do not need to worry about deleting it
 later. This, however, means that your listener object must also be referred to in another
 location in order for this to work. I doubt that will be a problem, though.
 
-=head3 Priorities and listeners
+B<Priorities and listeners>
 
 Evented::Object is rather genius when it comes to callback priorities. With object
 listeners, it is as though the callbacks belong to the object being listened to. Referring
 to the above example, if you attach a callback on the farm object with priority 1, it will
 be called before your callback with priority 0 on the cow object.
 
-=head3 Fire objects and listeners
+B<Fire objects and listeners>
 
 When an event is fired on an object, the same fire object is used for callbacks
 belonging to both the evented object and its listening objects. Therefore, callback names
@@ -719,13 +719,13 @@ object.
 
 Note: Events cannot be fired on a class.
 
-=head3 Prioritizing
+B<Prioritizing>
 
 When firing an event, any callbacks on the class will sorted by priority just as if they
 were registered on the object. Whether registered on the class or the object, a callback
 with a higher priority will be called before one of a lower priority.
 
-=head3 Subclassing
+B<Subclassing>
 
 If an evented object is blessed to a subclass of a class with callbacks registered to it,
 the object will NOT inherit the callbacks associated with the parent class. Callbacks
@@ -745,9 +745,9 @@ to find a problem.
 
 =head2 Collections
 
-Sometimes it is useful to prepare an event fire before actually calling it. The group
-of callbacks that are about to be called are represented by a collection object.
-Collections are returned by the 'prepare' methods.
+Evented::Object 5.0 introduces callback collections. Sometimes it is useful to prepare an
+event fire before actually calling it. The group of callbacks that are about to be called
+are represented by a collection object. Collections are returned by the 'prepare' methods.
 
 Collections are especially useful for firing events with special options. This usually
 looks something like:

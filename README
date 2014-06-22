@@ -161,12 +161,14 @@ DESCRIPTION
     farm's event for mooing is `cow.moo'.
 
     Potential looping references
+
     The cow holds a weak reference to the farm, so you do not need to worry
     about deleting it later. This, however, means that your listener object
     must also be referred to in another location in order for this to work.
     I doubt that will be a problem, though.
 
     Priorities and listeners
+
     Evented::Object is rather genius when it comes to callback priorities.
     With object listeners, it is as though the callbacks belong to the
     object being listened to. Referring to the above example, if you attach
@@ -174,6 +176,7 @@ DESCRIPTION
     your callback with priority 0 on the cow object.
 
     Fire objects and listeners
+
     When an event is fired on an object, the same fire object is used for
     callbacks belonging to both the evented object and its listening
     objects. Therefore, callback names must be unique not only to the
@@ -205,12 +208,14 @@ DESCRIPTION
     Note: Events cannot be fired on a class.
 
     Prioritizing
+
     When firing an event, any callbacks on the class will sorted by priority
     just as if they were registered on the object. Whether registered on the
     class or the object, a callback with a higher priority will be called
     before one of a lower priority.
 
     Subclassing
+
     If an evented object is blessed to a subclass of a class with callbacks
     registered to it, the object will NOT inherit the callbacks associated
     with the parent class. Callbacks registered to classes ONLY apply to
@@ -229,10 +234,10 @@ DESCRIPTION
     log all of them, making it easier to find a problem.
 
   Collections
-    Sometimes it is useful to prepare an event fire before actually calling
-    it. The group of callbacks that are about to be called are represented
-    by a collection object. Collections are returned by the 'prepare'
-    methods.
+    Evented::Object 5.0 introduces callback collections. Sometimes it is
+    useful to prepare an event fire before actually calling it. The group of
+    callbacks that are about to be called are represented by a collection
+    object. Collections are returned by the 'prepare' methods.
 
     Collections are especially useful for firing events with special
     options. This usually looks something like:
