@@ -881,8 +881,9 @@ B<after>: the name of a callback to succeed.
  
 =item *
 
-B<data>: any data that will be stored as C<$fire-E<gt>event_data> as the callback is
-fired.
+B<data>: any data that will be stored as C<$fire-E<gt>callback_data> as the callback is
+fired. If C<data> is a hash reference, its values can be fetched conveniently with
+C<< $fire->callback_data('key') >>.
 
 =item *
 
@@ -1283,6 +1284,13 @@ the event will be stopped at that point with the error.
 B<fail_continue>: I<boolean>, if C<safe> above is enabled, this tells the fire to continue
 even if one of the callbacks fails. This could be dangerous if any of the callbacks
 expected a previous callback to be done when it actually failed.
+
+=item *
+
+B<data>: I<requires value>, a scalar value that can be fetched by C<< $fire->data >>
+from within the callbacks. Good for data that might be useful sometimes but not frequently
+enough to deserve a spot in the argument list. If C<data> is a hash reference, its 
+values can be fetched conveniently with C<< $fire->data('key') >>.
 
 =back
 
