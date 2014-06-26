@@ -1000,7 +1000,7 @@ B<arguments>: I<optional>, list of arguments to pass to event callbacks.
 =head2 $eo->fire_once($event_name => @arguments)
 
 Fires the specified event, calling each callback that was registered with
-C<< -register_callback() >> in descending order of their priorities.
+C<< ->register_callback() >> in descending order of their priorities.
 
 Then, all callbacks for the event are deleted. This method is useful for situations where
 an event will never be fired more than once.

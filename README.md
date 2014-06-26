@@ -437,7 +437,7 @@ $eo->fire_event(some_event => $some_argument, $some_other_argument);
 ## $eo->fire\_once($event\_name => @arguments)
 
 Fires the specified event, calling each callback that was registered with
-`-register_callback()` in descending order of their priorities.
+`->register_callback()` in descending order of their priorities.
 
 Then, all callbacks for the event are deleted. This method is useful for situations where
 an event will never be fired more than once.
