@@ -43,7 +43,7 @@ SYNOPSIS
  
      }, name => '21-soon');
  
-     # Add an event callback that checks if Jake is 21 and cancels the above callback if he is.
+     # Add an event callback that checks if Jake is 21 and cancels the above callback if so.
      $jake->on(birthday => sub {
          my ($fire, $new_age) =  @_;
  
@@ -432,7 +432,7 @@ Evented object methods
 
   $eo->fire_once($event_name => @arguments)
     Fires the specified event, calling each callback that was registered
-    with `->register_callback()' in descending order of their priorities.
+    with `-register_callback()' in descending order of their priorities.
 
     Then, all callbacks for the event are deleted. This method is useful for
     situations where an event will never be fired more than once.
@@ -662,7 +662,7 @@ Collection methods
         argument list. If `data' is a hash reference, its values can be
         fetched conveniently with `$fire->data('key')'.
 
-  $col->sort_callbacks
+  $col->sort
     Sorts the callbacks according to `priority', `before', and `after'
     options.
 

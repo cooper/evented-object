@@ -67,7 +67,7 @@ my $build = $class->new(
     },
     recommends          => {},
     build_requires      => {},
-    configure_requires  => { 'Module::Build' => 0.42 },
+    auto_configure_requires => 0,
     license             => 'bsd',
     create_makefile_pl  => 'traditional',
     # create_license    => 1,

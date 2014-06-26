@@ -52,7 +52,7 @@ $jake->on(birthday => sub {
 
 }, name => '21-soon');
 
-# Add an event callback that checks if Jake is 21 and cancels the above callback if he is.
+# Add an event callback that checks if Jake is 21 and cancels the above callback if so.
 $jake->on(birthday => sub {
     my ($fire, $new_age) =  @_;
 
@@ -104,9 +104,11 @@ object which is a member of the Evented::Object class or a class which inherits 
 Evented::Object class. 'Fire object' refers to an object representing an event fire.
 
 - **Evented::Object**: this class that provides methods for managing events.
-- **Evented object**: `$eo` - refers to an object that uses Evented::Object for event management.
+- **Evented object**: `$eo` - refers to an object that uses Evented::Object for event
+management.
 - **Fire object**: `$fire` or `$event` - an object that represents an event fire.
-- **Collection**: `$col` or `$collection` - represents a group of callbacks about to be fired.
+- **Collection**: `$col` or `$collection` - represents a group of callbacks about to be
+fired.
 - **Listener object**: another evented object that receives event notifications.
 
 Evented::Object and its core packages are prefixed with `Evented::Object`.
@@ -435,7 +437,7 @@ $eo->fire_event(some_event => $some_argument, $some_other_argument);
 ## $eo->fire\_once($event\_name => @arguments)
 
 Fires the specified event, calling each callback that was registered with
-`->register_callback()` in descending order of their priorities.
+`-register_callback()` in descending order of their priorities.
 
 Then, all callbacks for the event are deleted. This method is useful for situations where
 an event will never be fired more than once.
@@ -684,7 +686,7 @@ from within the callbacks. Good for data that might be useful sometimes but not 
 enough to deserve a spot in the argument list. If `data` is a hash reference, its 
 values can be fetched conveniently with `$fire->data('key')`.
 
-## $col->sort\_callbacks
+## $col->sort
 
 Sorts the callbacks according to `priority`, `before`, and `after` options.
 

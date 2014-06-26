@@ -62,7 +62,7 @@ sub fire {
     
     # if it hasn't been sorted, do so.
     my $callbacks = $collection->{pending} or return $fire;
-    $collection->sort_callbacks if not $collection->{sorted};
+    $collection->sort if not $collection->{sorted};
     
     # if return_check is enabled, add a callback to be fired last that will
     # check the return values. this is basically hackery using a dummy object.
@@ -80,7 +80,7 @@ sub fire {
 # sorts the callbacks, trying its best to listen to before and after.
 # perhaps one day this could be done more efficiently - it currently must
 # loop through twice: once for before and after, once for numerical sort.
-sub sort_callbacks {
+sub sort : method {
     my $collection = shift;
     my @remaining  = @{ $collection->{pending} };
     my @sorted;
@@ -173,6 +173,7 @@ sub _call_callbacks {
     while (my $entry = shift @$remaining) {
         my ($priority, $group, $cb)  = @$entry;
         my ($eo, $event_name, $args) = @$group;
+        ref $eo && $eo->isa('Evented::Object') or return;
         
         $ef_props->{callback_i}++;
         
