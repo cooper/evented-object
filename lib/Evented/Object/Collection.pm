@@ -12,7 +12,7 @@ use utf8;
 use 5.010;
 use Scalar::Util 'weaken';
 
-our $VERSION = '5.431';
+our $VERSION = '5.45';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -90,6 +90,12 @@ sub sort : method {
     while (@remaining) {
         my $item = shift @remaining;
         my $cb   = $item->[2];
+        
+        # test failed? uh excuse me?
+        if (!ref $cb || ref $cb ne 'HASH') {
+            warn "callback($cb) is not a hashref!";
+            next;
+        }
         next if defined $done{ $cb->{name} };
                 
         # there is no defined priority, but there is before/after.
@@ -222,7 +228,7 @@ sub _call_callbacks {
         # stop if eval failed.
         if ($collection->{safe} and my $err = $@) {
             chomp $err;
-            $ef_props->{error}{ $cb->{name} } = $@;
+            $ef_props->{error}{ $cb->{name} } = $err;
             $fire->stop($err) unless $collection->{fail_continue};
         }
         
@@ -252,7 +258,7 @@ sub _return_check {
     my %returns = %{ $fire->{$props}{return} };
     foreach my $cb_name (keys %returns) {
         next if $returns{$cb_name};
-        return $fire->stop;
+        return $fire->stop("$cb_name returned false with return_check enabled");
     }
     return 1;
 }

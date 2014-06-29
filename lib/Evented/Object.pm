@@ -32,7 +32,7 @@ use Evented::Object::Collection;
 
 # always using 2 decimals now for CPAN releases.
 # change other packages too.
-our $VERSION = '5.44';
+our $VERSION = '5.45';
 
 # create a new evented object.
 sub new {
@@ -214,16 +214,19 @@ sub prepare_together {
         # okay, it's an array ref of
         # [ $eo (optional), $event_name => @args ]
         ref $set eq 'ARRAY' or next;
-        my ($eo_maybe, $event_name, @args) = @$set;
+        my ($eo_maybe, $event_name, @args);
 
-        # determine the object.
+        # was an object specified?
+        my $eo_maybe = shift @$set;
         if (blessed $eo_maybe && $eo_maybe->isa(__PACKAGE__)) {
             $eo = $eo_maybe;
+            ($event_name, @args) = @$set;
         }
+        
+        # no object; fall back to $obj.
         else {
-            $eo   = $obj or return;
-            @args = ($event_name, @args);
-            $event_name = $eo_maybe;
+            $eo = $obj or return;
+            ($event_name, @args) = ($eo_maybe, @$set);
         }
         
         # add to the collection.
@@ -271,8 +274,7 @@ sub add_listener {
     my ($eo, $obj, $prefix) = @_;
     
     # find listeners list.
-    $eo->{$props}{listeners} ||= [];
-    my $listeners = $eo->{$props}{listeners};
+    my $listeners = $eo->{$props}{listeners} ||= [];
     
     # store this listener.
     push @$listeners, [$prefix, $obj];
@@ -387,31 +389,30 @@ sub _get_callbacks {
     my @collection;
     
     # if there are any listening objects, call its callbacks of this priority.
-    if ($eo->{$props}{listeners}) {
+    if (my $listeners = $eo->{$props}{listeners}) {
         my @delete;
-        my $listeners = $eo->{$props}{listeners};
         
         LISTENER: foreach my $i (0 .. $#$listeners) {
             my $l = $listeners->[$i] or next;
-            my ($prefix, $obj) = @$l;
+            my ($prefix, $lis) = @$l;
             my $listener_event_name = $prefix.q(.).$event_name;
             
             # object has been deallocated by garbage disposal,
             # so we can delete this listener.
-            if (!$obj) {
+            if (!$lis) {
                 push @delete, $i;
                 next LISTENER;
             }
             
             # add the callbacks from this priority.
-            foreach my $priority (keys %{ $obj->{$events}{$listener_event_name} }) {
+            foreach my $priority (keys %{ $lis->{$events}{$listener_event_name} }) {
 
                 # create a group reference.
                 my $group = [ $eo, $listener_event_name, \@args];
                 weaken($group->[0]);
                 
                 # add each callback.
-                foreach my $cb (@{ $obj->{$events}{$listener_event_name}{$priority} }) {
+                foreach my $cb (@{ $lis->{$events}{$listener_event_name}{$priority} }) {
                     push @collection, [ $priority, $group, $cb ];
                 }
                 
@@ -760,10 +761,8 @@ See L</"Collection methods"> for more information.
 
 =head1 COMPATIBILITY
 
-Evented::Object versions 0.0 to 0.7 are entirely compatible - anything that worked in
-version 0.0 or even compies of Evented::Object before it was versioned also work in
-version 0.7; however, some recent changes break the compatibility with these previous
-versions in many cases.
+Although Evented::Object attempts to maintain compatibility for an extended period of
+time, a number of exceptions do exist. 
 
 =head2 Asynchronous improvements 1.0+
 
@@ -1547,7 +1546,7 @@ Alias for C<< $fire->object >>.
 
 L<Mitchell Cooper|https://github.com/cooper> <cooper@cpan.org>
 
-Copyright E<copy> 2011-2013. Released under BSD license.
+Copyright E<copy> 2011-2014. Released under BSD license.
 
 =over 4
 

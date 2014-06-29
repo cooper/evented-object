@@ -249,10 +249,8 @@ See ["Collection methods"](#collection-methods) for more information.
 
 # COMPATIBILITY
 
-Evented::Object versions 0.0 to 0.7 are entirely compatible - anything that worked in
-version 0.0 or even compies of Evented::Object before it was versioned also work in
-version 0.7; however, some recent changes break the compatibility with these previous
-versions in many cases.
+Although Evented::Object attempts to maintain compatibility for an extended period of
+time, a number of exceptions do exist. 
 
 ## Asynchronous improvements 1.0+
 
@@ -923,7 +921,7 @@ Alias for `$fire->object`.
 
 [Mitchell Cooper](https://github.com/cooper) <cooper@cpan.org>
 
-Copyright © 2011-2013. Released under BSD license.
+Copyright © 2011-2014. Released under BSD license.
 
 - **IRC**: [irc.notroll.net #k](irc://irc.notroll.net/k)
 - **Email**: [cooper@cpan.org](mailto:cooper@cpan.org)
