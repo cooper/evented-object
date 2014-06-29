@@ -32,7 +32,7 @@ use Evented::Object::Collection;
 
 # always using 2 decimals now for CPAN releases.
 # change other packages too.
-our $VERSION = '5.45';
+our $VERSION = '5.47';
 
 # create a new evented object.
 sub new {
@@ -51,13 +51,12 @@ sub new {
 sub register_callback {
     my ($eo, $event_name, $code, %opts) = @_;
     
-    # no name was provided, so we shall construct
-    # one using the power of pure hackery.
+    # no name was provided, so we shall construct one using pure hackery.
     # this is one of the most criminal things I've ever done.
     my @caller = caller;
     if (!defined $opts{name}) {
-        state $c    = -1; $c++; 
-        $opts{name} = "$caller[0]($caller[2],$c)";
+        state $c    = -1; $c++;
+        $opts{name} = "$event_name:$caller[0]($caller[2],$c)";
     }
     
     # determine the event store.
@@ -174,7 +173,9 @@ sub delete_all_events {
     
     # just clear it to be safe.
     %$event_store = ();
-
+    delete $eo->{$events};
+    delete $eo->{$props};
+    
     return $amount;
 }
  
@@ -217,7 +218,7 @@ sub prepare_together {
         my ($eo_maybe, $event_name, @args);
 
         # was an object specified?
-        my $eo_maybe = shift @$set;
+        $eo_maybe = shift @$set;
         if (blessed $eo_maybe && $eo_maybe->isa(__PACKAGE__)) {
             $eo = $eo_maybe;
             ($event_name, @args) = @$set;
@@ -249,7 +250,7 @@ sub fire_event {
 
 # fire multiple events on multiple objects as a single event.
 sub fire_events_together {
-    prepare_together(@_)->fire;
+    prepare_together(@_)->fire(caller => [caller 1]);
 }
 
 # fire an event; then delete it.
@@ -388,7 +389,14 @@ sub _get_callbacks {
     my ($eo, $event_name, @args) = @_;
     my @collection;
     
-    # if there are any listening objects, call its callbacks of this priority.
+    # start out with two stores: the object and the package.
+    my @stores = (
+        [ $event_name => $eo->{$events}             ],
+        [ $event_name => _event_store(blessed $eo)  ]
+    );
+
+
+    # if there are any listening objects, add those stores.
     if (my $listeners = $eo->{$props}{listeners}) {
         my @delete;
         
@@ -403,20 +411,9 @@ sub _get_callbacks {
                 push @delete, $i;
                 next LISTENER;
             }
-            
-            # add the callbacks from this priority.
-            foreach my $priority (keys %{ $lis->{$events}{$listener_event_name} }) {
 
-                # create a group reference.
-                my $group = [ $eo, $listener_event_name, \@args];
-                weaken($group->[0]);
-                
-                # add each callback.
-                foreach my $cb (@{ $lis->{$events}{$listener_event_name}{$priority} }) {
-                    push @collection, [ $priority, $group, $cb ];
-                }
-                
-            }
+            
+            push @stores, [ $listener_event_name => $lis->{$events} ];
             
         }
         
@@ -425,37 +422,19 @@ sub _get_callbacks {
        
     }
 
-    # add the local callbacks from this priority.
-    if ($eo->{$events}{$event_name}) {
-        foreach my $priority (keys %{ $eo->{$events}{$event_name} }) {
+    # add callbacks from each store.
+    foreach my $st (@stores) {
+        my ($event_name, $event_store) = @$st;
+        my $store = $event_store->{$event_name} or next;
+        foreach my $priority (keys %$store) {
         
             # create a group reference.
             my $group = [ $eo, $event_name, \@args];
             weaken($group->[0]);
             
             # add each callback.
-            foreach my $cb (@{ $eo->{$events}{$event_name}{$priority} }) {
-                push @collection, [ $priority, $group, $cb ];
-            }
-            
-        }
-        
-    }
-    
-    # add the package callbacks for this priority.
-    my $event_store = _event_store(blessed $eo);
-    if ($event_store && $event_store->{$event_name}) {
-        foreach my $priority (keys %{ $event_store->{$event_name} }) {
-        
-            # create a group reference.
-            my $group = [ $eo, $event_name, \@args];
-            weaken($group->[0]);
-            
-            # add each callback.
-            foreach my $cb (@{ $event_store->{$event_name}{$priority} }) {
-                push @collection, [ $priority, $group, $cb ];
-            }
-            
+            push @collection, [ $priority, $group, $_ ] foreach @{ $store->{$priority} };
+
         }
     }
     
