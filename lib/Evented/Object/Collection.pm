@@ -12,7 +12,7 @@ use utf8;
 use 5.010;
 use Scalar::Util 'weaken';
 
-our $VERSION = '5.45';
+our $VERSION = '5.46';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -229,6 +229,7 @@ sub _call_callbacks {
         if ($collection->{safe} and my $err = $@) {
             chomp $err;
             $ef_props->{error}{ $cb->{name} } = $err;
+            $ef_props->{exception} = $err;
             $fire->stop($err) unless $collection->{fail_continue};
         }
         

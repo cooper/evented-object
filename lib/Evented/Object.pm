@@ -1353,6 +1353,16 @@ Returns the callback which called C<< $fire->stop >>.
  if ($fire->stopper) {
      say 'Fire was stopped by '.$fire->stopper;
  }
+ 
+=head2 $fire->exception
+
+If the event was fired with the `safe` option, it is possible that an exception occurred
+in one (or more if `fail_continue` enabled) callbacks. This method returns the last
+exception that occurred or `undef` if none did.
+
+ if (my $e = $fire->exception) {
+    say "Exception! $e";
+ }
 
 =head2 $fire->called($callback)
 

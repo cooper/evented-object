@@ -740,6 +740,19 @@ Returns the callback which called `$fire->stop`.
 if ($fire->stopper) {
     say 'Fire was stopped by '.$fire->stopper;
 }
+
+```
+
+## $fire->exception
+
+If the event was fired with the \`safe\` option, it is possible that an exception occurred
+in one (or more if \`fail\_continue\` enabled) callbacks. This method returns the last
+exception that occurred or \`undef\` if none did.
+
+````perl
+if (my $e = $fire->exception) {
+   say "Exception! $e";
+}
 ```
 
 ## $fire->called($callback)

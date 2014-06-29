@@ -15,7 +15,7 @@ use 5.010;
 ### EVENT FIRE OBJECTS ###
 ##########################
 
-our $VERSION = '5.45';
+our $VERSION = '5.46';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -153,6 +153,11 @@ sub data {
 # returns the evented object.
 sub object {
     shift->{$props}{object};
+}
+
+# returns the exception from 'safe' option, if any.
+sub exception {
+    shift->{$props}{exception};
 }
 
 # internal use only.
