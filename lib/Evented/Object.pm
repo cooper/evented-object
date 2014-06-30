@@ -32,7 +32,7 @@ use Evented::Object::Collection;
 
 # always using 2 decimals now for CPAN releases.
 # change other packages too.
-our $VERSION = '5.47';
+our $VERSION = '5.48';
 
 # create a new evented object.
 sub new {
@@ -119,40 +119,28 @@ sub delete_callback {
     # iterate through callbacks and delete matches.
     PRIORITY: foreach my $priority (keys %{ $event_store->{$event_name} }) {
         my $callbacks = $event_store->{$event_name}{$priority};
-        my @a = grep { $_->{name} ne $name } @$callbacks;
+        my @goodbacks;
         
-        my $i = -1;
-        CALLBACK: foreach my $cb (@$callbacks) { $i++;
-            next unless $cb->{name} eq $name;
-            
-            # it matches; remove it.
-            $amount++;
-            splice @$callbacks, $i, 1;
-            
-            # tell monitors.
-            _monitor_fire($caller[0], delete_callback => $eo, $event_name, $name);
-            
-            last CALLBACK;
-        }
-        
-        # none left in this priority.
-        if (scalar @a == 0) {
-            delete $event_store->{$event_name}{$priority};
-            
-            # delete this event because all priorities have been removed.
-            if (!keys %{ $event_store->{$event_name} }) {
-                delete $event_store->{$event_name};
-                return 1;
+        CALLBACK: foreach my $cb (@$callbacks) {
+
+            # don't want this one.
+            if (ref $cb ne 'HASH' || $cb->{name} eq $name) {
+                $amount++;
+                next CALLBACK;
             }
             
-            last PRIORITY if $amount;
-            next PRIORITY;
-            
+            push @goodbacks, $cb;
         }
         
-        # store the new array.
-        @$callbacks = \@a;
-
+        # no callbacks left in this priority.
+        if (!scalar @goodbacks) {
+            delete $event_store->{$event_name}{$priority};
+            next PRIORITY;
+        }
+        
+        # keep these callbacks.
+        @$callbacks = @goodbacks;
+        
     }
 
     return $amount;

@@ -12,7 +12,7 @@ use utf8;
 use 5.010;
 use Scalar::Util 'weaken';
 
-our $VERSION = '5.47';
+our $VERSION = '5.48';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -96,21 +96,7 @@ sub sort : method {
         my $item = shift @remaining;
         my $cb   = $item->[2];
         
-        # fix for inexplicable bug.
-        if (!ref $cb || ref $cb ne 'HASH') {
-            
-            if (ref $cb eq 'ARRAY' && ref $cb->[0] eq 'HASH') {
-                $cb = $item->[2] = $cb->[0];
-            }
-                
-            # uh what?
-            else {
-                warn "callback($cb) is not a hashref!";
-                warn "callback($cb) array: @$cb" if ref $cb eq 'ARRAY';
-                next;
-            }
-            
-        }
+        # already did this one.
         next if defined $done{ $cb->{name} };
                 
         # there is no defined priority, but there is before/after.
@@ -271,7 +257,7 @@ sub _call_callbacks {
 
 sub _return_check {
     my $fire    = shift;
-    my %returns = %{ $fire->{$props}{return} };
+    my %returns = %{ $fire->{$props}{return} || {} };
     foreach my $cb_name (keys %returns) {
         next if $returns{$cb_name};
         return $fire->stop("$cb_name returned false with return_check enabled");
