@@ -12,7 +12,7 @@ use utf8;
 use 5.010;
 use Scalar::Util 'weaken';
 
-our $VERSION = '5.48';
+our $VERSION = '5.49';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -95,6 +95,7 @@ sub sort : method {
     while (@remaining) {
         my $item = shift @remaining;
         my $cb   = $item->[2];
+        ref $cb eq 'HASH' or next;
         
         # already did this one.
         next if defined $done{ $cb->{name} };

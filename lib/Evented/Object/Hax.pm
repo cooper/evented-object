@@ -10,7 +10,7 @@ use warnings;
 use strict;
 use 5.010;
 
-our $VERSION = '5.48';
+our $VERSION = '5.49';
 
 # exported import subroutine.
 sub import {
