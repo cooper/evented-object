@@ -353,8 +353,8 @@ recommended**.
 - **name**: the name of the callback being registered. must be unique to this particular
 event.
 - **priority**: a numerical priority of the callback.
-- **before**: the name of a callback to precede.
-- **after**: the name of a callback to succeed.
+- **before**: the name of a callback or an array reference of callback names to precede.
+- **after**: the name of a callback or an array reference of callback names to succeed.
 - **data**: any data that will be stored as `$fire->callback_data` as the callback is
 fired. If `data` is a hash reference, its values can be fetched conveniently with
 `$fire->callback_data('key')`.
@@ -364,9 +364,18 @@ fired. If `data` is a hash reference, its values can be fetched conveniently wit
 Note: the order of objects will always be `$eo`, `$fire`, `@args`, regardless of
 omissions. By default, the argument list is `$fire`, `@args`.
 
-Note: only one of `priority`, `before`, and `after` will be respected. Although more
-complex prioritization is in the works, Evented::Object is not currently capable of
-resolving priority conflicts with before and after.
+Note: In Evented::Object 5.5+, you may have any number of `before` and any number of
+`after` options for any given callback. For instance, one callback may specify
+to be before 'b' and 'c' but after 'a'. Evented::Object will resolve these priorities to
+its best ability.
+
+In the case that the priorities can not be resolved (for instance, if a callback asks to
+be before 'a' and after 'b' while 'b' has already asked to be before 'a'), the behavior of
+Evented::Object is not guaranteed to be consistent. In other words, please do your best to
+not request impossible priorities.
+
+In any case, `before` and `after` options are completely ignored when a `priority` is
+explicitly specified.
 
 ## $eo->register\_callbacks(@events)
 

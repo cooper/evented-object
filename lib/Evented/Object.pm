@@ -852,11 +852,11 @@ B<priority>: a numerical priority of the callback.
 
 =item *
 
-B<before>: the name of a callback to precede.
+B<before>: the name of a callback or an array reference of callback names to precede.
  
 =item *
 
-B<after>: the name of a callback to succeed.
+B<after>: the name of a callback or an array reference of callback names to succeed.
  
 =item *
 
@@ -877,9 +877,18 @@ B<no_fire_obj>: if true, the fire object will not be prepended to the argument l
 Note: the order of objects will always be C<$eo>, C<$fire>, C<@args>, regardless of
 omissions. By default, the argument list is C<$fire>, C<@args>.
 
-Note: only one of C<priority>, C<before>, and C<after> will be respected. Although more
-complex prioritization is in the works, Evented::Object is not currently capable of
-resolving priority conflicts with before and after.
+Note: In Evented::Object 5.5+, you may have any number of C<before> and any number of
+C<after> options for any given callback. For instance, one callback may specify
+to be before 'b' and 'c' but after 'a'. Evented::Object will resolve these priorities to
+its best ability.
+
+In the case that the priorities can not be resolved (for instance, if a callback asks to
+be before 'a' and after 'b' while 'b' has already asked to be before 'a'), the behavior of
+Evented::Object is not guaranteed to be consistent. In other words, please do your best to
+not request impossible priorities.
+
+In any case, C<before> and C<after> options are completely ignored when a C<priority> is
+explicitly specified.
 
 =head2 $eo->register_callbacks(@events)
 
