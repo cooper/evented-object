@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 28;
+use Test::More tests => 32;
 use Evented::Object;
 
 ################## Tests basic priorities.
@@ -226,3 +226,42 @@ $eo->register_callback(event => sub {
 }, data => 'my data');
 
 $eo->fire_event('event');
+
+##########################
+### COMPLEX PRIORITIES ###
+##########################
+
+$eo->delete_all_events;
+@results = ();
+my $cb = sub { push @results, shift->callback_name };
+# b a c
+$eo->register_callback(event => $cb, name => 'third');
+$eo->register_callback(event => $cb, name => 'second', before => 'third');
+$eo->register_callback(event => $cb, name => 'first',  before => ['second', 'third']);
+$eo->register_callback(event => $cb, name => 'fourth', after  => ['first', 'third']);
+
+$eo->fire_event('event');
+
+is($results[0], 'first',  'complex before and afters');
+is($results[1], 'second', 'complex before and afters');
+is($results[2], 'third',  'complex before and afters');
+is($results[3], 'fourth', 'complex before and afters');
+
+###############################
+### UNRESOLVABLE PRIORITIES ###
+###############################
+
+@results = ();
+
+$eo->register_callback(event => $cb, name => 'unresolvable1',
+    before => 'first', after => ['fourth', 'unresolvable2']);
+    
+$eo->register_callback(event => $cb, name => 'unresolvable2',
+    before => ['first', 'unresolvable1'], after => 'fourth');
+
+$eo->fire_event('event');
+
+
+
+
+

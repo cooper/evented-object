@@ -32,7 +32,7 @@ use Evented::Object::Collection;
 
 # always using 2 decimals now for CPAN releases.
 # change other packages too.
-our $VERSION = '5.49';
+our $VERSION = '5.50';
 
 # create a new evented object.
 sub new {
@@ -189,7 +189,7 @@ sub prepare_event {
 
 # prepare a fire of one or more events.
 sub prepare_together {
-    my ($obj, @collection);
+    my ($obj, %collection);
     foreach my $set (@_) {
         my $eo;
 
@@ -219,11 +219,12 @@ sub prepare_together {
         }
         
         # add to the collection.
-        push @collection, @{ _get_callbacks($eo, $event_name, @args) };
+        my %mini_collection = %{ _get_callbacks($eo, $event_name, @args) };
+        @collection{ keys %mini_collection } = values %mini_collection;
         
     }
 
-    return bless { pending => \@collection }, 'Evented::Object::Collection';
+    return bless { pending => \%collection }, 'Evented::Object::Collection';
 }
 
 #####################
@@ -375,7 +376,7 @@ sub _get_callback_named {
 # internal use only.
 sub _get_callbacks {
     my ($eo, $event_name, @args) = @_;
-    my @collection;
+    my %collection;
     
     # start out with two stores: the object and the package.
     my @stores = (
@@ -421,12 +422,13 @@ sub _get_callbacks {
             weaken($group->[0]);
             
             # add each callback.
-            push @collection, [ $priority, $group, $_ ] foreach @{ $store->{$priority} };
+            $collection{ $_->{name} } = [ $priority, $group, $_ ]
+                foreach @{ $store->{$priority} };
 
         }
     }
-    
-    return \@collection;
+
+    return \%collection;
 }
 
 # fire a class monitor event.

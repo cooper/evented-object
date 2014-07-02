@@ -10,9 +10,11 @@ use warnings;
 use strict;
 use utf8;
 use 5.010;
-use Scalar::Util 'weaken';
 
-our $VERSION = '5.49';
+use Scalar::Util 'weaken';
+use List::Util qw(min max);
+
+our $VERSION = '5.50';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -61,8 +63,8 @@ sub fire {
     );
     
     # if it hasn't been sorted, do so.
-    my $callbacks = $collection->{pending} or return $fire;
     $collection->sort if not $collection->{sorted};
+    my $callbacks = $collection->{sorted} or return $fire;
     
     # if return_check is enabled, add a callback to be fired last that will
     # check the return values. this is basically hackery using a dummy object.
@@ -83,59 +85,106 @@ sub fire {
 }
 
 # sorts the callbacks, trying its best to listen to before and after.
-# perhaps one day this could be done more efficiently - it currently must
-# loop through twice: once for before and after, once for numerical sort.
 sub sort : method {
     my $collection = shift;
-    my @remaining  = @{ $collection->{pending} };
-    my @sorted;
+    return unless $collection->{pending};
+    my %callbacks = %{ $collection->{pending} };
+    my (@sorted, %done, %waited);
     
-    # sort by before/after.
-    my (%waited, %done);
-    while (@remaining) {
-        my $item = shift @remaining;
-        my $cb   = $item->[2];
-        ref $cb eq 'HASH' or next;
+    my @callbacks = values %callbacks;
+    SET: while (my $set = shift @callbacks) {
+        my ($priority, $group, $cb) = @$set;
+        my (@befores, @afters);
+        next if $done{ $cb->{name} };
         
-        # already did this one.
-        next if defined $done{ $cb->{name} };
+        # a real priority exists already.
+        if (defined $priority && $priority ne 'nan') {
+            push @sorted, $set;
+            $done{ $cb->{name} } = 1;
+            next;
+        }
+        
+        #
+        # TODO: if before and afters cannot be resolved, the callbacks are currently
+        # skipped. maybe there should be a way to specify that a callback is REQUIRED,
+        # meaning to skip the callback entirely if it cannot be done. or maybe something
+        # more sophisticated that can prioritize the befores and afters in this way.
+        # for now though, we will just try to not specify impossible befores and afters.
+        #
+        # also, the code repetition here for before and afters is quite ugly.
+        #
+        
+        # befores.
+        if (defined(my $b = $cb->{before})) {
+            $cb->{before} = $b = [ $b ] if ref $b ne 'ARRAY';
+            foreach (@$b) {
+                $callbacks{$_} or next;
+                my $their_priority = $callbacks{$_}[0];
                 
-        # there is no defined priority, but there is before/after.
-        if ($item->[0] eq 'nan' and my $ref_cb_name = $cb->{before} // $cb->{after}) {
-        
-            # have we dealt with the referred callback already?
-            if (defined(my $ref_priority = $done{$ref_cb_name})) {
-                $item->[0] = ++$ref_priority if $cb->{before};
-                $item->[0] = --$ref_priority if $cb->{after};
-            }
-            
-            # no, the referred callback is probably pending. maybe.
-            else {
-            
-                # if we've not waited on this callback already, append it to remaining.
-                # then maybe by the next time we get around to it, the callback will exist.
-                if (!$waited{ $cb->{name} }) {
-                    $waited{ $cb->{name} } = 1;
-                    push @remaining, $item;
-                    next;
+                # wait until priority is determined.
+                if ($their_priority eq 'nan') {
+                    my $key = $cb->{name}.q( ).$callbacks{$_}[2]->{name};
+                    push @callbacks, $set unless $waited{$key};
+                    $waited{$key} = 1;
+                    next SET;
                 }
                 
-                # if we have waited on the callback, this is the point at which we give up.
-                $item->[0] = 0;
-                                
+                push @befores, $their_priority;
             }
         }
         
-        # if we have a priority, we're done with this one.
-        $done{ $cb->{name} } = $item->[0];
-        push @sorted, $item;
+        # afters.
+        if (defined(my $b = $cb->{after})) {
+            $cb->{after} = $b = [ $b ] if ref $b ne 'ARRAY';
+            foreach (@$b) {
+                $callbacks{$_} or next;
+                my $their_priority = $callbacks{$_}[0];
+                
+                # wait until priority is determined.
+                if ($their_priority eq 'nan') {
+                    my $key = $cb->{name}.q( ).$callbacks{$_}[2]->{name};
+                    push @callbacks, $set unless $waited{$key};
+                    $waited{$key} = 1;
+                    next SET;
+                }
+                
+                push @afters, $their_priority;
+            }
+        }
         
+        # figure the ideal priority.
+        if (@befores && @afters) {
+            my $a_refpoint = min @afters;
+            my $b_refpoint = max @befores;
+            $priority      = (@afters + @befores) / 2;
+        }
+        
+        # only before. just have 1 higher priority.
+        elsif (@befores) {
+            my $refpoint = max @befores;
+            $priority    = ++$refpoint;
+        }
+        
+        # only after.
+        elsif (@afters) {
+            my $refpoint = min @afters;
+            $priority    = --$refpoint;
+        }
+        
+        $priority = 0 if $priority eq 'nan';
+
+        # done with this callback.
+        $set->[0] = $priority;
+        push @sorted, $set;
+        $done{ $cb->{name} } = 1;
+
     }
 
     # the final sort by numerical priority.
-    @{ $collection->{pending} } = sort { $b->[0] <=> $a->[0] } @sorted;
+    use Data::Dumper;
+
+    $collection->{sorted} = [ sort { $b->[0] <=> $a->[0] } @sorted ];
     
-    $collection->{sorted} = 1;
 }
 
 # Nov. 22, 2013 revision:
@@ -174,7 +223,7 @@ sub _call_callbacks {
     my %called;
     
     # store the collection.
-    my $remaining = $collection->{pending} or return;
+    my $remaining = $collection->{sorted} or return;
     $ef_props->{collection} = $collection;
     
     # call each callback.
@@ -199,8 +248,8 @@ sub _call_callbacks {
         next if $ef_props->{called}{ $cb->{name} };
         next if $called{$cb};
 
-        # this callback has been cancelled.
-        next if $ef_props->{cancelled}{ $cb->{name} };
+        # this callback has probably been cancelled.
+        next unless $collection->{pending}{ $cb->{name} };
 
         
         # determine arguments.
@@ -226,6 +275,9 @@ sub _call_callbacks {
         $called{$cb}                       =
         $ef_props->{called}{ $cb->{name} } = 1;
         $ef_props->{last_callback}         = $cb->{name};
+        
+        # no longer pending.
+        delete $collection->{pending}{ $cb->{name} };
         
         # stop if eval failed.
         if ($collection->{safe} and my $err = $@) {

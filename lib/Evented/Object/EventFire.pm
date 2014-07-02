@@ -15,7 +15,7 @@ use 5.010;
 ### EVENT FIRE OBJECTS ###
 ##########################
 
-our $VERSION = '5.49';
+our $VERSION = '5.50';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -55,30 +55,29 @@ sub called {
 # with no argument, returns number of callbacks pending.
 sub pending {
     my ($fire, $cb_name) = @_;
+    my $pending = $fire->{$props}{collection}{pending};
     
     # return number of callbacks remaining.
     if (!defined $cb_name) {
-        return scalar $fire->_pending_callbacks;
+        return scalar keys %$pending;
     }
 
-    # return whether the specified callback is pending.
-    foreach my $callback ($fire->_pending_callbacks) {
-        return 1 if $callback->[2]{name} eq $cb_name;
-    }
+    # return whether the specified callback is pending.    
+    return $pending->{$cb_name};
     
-    return;
 }
 
 # cancels a future callback once.
 sub cancel {
-    my ($fire, $callback) = @_;
+    my ($fire, $cb_name) = @_;
     
     # if there is no argument given, we will just
     # treat this like a ->stop on the event.
-    defined $callback or return $fire->stop;
+    defined $cb_name or return $fire->stop;
+
+    # cancel the callback.
+    delete $fire->{$props}{collection}{pending}{$cb_name};
     
-    $fire->{$props}{cancelled}{$callback} = 1;
-    $fire->{$props}{cancellor}{$callback} = $fire->callback_name;
     return 1;
 }
 
@@ -158,22 +157,6 @@ sub object {
 # returns the exception from 'safe' option, if any.
 sub exception {
     shift->{$props}{exception};
-}
-
-# internal use only.
-# returns an array of the callbacks to come.
-sub _pending_callbacks {
-    my ($fire, @pending) = shift;
-    my $ef_props   = $fire->{$props};
-    my $collection = $ef_props->{collection};
-    my @remaining  = @{ $collection->{pending} };
-    
-    # this is the last callback.
-    return @remaining if !@remaining;
-    
-    # return the pending callbacks, filtering out canceled callbacks.
-    return grep { not $ef_props->{cancelled}{ $_->[2]{name} } } @remaining;
-    
 }
 
 ###############
