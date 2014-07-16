@@ -32,11 +32,12 @@ use Evented::Object::Collection;
 
 # always using 2 decimals now for CPAN releases.
 # change other packages too.
-our $VERSION = '5.50';
+our $VERSION = '5.51';
 
 # create a new evented object.
 sub new {
-    bless {}, shift;
+    my ($class, %opts) = @_;
+    bless \%opts, $class;
 }
 
 #############################
