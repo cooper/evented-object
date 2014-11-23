@@ -181,8 +181,6 @@ sub sort : method {
     }
 
     # the final sort by numerical priority.
-    use Data::Dumper;
-
     $collection->{sorted} = [ sort { $b->[0] <=> $a->[0] } @sorted ];
     
 }
