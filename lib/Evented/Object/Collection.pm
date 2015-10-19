@@ -11,10 +11,10 @@ use strict;
 use utf8;
 use 5.010;
 
-use Scalar::Util 'weaken';
+use Scalar::Util qw(weaken);
 use List::Util qw(min max);
 
-our $VERSION = '5.52';
+our $VERSION = '5.53';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 

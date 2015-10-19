@@ -10,7 +10,9 @@ use warnings;
 use strict;
 use 5.010;
 
-our $VERSION = '5.52';
+use List::Util qw(first);
+
+our $VERSION = '5.53';
 
 # exported import subroutine.
 sub import {
@@ -96,7 +98,7 @@ sub make_child {
     my $isa = get_symbol_ref($package, '@ISA');
 
     # package already inherits directly.
-    return 1 if $make_parent ~~ @$isa;
+    return 1 if scalar first { $_ eq $make_parent } @$isa;
 
     # check each class in ISA for inheritance.
     foreach my $parent (@$isa) {
