@@ -13,7 +13,7 @@
 # in its latest version at https://github.com/cooper/evented-object.
 #
 package Evented::Object;
- 
+
 use warnings;
 use strict;
 use utf8;
@@ -32,7 +32,7 @@ use Evented::Object::Collection;
 
 # always using 2 decimals now for CPAN releases.
 # change other packages too.
-our $VERSION = '5.51';
+our $VERSION = '5.52';
 
 # create a new evented object.
 sub new {
@@ -51,7 +51,7 @@ sub new {
 # note: no_obj fires callback without $fire as first argument.
 sub register_callback {
     my ($eo, $event_name, $code, %opts) = @_;
-    
+
     # no name was provided, so we shall construct one using pure hackery.
     # this is one of the most criminal things I've ever done.
     my @caller = caller;
@@ -59,17 +59,17 @@ sub register_callback {
         state $c    = -1; $c++;
         $opts{name} = "$event_name:$caller[0]($caller[2],$c)";
     }
-    
+
     # determine the event store.
     my $event_store = _event_store($eo);
-        
+
     # before/after a callback.
     my $priority   = delete $opts{priority} || 0;
     if (defined $opts{before} or defined $opts{after}) {
         $priority = 'nan';
         # nan priority indicates it should be determined at a later time.
     }
-    
+
     # add the callback.
     my $callbacks = $event_store->{$event_name}{$priority} ||= [];
     push @$callbacks, my $cb = {
@@ -77,13 +77,13 @@ sub register_callback {
         code   => $code,
         caller => \@caller
     };
-    
+
     # tell class monitor.
     _monitor_fire(
         $opts{_caller} // $caller[0],
         register_callback => $eo, $event_name, $cb
     );
-    
+
     return $cb;
 }
 
@@ -105,10 +105,10 @@ sub delete_callback {
     my @caller      = $caller && ref $caller eq 'ARRAY' ? @$caller : caller;
     my $amount      = 0;
     my $event_store = _event_store($eo);
-    
+
     # event does not have any callbacks.
     return 0 unless $event_store->{$event_name};
- 
+
      # if no callback is specified, delete all events of this type.
     if (!$name) {
         $amount = scalar keys %{ $event_store->{$event_name} };
@@ -121,7 +121,7 @@ sub delete_callback {
     PRIORITY: foreach my $priority (keys %{ $event_store->{$event_name} }) {
         my $callbacks = $event_store->{$event_name}{$priority};
         my @goodbacks;
-        
+
         CALLBACK: foreach my $cb (@$callbacks) {
 
             # don't want this one.
@@ -129,19 +129,19 @@ sub delete_callback {
                 $amount++;
                 next CALLBACK;
             }
-            
+
             push @goodbacks, $cb;
         }
-        
+
         # no callbacks left in this priority.
         if (!scalar @goodbacks) {
             delete $event_store->{$event_name}{$priority};
             next PRIORITY;
         }
-        
+
         # keep these callbacks.
         @$callbacks = @goodbacks;
-        
+
     }
 
     return $amount;
@@ -152,22 +152,22 @@ sub delete_all_events {
     my ($eo, $amount) = (shift, 0);
     my $event_store   = _event_store($eo) or return;
     ref $event_store eq 'HASH'            or return;
-    
+
     # delete one-by-one.
     # we can't simply set an empty list because monitor events must be fired.
     foreach my $event_name (keys %$event_store) {
         $eo->delete_event($event_name);
         $amount++;
     }
-    
+
     # just clear it to be safe.
     %$event_store = ();
     delete $eo->{$events};
     delete $eo->{$props};
-    
+
     return $amount;
 }
- 
+
 ########################
 ### PREPARING EVENTS ###
 ########################
@@ -200,7 +200,7 @@ sub prepare_together {
             $obj = $set;
             next;
         }
-    
+
         # okay, it's an array ref of
         # [ $eo (optional), $event_name => @args ]
         ref $set eq 'ARRAY' or next;
@@ -212,17 +212,17 @@ sub prepare_together {
             $eo = $eo_maybe;
             ($event_name, @args) = @$set;
         }
-        
+
         # no object; fall back to $obj.
         else {
             $eo = $obj or return;
             ($event_name, @args) = ($eo_maybe, @$set);
         }
-        
+
         # add to the collection.
         my %mini_collection = %{ _get_callbacks($eo, $event_name, @args) };
         @collection{ keys %mini_collection } = values %mini_collection;
-        
+
     }
 
     return bless { pending => \%collection }, 'Evented::Object::Collection';
@@ -246,14 +246,14 @@ sub fire_events_together {
 # fire an event; then delete it.
 sub fire_once {
     my ($eo, $event_name, @args) = @_;
-    
+
     # fire with this caller.
     my $fire = $eo->prepare_event($event_name, @args)->fire(caller => [caller 1]);
 
     # delete the event.
     $eo->delete_event($event_name);
     return $fire;
-    
+
 }
 
 ########################
@@ -263,16 +263,16 @@ sub fire_once {
 # add an object to listen to events.
 sub add_listener {
     my ($eo, $obj, $prefix) = @_;
-    
+
     # find listeners list.
     my $listeners = $eo->{$props}{listeners} ||= [];
-    
+
     # store this listener.
     push @$listeners, [$prefix, $obj];
-    
+
     # weaken the reference to the listener.
     weaken($listeners->[$#$listeners][1]);
-    
+
     return 1;
 }
 
@@ -300,18 +300,18 @@ sub stop_monitoring { delete_class_monitor(reverse @_) }
 #
 sub add_class_monitor {
     my ($pkg, $obj) = @_;
-    
+
     # ensure it's an evented object.
     return unless $obj->isa(__PACKAGE__);
-    
+
     # it's already in the list.
     my $m = $monitors{$pkg} ||= [];
     return if grep { $_ == $obj } @$m = grep { defined } @$m;
-    
+
     # hold a weak reference to the monitor.
     push @$m, $obj;
     weaken($monitors{$pkg}[$#$m]);
-    
+
     return 1;
 }
 
@@ -355,7 +355,7 @@ sub _event_store {
     my $store = _package_store($eo);
     return $store->{events} ||= {} if not blessed $eo;
 }
- 
+
 # fetch the property store of object or package.
 sub _prop_store {
     my $eo    = shift;
@@ -378,7 +378,7 @@ sub _get_callback_named {
 sub _get_callbacks {
     my ($eo, $event_name, @args) = @_;
     my %collection;
-    
+
     # start out with two stores: the object and the package.
     my @stores = (
         [ $event_name => $eo->{$events}             ],
@@ -389,12 +389,12 @@ sub _get_callbacks {
     # if there are any listening objects, add those stores.
     if (my $listeners = $eo->{$props}{listeners}) {
         my @delete;
-        
+
         LISTENER: foreach my $i (0 .. $#$listeners) {
             my $l = $listeners->[$i] or next;
             my ($prefix, $lis) = @$l;
             my $listener_event_name = $prefix.q(.).$event_name;
-            
+
             # object has been deallocated by garbage disposal,
             # so we can delete this listener.
             if (!$lis) {
@@ -402,14 +402,14 @@ sub _get_callbacks {
                 next LISTENER;
             }
 
-            
+
             push @stores, [ $listener_event_name => $lis->{$events} ];
-            
+
         }
-        
+
         # delete listeners if necessary.
         splice @$listeners, $_, 1 foreach @delete;
-       
+
     }
 
     # add callbacks from each store.
@@ -417,11 +417,11 @@ sub _get_callbacks {
         my ($event_name, $event_store) = @$st;
         my $store = $event_store->{$event_name} or next;
         foreach my $priority (keys %$store) {
-        
+
             # create a group reference.
             my $group = [ $eo, $event_name, \@args];
             weaken($group->[0]);
-            
+
             # add each callback.
             $collection{ $_->{name} } = [ $priority, $group, $_ ]
                 foreach @{ $store->{$priority} };
@@ -451,7 +451,7 @@ sub delete_event;
 
 sub on;
 sub del;
-sub fire; 
+sub fire;
 
 BEGIN {
     *register_event     = *register_callback;
@@ -461,7 +461,7 @@ BEGIN {
     *del                = *delete_callback;
     *fire               = *fire_event;
 }
- 
+
 1;
 
 =head1 NAME
@@ -470,26 +470,26 @@ B<Evented::Object> - a base class that allows you to attach event callbacks to a
 and then fire events on that object.
 
 =head1 SYNOPSIS
- 
+
 Demonstrates basic Evented::Object subclasses, priorities of event callbacks,
 and fire objects and their methods.
- 
+
  package Person;
- 
+
  use warnings;
  use strict;
  use 5.010;
  use parent 'Evented::Object';
- 
+
  use Evented::Object;
- 
+
  # Creates a new person object. This is nothing special.
  # Evented::Object does not require any specific constructor to be called.
  sub new {
      my ($class, %opts) = @_;
      bless \%opts, $class;
  }
- 
+
  # Fires birthday event and increments age.
  sub have_birthday {
      my $person = shift;
@@ -506,38 +506,38 @@ In some other package...
  # Add an event callback that assumes Jake is under 21.
  $jake->on(birthday => sub {
      my ($fire, $new_age) = @_;
- 
+
      say 'not quite 21 yet...';
- 
+
  }, name => '21-soon');
- 
+
  # Add an event callback that checks if Jake is 21 and cancels the above callback if so.
  $jake->on(birthday => sub {
      my ($fire, $new_age) =  @_;
- 
+
      if ($new_age == 21) {
          say 'time to get drunk!';
          $fire->cancel('21-soon');
      }
- 
+
  }, name => 'finally-21', priority => 1);
- 
+
  # Jake has two birthdays.
- 
+
  # Jake's 20th birthday.
  $jake->have_birthday;
- 
+
  # Jake's 21st birthday.
  $jake->have_birthday;
- 
+
  # Because 21-soon has a lower priority than finally-21,
  # finally-21 will cancel 21-soon if Jake is 21.
- 
+
  # The result:
  #
  #   not quite 21 yet...
  #   time to get drunk!
- 
+
 =head1 DESCRIPTION
 
 B<I honestly doubt your objects have ever been this evented in your entire life.> This
@@ -684,8 +684,8 @@ Evented::Object 3.9 adds the ability to register event callbacks to a subclass o
 Evented::Object. The methods C<< ->register_callback() >>, C<< ->delete_event() >>,
 C<< ->delete_callback >>, etc. can be called in the form of C<< MyClass->method() >>.
 Evented::Object will store these callbacks in a special hash hidden in the package's
-symbol table.  
-  
+symbol table.
+
 Any object of this class will borrow these callbacks from the class. They will be
 incorporated into the callback collection as though they were registered directly on the
 object.
@@ -732,7 +732,7 @@ See L</"Collection methods"> for more information.
 =head1 COMPATIBILITY
 
 Although Evented::Object attempts to maintain compatibility for an extended period of
-time, a number of exceptions do exist. 
+time, a number of exceptions do exist.
 
 =head2 Asynchronous improvements 1.0+
 
@@ -854,11 +854,11 @@ B<priority>: a numerical priority of the callback.
 =item *
 
 B<before>: the name of a callback or an array reference of callback names to precede.
- 
+
 =item *
 
 B<after>: the name of a callback or an array reference of callback names to succeed.
- 
+
 =item *
 
 B<data>: any data that will be stored as C<< $fire->callback_data >> as the callback is
@@ -1069,7 +1069,7 @@ for the event.
 
 =head2 $eo->prepare_together(@events)
 
-The preparatory method equivalent to C<< ->fire_events_together >>. 
+The preparatory method equivalent to C<< ->fire_events_together >>.
 
 =head2 $eo->prepare(...)
 
@@ -1078,7 +1078,7 @@ C<< ->prepare_together >>.
 
  # uses ->prepare_event()
  $eo->prepare(some_event => @arguments);
- 
+
  # uses ->prepare_together()
  $eo->prepare(
     [ some_event => @arguments ],
@@ -1094,28 +1094,28 @@ section above for more details on class monitors and their purpose.
 
  my $some_eo  = Evented::Object->new;
  my $other_eo = Evented::Object->new;
- 
+
  $some_eo->on('monitor:register_callback', sub {
      my ($event, $eo, $event_name, $cb) = @_;
      # $eo         == $other_eo
      # $event_name == "blah"
      # $cb         == callback hash from ->register_callback()
-     say "Registered $$cb{name} to $eo for $event_name"; 
+     say "Registered $$cb{name} to $eo for $event_name";
  });
- 
+
  $some_eo->monitor_events('Some::Class');
- 
+
  package Some::Class;
  $other_eo->on(blah => sub{}); # will trigger the callback above
 
 =over 4
 
 =item *
- 
+
 B<pkg>: a package whose event activity you wish to monitor.
 
 =back
- 
+
 =head2 $eo->stop_monitoring($pkg)
 
 Removes an evented object from its current position as a monitor for a specific package.
@@ -1158,7 +1158,7 @@ C<< [ $evented_object, event_name => @arguments ] >>
      [ $channel, user_joined         => $user           ],
      [ $user,    joined_channel      => $channel        ]
  );
- 
+
 Since Evented::Object 5.0, C<< ->fire_events_together >> can be used as a method on any
 evented object.
 
@@ -1166,14 +1166,14 @@ evented object.
      [ some_event => @arguments ],
      [ some_other => @other_arg ]
  );
- 
+
 The above example would formerly be achieved as:
 
  Evented::Object::fire_events_together(
      [ $eo, some_event => @arguments ],
      [ $eo, some_other => @other_arg ]
  );
- 
+
 However, other evented objects may be specified even when this is used as a method.
 Basically, anywhere that an object is missing will fall back to the object on which
 the method was called.
@@ -1182,7 +1182,7 @@ the method was called.
      [ $other_eo, some_event => @arguments ],
      [            some_other => @other_arg ] # no object, falls back to $eo
  );
- 
+
 B<Parameters>
 
 =over 4
@@ -1211,7 +1211,7 @@ B<eo>: the evented object.
 
 =item *
 
-B<event_name>: the name of the event. 
+B<event_name>: the name of the event.
 
 =item *
 
@@ -1230,7 +1230,7 @@ Fires the pending callbacks with the specified options, if any. If the callbacks
 yet been sorted, they are sorted before the event is fired.
 
  $eo->prepare(some_event => @arguments)->fire('safe');
- 
+
 B<Parameters>
 
 =over 4
@@ -1272,7 +1272,7 @@ expected a previous callback to be done when it actually failed.
 
 B<data>: I<requires value>, a scalar value that can be fetched by C<< $fire->data >>
 from within the callbacks. Good for data that might be useful sometimes but not frequently
-enough to deserve a spot in the argument list. If C<data> is a hash reference, its 
+enough to deserve a spot in the argument list. If C<data> is a hash reference, its
 values can be fetched conveniently with C<< $fire->data('key') >>.
 
 =back
@@ -1332,7 +1332,7 @@ Returns the callback which called C<< $fire->stop >>.
  if ($fire->stopper) {
      say 'Fire was stopped by '.$fire->stopper;
  }
- 
+
 =head2 $fire->exception
 
 If the event was fired with the `safe` option, it is possible that an exception occurred
@@ -1350,11 +1350,11 @@ current one. If a callback argument is supplied, returns whether that particular
 has been called.
 
  say $fire->called, 'callbacks have been called so far.';
- 
+
  if ($fire->called('some.callback')) {
      say 'some.callback has been called already.';
  }
- 
+
 B<Parameters>
 
 =over 4
@@ -1370,9 +1370,9 @@ B<callback>: I<optional>, the callback being checked.
 If no argument is supplied, returns the number of callbacks pending to be called,
 excluding the current one. If a callback  argument is supplied, returns whether that
 particular callback is pending for being called.
- 
+
  say $fire->pending, ' callbacks are left.';
- 
+
  if ($fire->pending('some.callback')) {
      say 'some.callback will be called soon (unless it gets canceled)';
  }
@@ -1430,7 +1430,7 @@ Returns the most recent previous callback called.
 This is also useful for determining which callback was the last to be called.
 
  say $fire->last, ' was called before this one.';
- 
+
  my $fire = $eo->fire_event('myEvent');
  say $fire->last, ' was the last callback called.';
 
@@ -1472,12 +1472,12 @@ is a hash reference, an optional key parameter can specify a which value to fetc
  say 'my name is ', $fire->callback_data('name');
 
 B<Parameters>
- 
+
 =over 4
 
 =item *
 
-B<key>: I<optional>, a key to fetch a value if the data registered was a hash. 
+B<key>: I<optional>, a key to fetch a value if the data registered was a hash.
 
 =back
 
@@ -1490,12 +1490,12 @@ is a hash reference, an optional key parameter can specify a which value to fetc
  say 'fire time was ', $fire->data('time');
 
 B<Parameters>
- 
+
 =over 4
 
 =item *
 
-B<key>: I<optional>, a key to fetch a value if the data registered was a hash. 
+B<key>: I<optional>, a key to fetch a value if the data registered was a hash.
 
 =back
 

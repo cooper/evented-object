@@ -5,7 +5,7 @@
 # https://github.com/cooper/evented-object
 #
 package Evented::Object::EventFire; # leave this package name the same FOREVER.
- 
+
 use warnings;
 use strict;
 use utf8;
@@ -15,7 +15,7 @@ use 5.010;
 ### EVENT FIRE OBJECTS ###
 ##########################
 
-our $VERSION = '5.50';
+our $VERSION = '5.52';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -37,7 +37,7 @@ sub stop {
 # with no argument, returns number of callbacks called so far.
 sub called {
     my ($fire, $callback) = @_;
-    
+
     # return the number of callbacks called.
     # this includes the current callback.
     if (!defined $callback) {
@@ -45,10 +45,10 @@ sub called {
         $called++ unless $fire->{$props}{complete};
         return $called;
     }
-    
+
     # return whether the specified callback was called.
     return $fire->{$props}{called}{$callback};
-    
+
 }
 
 # returns a true value if the given callback will be called soon.
@@ -56,28 +56,28 @@ sub called {
 sub pending {
     my ($fire, $cb_name) = @_;
     my $pending = $fire->{$props}{collection}{pending};
-    
+
     # return number of callbacks remaining.
     if (!defined $cb_name) {
         return scalar keys %$pending;
     }
 
-    # return whether the specified callback is pending.    
+    # return whether the specified callback is pending.
     return $pending->{$cb_name};
-    
+
 }
 
 # cancels a future callback once.
 sub cancel {
     my ($fire, $cb_name) = @_;
-    
+
     # if there is no argument given, we will just
     # treat this like a ->stop on the event.
     defined $cb_name or return $fire->stop;
 
     # cancel the callback.
     delete $fire->{$props}{collection}{pending}{$cb_name};
-    
+
     return 1;
 }
 
@@ -106,6 +106,7 @@ sub stopper {
 }
 
 # returns the name of the event being fired.
+# this isn't reliable afterward because it can differ within one fire.
 sub event_name {
     shift->{$props}{name};
 }

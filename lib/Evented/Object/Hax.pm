@@ -10,7 +10,7 @@ use warnings;
 use strict;
 use 5.010;
 
-our $VERSION = '5.50';
+our $VERSION = '5.52';
 
 # exported import subroutine.
 sub import {
@@ -27,20 +27,20 @@ sub import {
 # fetch a symbol from package's symbol table.
 sub get_symbol {
     my ($package, $variable, $ref) = @_;
-    
+
     # must start with a sigil.
     return if $variable !~ m/^([@\*%\$])(\w+)$/;
     my ($sigil, $var_name) = ($1, $2);
-    
+
     my $symbol = $package.q(::).$var_name;
     no strict 'refs';
- 
+
     # find the symbol.
     if ($sigil eq '$') { return $ref ? \$$symbol : $$symbol }
     if ($sigil eq '@') { return $ref ? \@$symbol : @$symbol }
     if ($sigil eq '*') { return $ref ? \*$symbol : *$symbol }
     if ($sigil eq '%') { return $ref ? \&$symbol : %$symbol }
-    
+
     return;
 }
 
@@ -50,26 +50,26 @@ sub get_symbol_ref { get_symbol(@_, 1) }
 # set a symbol in package's symbol table.
 sub set_symbol {
     my ($package, $variable, @values) = @_;
-    
+
     # several symbols.
     if (ref $variable && ref $variable eq 'HASH') {
         set_symbol($package, $_, $variable->{$_}) foreach keys %$variable;
         return;
     }
-    
+
     # must start with a sigil.
     return if $variable !~ m/^([@\*%\$])(\w+)$/;
     my ($sigil, $var_name) = ($1, $2);
-    
+
     my $symbol = $package.q(::).$var_name;
     no strict 'refs';
- 
+
     # find the symbol.
     if ($sigil eq '$') { $$symbol = $values[0] }
     if ($sigil eq '@') { @$symbol = @values    }
     if ($sigil eq '*') { *$symbol = $values[0] }
     if ($sigil eq '%') { %$symbol = @values    }
-    
+
     return;
 }
 
@@ -94,21 +94,21 @@ sub delete_code {
 sub make_child {
     my ($package, $make_parent, $at_end) = @_;
     my $isa = get_symbol_ref($package, '@ISA');
-    
+
     # package already inherits directly.
     return 1 if $make_parent ~~ @$isa;
-    
+
     # check each class in ISA for inheritance.
     foreach my $parent (@$isa) {
         return 1 if $parent->isa($make_parent);
     }
-    
+
     # add to ISA.
     unshift @$isa, $make_parent unless $at_end;
     push    @$isa, $make_parent if     $at_end;
-    
+
     return 1;
-    
+
 }
 
 1;
