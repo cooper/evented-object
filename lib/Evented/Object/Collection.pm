@@ -14,7 +14,7 @@ use 5.010;
 use Scalar::Util qw(weaken);
 use List::Util qw(min max);
 
-our $VERSION = '5.53';
+our $VERSION = '5.54';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -68,12 +68,12 @@ sub fire {
 
     # if return_check is enabled, add a callback to be fired last that will
     # check the return values. this is basically hackery using a dummy object.
-    my $cb = {
-        name   => 'eventedObject.returnCheck',
-        caller => $caller,
-        code   => \&_return_check
-    };
-    if $collection->{return_check}) {
+    if ($collection->{return_check}) {
+        my $cb = {
+            name   => 'eventedObject.returnCheck',
+            caller => $caller,
+            code   => \&_return_check
+        };
         push @$callbacks, [
             -inf,                                                       # [0] $priority
             [ $dummy ||= Evented::Object->new, 'returnCheck', [] ],     # [1] $group
