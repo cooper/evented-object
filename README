@@ -7,21 +7,21 @@ SYNOPSIS
     callbacks, and fire objects and their methods.
 
      package Person;
- 
+
      use warnings;
      use strict;
      use 5.010;
      use parent 'Evented::Object';
- 
+
      use Evented::Object;
- 
+
      # Creates a new person object. This is nothing special.
      # Evented::Object does not require any specific constructor to be called.
      sub new {
          my ($class, %opts) = @_;
          bless \%opts, $class;
      }
- 
+
      # Fires birthday event and increments age.
      sub have_birthday {
          my $person = shift;
@@ -38,38 +38,38 @@ SYNOPSIS
      # Add an event callback that assumes Jake is under 21.
      $jake->on(birthday => sub {
          my ($fire, $new_age) = @_;
- 
+
          say 'not quite 21 yet...';
- 
+
      }, name => '21-soon');
- 
+
      # Add an event callback that checks if Jake is 21 and cancels the above callback if so.
      $jake->on(birthday => sub {
          my ($fire, $new_age) =  @_;
- 
+
          if ($new_age == 21) {
              say 'time to get drunk!';
              $fire->cancel('21-soon');
          }
- 
+
      }, name => 'finally-21', priority => 1);
- 
+
      # Jake has two birthdays.
- 
+
      # Jake's 20th birthday.
      $jake->have_birthday;
- 
+
      # Jake's 21st birthday.
      $jake->have_birthday;
- 
+
      # Because 21-soon has a lower priority than finally-21,
      # finally-21 will cancel 21-soon if Jake is 21.
- 
+
      # The result:
      #
      #   not quite 21 yet...
      #   time to get drunk!
- 
+
 DESCRIPTION
     I honestly doubt your objects have ever been this evented in your entire
     life. This concept is so incredible that we're using a noun as a verb
@@ -514,7 +514,7 @@ Preparation methods
 
      # uses ->prepare_event()
      $eo->prepare(some_event => @arguments);
- 
+
      # uses ->prepare_together()
      $eo->prepare(
         [ some_event => @arguments ],
@@ -529,17 +529,17 @@ Class monitors
 
      my $some_eo  = Evented::Object->new;
      my $other_eo = Evented::Object->new;
- 
+
      $some_eo->on('monitor:register_callback', sub {
          my ($event, $eo, $event_name, $cb) = @_;
          # $eo         == $other_eo
          # $event_name == "blah"
          # $cb         == callback hash from ->register_callback()
-         say "Registered $$cb{name} to $eo for $event_name"; 
+         say "Registered $$cb{name} to $eo for $event_name";
      });
- 
+
      $some_eo->monitor_events('Some::Class');
- 
+
      package Some::Class;
      $other_eo->on(blah => sub{}); # will trigger the callback above
 
@@ -583,7 +583,7 @@ Procedural functions
          [ $channel, user_joined         => $user           ],
          [ $user,    joined_channel      => $channel        ]
      );
- 
+
     Since Evented::Object 5.0, `->fire_events_together' can be used as a
     method on any evented object.
 
@@ -591,14 +591,14 @@ Procedural functions
          [ some_event => @arguments ],
          [ some_other => @other_arg ]
      );
- 
+
     The above example would formerly be achieved as:
 
      Evented::Object::fire_events_together(
          [ $eo, some_event => @arguments ],
          [ $eo, some_other => @other_arg ]
      );
- 
+
     However, other evented objects may be specified even when this is used
     as a method. Basically, anywhere that an object is missing will fall
     back to the object on which the method was called.
@@ -607,7 +607,7 @@ Procedural functions
          [ $other_eo, some_event => @arguments ],
          [            some_other => @other_arg ] # no object, falls back to $eo
      );
- 
+
     Parameters
 
     *   events: an array of events in the form of `[$eo, event_name =>
@@ -639,7 +639,7 @@ Collection methods
     fired.
 
      $eo->prepare(some_event => @arguments)->fire('safe');
- 
+
     Parameters
 
     *   options: *optional*, a mixture of boolean and key:value options for
@@ -717,7 +717,7 @@ Fire object methods
      if ($fire->stopper) {
          say 'Fire was stopped by '.$fire->stopper;
      }
- 
+
   $fire->exception
     If the event was fired with the `safe` option, it is possible that an
     exception occurred in one (or more if `fail_continue` enabled)
@@ -734,11 +734,11 @@ Fire object methods
     returns whether that particular callback has been called.
 
      say $fire->called, 'callbacks have been called so far.';
- 
+
      if ($fire->called('some.callback')) {
          say 'some.callback has been called already.';
      }
- 
+
     Parameters
 
     *   callback: *optional*, the callback being checked.
@@ -750,7 +750,7 @@ Fire object methods
     called.
 
      say $fire->pending, ' callbacks are left.';
- 
+
      if ($fire->pending('some.callback')) {
          say 'some.callback will be called soon (unless it gets canceled)';
      }
@@ -787,7 +787,7 @@ Fire object methods
     for determining which callback was the last to be called.
 
      say $fire->last, ' was called before this one.';
- 
+
      my $fire = $eo->fire_event('myEvent');
      say $fire->last, ' was the last callback called.';
 

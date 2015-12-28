@@ -14,7 +14,7 @@ use 5.010;
 use Scalar::Util qw(weaken);
 use List::Util qw(min max);
 
-our $VERSION = '5.54';
+our $VERSION = '5.55';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -117,6 +117,11 @@ sub sort : method {
         # also, the code repetition here for before and afters is quite ugly.
         #
 
+        # callback priority determination can be postponed until another's
+        # priority is determined. the maxmium number of times one particular
+        # callback can be postponed is the number of total callbacks.
+        my $wait_max = keys %callbacks;
+
         # befores.
         if (defined(my $b = $cb->{before})) {
             $cb->{before} = $b = [ $b ] if ref $b ne 'ARRAY';
@@ -127,8 +132,9 @@ sub sort : method {
                 # wait until priority is determined.
                 if ($their_priority eq 'nan') {
                     my $key = $cb->{name}.q( ).$callbacks{$_}[2]->{name};
-                    push @callbacks, $set unless $waited{$key};
-                    $waited{$key} = 1;
+                    push @callbacks, $set
+                        unless ($waited{$key} || 0) > $wait_max;
+                    $waited{$key}++;
                     next SET;
                 }
 
@@ -146,8 +152,9 @@ sub sort : method {
                 # wait until priority is determined.
                 if ($their_priority eq 'nan') {
                     my $key = $cb->{name}.q( ).$callbacks{$_}[2]->{name};
-                    push @callbacks, $set unless $waited{$key};
-                    $waited{$key} = 1;
+                    push @callbacks, $set
+                        unless ($waited{$key} || 0) > $wait_max;
+                    $waited{$key}++;
                     next SET;
                 }
 
@@ -159,7 +166,7 @@ sub sort : method {
         if (@befores && @afters) {
             my $a_refpoint = min @afters;
             my $b_refpoint = max @befores;
-            $priority      = (@afters + @befores) / 2;
+            $priority      = ($a_refpoint + $b_refpoint) / 2;
         }
 
         # only before. just have 1 higher priority.

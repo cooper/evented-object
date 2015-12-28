@@ -12,7 +12,7 @@ use 5.010;
 
 use List::Util qw(first);
 
-our $VERSION = '5.54';
+our $VERSION = '5.55';
 
 # exported import subroutine.
 sub import {
