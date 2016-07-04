@@ -13,15 +13,15 @@ my $class = Module::Build->subclass(
 
                 $self->log_info("Creating README.md using Pod::Markdown\n");
                 open my $fh, '>', 'README.md' or return $self->SUPER::ACTION_distmeta(@_);
-                
+
                 my $p = Pod::Markdown->new;
                 my $markdown;
                 $p->output_string(\$markdown);
                 $p->parse_file('lib/Evented/Object.pm') or return $self->SUPER::ACTION_distmeta(@_);
-                
+
                 my (@lines, $in_block);
                 foreach my $line (split "\n", $markdown) {
-                
+
                     # indented code.
                     if (substr($line, 0, 4) eq '    ') {
                         my $code = substr($line, 4, length($line) - 4);
@@ -29,22 +29,22 @@ my $class = Module::Build->subclass(
                             push @lines, $code;
                             next;
                         }
-                    
+
                         push @lines, '````perl', $code;
                         $in_block = 1;
                         next;
                     }
-                    
+
                     # not indented.
                     if ($in_block) {
                         push @lines, '```', $line;
                         $in_block = 0;
                         next;
                     }
-                    
+
                     push @lines, $line;
                 }
-                
+
                 print $fh $_, "\n" foreach @lines;
                 close $fh;
                 $self->_add_to_manifest('MANIFEST', 'README.md');
@@ -70,7 +70,6 @@ my $build = $class->new(
     auto_configure_requires => 0,
     license             => 'bsd',
     create_makefile_pl  => 'traditional',
-    # create_license    => 1,
     create_readme       => 1,
     dynamic_config      => 0,
     meta_merge          => {

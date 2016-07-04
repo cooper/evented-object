@@ -552,9 +552,7 @@ Evented::Object supplies an (obviously objective) interface to store and manage 
 for events, fire events upon objects, and more. It provides several methods for
 convenience and simplicity.
 
-=head2 Naming confusion
-
-To clear some things up...
+=head2 Terminology
 
 'Evented::Object' refers to the Evented::Object package, but 'evented object' refers to an
 object which is a member of the Evented::Object class or a class which inherits from the
@@ -586,9 +584,9 @@ B<Listener object>: another evented object that receives event notifications.
 
 =back
 
-Evented::Object and its core packages are prefixed with C<Evented::Object>.
-Packages which are specifically designed for use with Evented::Object are prefixed with
-C<Evented::>.
+Evented::Object's included core packages are prefixed with C<Evented::Object::>.
+Other packages which are specifically designed for use with Evented::Object are
+prefixed with C<Evented::>.
 
 =head2 Purpose of Evented::Object
 
@@ -709,7 +707,7 @@ registered to classes ONLY apply to objects directly blessed to the class.
 Evented::Object 4.0 introduces a "class monitor" feature. This allows an evented object to
 be registered as a "monitor" of a specific class/package. Any event callbacks that are
 added from that class to any evented object of any type will trigger an event on the
-monitor object - in other words, the `caller` of `->register_callback()`, regardless of
+monitor object - in other words, the C<< caller >> of C<< ->register_callback() >>, regardless of
 the object.
 
 An example scenario of when this might be useful is an evented object for debugging all
@@ -728,70 +726,6 @@ looks something like:
  $eo->prepare(event_name => @args)->fire(some_fire_option => $value);
 
 See L</"Collection methods"> for more information.
-
-=head1 COMPATIBILITY
-
-Although Evented::Object attempts to maintain compatibility for an extended period of
-time, a number of exceptions do exist.
-
-=head2 Asynchronous improvements 1.0+
-
-Evented::Object 1.* series and above are incompatible with the former versions.
-Evented::Object 1.8+ is designed to be more thread-friendly and work well in asyncrhonous
-programs, whereas the previous versions were not suitable for such uses.
-
-The main comptability issue is the arguments passed to the callbacks. In the earlier
-versions, the evented object was always the first argument of all events, until
-Evented::Object 0.6 added the ability to pass a parameter to C<< ->attach_event() >> that
-would tell Evented::Object to omit the object from the callback's argument list.
-
-=head2 Introduction of fire info 1.8+
-
-The Evented::Object series 1.8+ passes a hash reference C<$fire> instead of the
-Evented::Object as the first argument. C<$fire> contains information that was formerly
-held within the object itself, such as C<event_info>, C<event_return>, and C<event_data>.
-These are now accessible through this new hash reference as C<< $fire->{info} >>,
-C<< $fire->{return} >>, C<< $fire->{data} >>, etc. The object is now accessible with
-C<< $fire->{object} >>. (this has since been changed; see below.)
-
-Events are now stored in the C<eventedObject.events> hash key instead of C<events>, as
-C<events> was a tad bit too broad and could conflict with other libraries.
-
-In addition to these changes, the C<< ->attach_event() >> method was deprecated in version
-1.8 in favor of the new C<< ->register_callback() >>; however, it will remain in
-Evented::Object until at least the late 2.* series.
-
-=head2 Alias changes 2.0+
-
-Version 2.0 breaks things even more because C<< ->on() >> is now an alias for
-C<< ->register_callback() >> rather than the former deprecated C<< ->attach_event() >>.
-
-=head2 Introduction of fire objects 2.2+
-
-Version 2.2+ introduces a new class, Evented::Object::EventFire, which provides several
-methods for fire objects. These methods such as C<< $fire->return >> and
-C<< $fire->object >> replace the former hash keys C<< $fire->{return} >>,
-C<< $fire->{object} >>, etc. The former hash interface is no longer supported and will
-lead to error.
-
-=head2 Removal of ->attach_event() 2.9+
-
-Version 2.9 removes the long-deprecated C<< ->attach_event() >> method in favor of the
-more flexible C<< ->register_callback() >>. This will break compatibility with any package
-still making use of C<< ->attach_event() >>.
-
-=head2 Rename to Evented::Object 3.54+
-
-In order to correspond with other 'Evented' packages, EventedObject was renamed to
-Evented::Object. All packages making use of EventedObject will need to be modified to use
-Evented::Object instead. This change was made pre-CPAN.
-
-=head2 Removal of deprecated options 5.0+
-
-Long-deprecated callback options may no longer behave as expected in older versions.
-Specifically, Evented::Object used to try to guess whether it should insert the event
-fire object and evented object to the callback arguments. Now, it does not try to guess
-but instead only listens to the explicit options.
 
 =head1 Evented object methods
 
@@ -1195,7 +1129,7 @@ B<events>: an array of events in the form of C<< [$eo, event_name => @arguments]
 
 =head2 safe_fire($eo, $event_name, @args)
 
-Safely fires an event. In other words, if the `$eo` is not an evented object or is not
+Safely fires an event. In other words, if the C<< $eo >> is not an evented object or is not
 blessed at all, the call will be ignored. This eliminates the need to use C<blessed()>
 and C<< ->isa() >> on a value for testing whether it is an evented object.
 
@@ -1335,9 +1269,9 @@ Returns the callback which called C<< $fire->stop >>.
 
 =head2 $fire->exception
 
-If the event was fired with the `safe` option, it is possible that an exception occurred
-in one (or more if `fail_continue` enabled) callbacks. This method returns the last
-exception that occurred or `undef` if none did.
+If the event was fired with the C<< safe >> option, it is possible that an exception occurred
+in one (or more if C<< fail_continue >> enabled) callbacks. This method returns the last
+exception that occurred or C<< undef >> if none did.
 
  if (my $e = $fire->exception) {
     say "Exception! $e";
@@ -1530,6 +1464,70 @@ Alias for C<< $eo->register_callbacks() >>.
 =head2 $fire->eo
 
 Alias for C<< $fire->object >>.
+
+=head1 COMPATIBILITY
+
+Although Evented::Object attempts to maintain compatibility for an extended period of
+time, a number of exceptions do exist.
+
+=head2 Asynchronous improvements 1.0+
+
+Evented::Object 1.* series and above are incompatible with the former versions.
+Evented::Object 1.8+ is designed to be more thread-friendly and work well in asyncrhonous
+programs, whereas the previous versions were not suitable for such uses.
+
+The main comptability issue is the arguments passed to the callbacks. In the earlier
+versions, the evented object was always the first argument of all events, until
+Evented::Object 0.6 added the ability to pass a parameter to C<< ->attach_event() >> that
+would tell Evented::Object to omit the object from the callback's argument list.
+
+=head2 Introduction of fire info 1.8+
+
+The Evented::Object series 1.8+ passes a hash reference C<$fire> instead of the
+Evented::Object as the first argument. C<$fire> contains information that was formerly
+held within the object itself, such as C<event_info>, C<event_return>, and C<event_data>.
+These are now accessible through this new hash reference as C<< $fire->{info} >>,
+C<< $fire->{return} >>, C<< $fire->{data} >>, etc. The object is now accessible with
+C<< $fire->{object} >>. (this has since been changed; see below.)
+
+Events are now stored in the C<eventedObject.events> hash key instead of C<events>, as
+C<events> was a tad bit too broad and could conflict with other libraries.
+
+In addition to these changes, the C<< ->attach_event() >> method was deprecated in version
+1.8 in favor of the new C<< ->register_callback() >>; however, it will remain in
+Evented::Object until at least the late 2.* series.
+
+=head2 Alias changes 2.0+
+
+Version 2.0 breaks things even more because C<< ->on() >> is now an alias for
+C<< ->register_callback() >> rather than the former deprecated C<< ->attach_event() >>.
+
+=head2 Introduction of fire objects 2.2+
+
+Version 2.2+ introduces a new class, Evented::Object::EventFire, which provides several
+methods for fire objects. These methods such as C<< $fire->return >> and
+C<< $fire->object >> replace the former hash keys C<< $fire->{return} >>,
+C<< $fire->{object} >>, etc. The former hash interface is no longer supported and will
+lead to error.
+
+=head2 Removal of ->attach_event() 2.9+
+
+Version 2.9 removes the long-deprecated C<< ->attach_event() >> method in favor of the
+more flexible C<< ->register_callback() >>. This will break compatibility with any package
+still making use of C<< ->attach_event() >>.
+
+=head2 Rename to Evented::Object 3.54+
+
+In order to correspond with other 'Evented' packages, EventedObject was renamed to
+Evented::Object. All packages making use of EventedObject will need to be modified to use
+Evented::Object instead. This change was made pre-CPAN.
+
+=head2 Removal of deprecated options 5.0+
+
+Long-deprecated callback options may no longer behave as expected in older versions.
+Specifically, Evented::Object used to try to guess whether it should insert the event
+fire object and evented object to the callback arguments. Now, it does not try to guess
+but instead only listens to the explicit options.
 
 =head1 AUTHOR
 
