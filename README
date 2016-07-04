@@ -83,9 +83,7 @@ DESCRIPTION
     manage callbacks for events, fire events upon objects, and more. It
     provides several methods for convenience and simplicity.
 
-  Naming confusion
-    To clear some things up...
-
+  Terminology
     'Evented::Object' refers to the Evented::Object package, but 'evented
     object' refers to an object which is a member of the Evented::Object
     class or a class which inherits from the Evented::Object class. 'Fire
@@ -106,9 +104,9 @@ DESCRIPTION
     *   Listener object: another evented object that receives event
         notifications.
 
-    Evented::Object and its core packages are prefixed with
-    `Evented::Object'. Packages which are specifically designed for use with
-    Evented::Object are prefixed with `Evented::'.
+    Evented::Object's included core packages are prefixed with
+    `Evented::Object::'. Other packages which are specifically designed for
+    use with Evented::Object are prefixed with `Evented::'.
 
   Purpose of Evented::Object
     In short, Evented::Object allows you to attach event callbacks to an
@@ -226,7 +224,7 @@ DESCRIPTION
     evented object to be registered as a "monitor" of a specific
     class/package. Any event callbacks that are added from that class to any
     evented object of any type will trigger an event on the monitor object -
-    in other words, the `caller` of `->register_callback()`, regardless of
+    in other words, the `caller' of `->register_callback()', regardless of
     the object.
 
     An example scenario of when this might be useful is an evented object
@@ -245,70 +243,6 @@ DESCRIPTION
      $eo->prepare(event_name => @args)->fire(some_fire_option => $value);
 
     See "Collection methods" for more information.
-
-COMPATIBILITY
-    Although Evented::Object attempts to maintain compatibility for an
-    extended period of time, a number of exceptions do exist.
-
-  Asynchronous improvements 1.0+
-    Evented::Object 1.* series and above are incompatible with the former
-    versions. Evented::Object 1.8+ is designed to be more thread-friendly
-    and work well in asyncrhonous programs, whereas the previous versions
-    were not suitable for such uses.
-
-    The main comptability issue is the arguments passed to the callbacks. In
-    the earlier versions, the evented object was always the first argument
-    of all events, until Evented::Object 0.6 added the ability to pass a
-    parameter to `->attach_event()' that would tell Evented::Object to omit
-    the object from the callback's argument list.
-
-  Introduction of fire info 1.8+
-    The Evented::Object series 1.8+ passes a hash reference `$fire' instead
-    of the Evented::Object as the first argument. `$fire' contains
-    information that was formerly held within the object itself, such as
-    `event_info', `event_return', and `event_data'. These are now accessible
-    through this new hash reference as `$fire->{info}', `$fire->{return}',
-    `$fire->{data}', etc. The object is now accessible with
-    `$fire->{object}'. (this has since been changed; see below.)
-
-    Events are now stored in the `eventedObject.events' hash key instead of
-    `events', as `events' was a tad bit too broad and could conflict with
-    other libraries.
-
-    In addition to these changes, the `->attach_event()' method was
-    deprecated in version 1.8 in favor of the new `->register_callback()';
-    however, it will remain in Evented::Object until at least the late 2.*
-    series.
-
-  Alias changes 2.0+
-    Version 2.0 breaks things even more because `->on()' is now an alias for
-    `->register_callback()' rather than the former deprecated
-    `->attach_event()'.
-
-  Introduction of fire objects 2.2+
-    Version 2.2+ introduces a new class, Evented::Object::EventFire, which
-    provides several methods for fire objects. These methods such as
-    `$fire->return' and `$fire->object' replace the former hash keys
-    `$fire->{return}', `$fire->{object}', etc. The former hash interface is
-    no longer supported and will lead to error.
-
-  Removal of ->attach_event() 2.9+
-    Version 2.9 removes the long-deprecated `->attach_event()' method in
-    favor of the more flexible `->register_callback()'. This will break
-    compatibility with any package still making use of `->attach_event()'.
-
-  Rename to Evented::Object 3.54+
-    In order to correspond with other 'Evented' packages, EventedObject was
-    renamed to Evented::Object. All packages making use of EventedObject
-    will need to be modified to use Evented::Object instead. This change was
-    made pre-CPAN.
-
-  Removal of deprecated options 5.0+
-    Long-deprecated callback options may no longer behave as expected in
-    older versions. Specifically, Evented::Object used to try to guess
-    whether it should insert the event fire object and evented object to the
-    callback arguments. Now, it does not try to guess but instead only
-    listens to the explicit options.
 
 Evented object methods
     The Evented::Object package provides several convenient methods for
@@ -614,7 +548,7 @@ Procedural functions
         @arguments]'.
 
   safe_fire($eo, $event_name, @args)
-    Safely fires an event. In other words, if the `$eo` is not an evented
+    Safely fires an event. In other words, if the `$eo' is not an evented
     object or is not blessed at all, the call will be ignored. This
     eliminates the need to use `blessed()' and `->isa()' on a value for
     testing whether it is an evented object.
@@ -719,10 +653,10 @@ Fire object methods
      }
 
   $fire->exception
-    If the event was fired with the `safe` option, it is possible that an
-    exception occurred in one (or more if `fail_continue` enabled)
+    If the event was fired with the `safe' option, it is possible that an
+    exception occurred in one (or more if `fail_continue' enabled)
     callbacks. This method returns the last exception that occurred or
-    `undef` if none did.
+    `undef' if none did.
 
      if (my $e = $fire->exception) {
         say "Exception! $e";
@@ -866,6 +800,70 @@ Aliases
 
   $fire->eo
     Alias for `$fire->object'.
+
+COMPATIBILITY
+    Although Evented::Object attempts to maintain compatibility for an
+    extended period of time, a number of exceptions do exist.
+
+  Asynchronous improvements 1.0+
+    Evented::Object 1.* series and above are incompatible with the former
+    versions. Evented::Object 1.8+ is designed to be more thread-friendly
+    and work well in asyncrhonous programs, whereas the previous versions
+    were not suitable for such uses.
+
+    The main comptability issue is the arguments passed to the callbacks. In
+    the earlier versions, the evented object was always the first argument
+    of all events, until Evented::Object 0.6 added the ability to pass a
+    parameter to `->attach_event()' that would tell Evented::Object to omit
+    the object from the callback's argument list.
+
+  Introduction of fire info 1.8+
+    The Evented::Object series 1.8+ passes a hash reference `$fire' instead
+    of the Evented::Object as the first argument. `$fire' contains
+    information that was formerly held within the object itself, such as
+    `event_info', `event_return', and `event_data'. These are now accessible
+    through this new hash reference as `$fire->{info}', `$fire->{return}',
+    `$fire->{data}', etc. The object is now accessible with
+    `$fire->{object}'. (this has since been changed; see below.)
+
+    Events are now stored in the `eventedObject.events' hash key instead of
+    `events', as `events' was a tad bit too broad and could conflict with
+    other libraries.
+
+    In addition to these changes, the `->attach_event()' method was
+    deprecated in version 1.8 in favor of the new `->register_callback()';
+    however, it will remain in Evented::Object until at least the late 2.*
+    series.
+
+  Alias changes 2.0+
+    Version 2.0 breaks things even more because `->on()' is now an alias for
+    `->register_callback()' rather than the former deprecated
+    `->attach_event()'.
+
+  Introduction of fire objects 2.2+
+    Version 2.2+ introduces a new class, Evented::Object::EventFire, which
+    provides several methods for fire objects. These methods such as
+    `$fire->return' and `$fire->object' replace the former hash keys
+    `$fire->{return}', `$fire->{object}', etc. The former hash interface is
+    no longer supported and will lead to error.
+
+  Removal of ->attach_event() 2.9+
+    Version 2.9 removes the long-deprecated `->attach_event()' method in
+    favor of the more flexible `->register_callback()'. This will break
+    compatibility with any package still making use of `->attach_event()'.
+
+  Rename to Evented::Object 3.54+
+    In order to correspond with other 'Evented' packages, EventedObject was
+    renamed to Evented::Object. All packages making use of EventedObject
+    will need to be modified to use Evented::Object instead. This change was
+    made pre-CPAN.
+
+  Removal of deprecated options 5.0+
+    Long-deprecated callback options may no longer behave as expected in
+    older versions. Specifically, Evented::Object used to try to guess
+    whether it should insert the event fire object and evented object to the
+    callback arguments. Now, it does not try to guess but instead only
+    listens to the explicit options.
 
 AUTHOR
     Mitchell Cooper <cooper@cpan.org>

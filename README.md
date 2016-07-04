@@ -10,21 +10,29 @@ and fire objects and their methods.
 
 ````perl
 package Person;
+```
 
+````perl
 use warnings;
 use strict;
 use 5.010;
 use parent 'Evented::Object';
+```
 
+````perl
 use Evented::Object;
+```
 
+````perl
 # Creates a new person object. This is nothing special.
 # Evented::Object does not require any specific constructor to be called.
 sub new {
     my ($class, %opts) = @_;
     bless \%opts, $class;
 }
+```
 
+````perl
 # Fires birthday event and increments age.
 sub have_birthday {
     my $person = shift;
@@ -47,38 +55,57 @@ my $jake = Person->new(name => 'Jake', age => 19);
 # Add an event callback that assumes Jake is under 21.
 $jake->on(birthday => sub {
     my ($fire, $new_age) = @_;
+```
 
+````perl
     say 'not quite 21 yet...';
+```
 
+````perl
 }, name => '21-soon');
+```
 
+````perl
 # Add an event callback that checks if Jake is 21 and cancels the above callback if so.
 $jake->on(birthday => sub {
     my ($fire, $new_age) =  @_;
+```
 
+````perl
     if ($new_age == 21) {
         say 'time to get drunk!';
         $fire->cancel('21-soon');
     }
+```
 
+````perl
 }, name => 'finally-21', priority => 1);
+```
 
+````perl
 # Jake has two birthdays.
+```
 
+````perl
 # Jake's 20th birthday.
 $jake->have_birthday;
+```
 
+````perl
 # Jake's 21st birthday.
 $jake->have_birthday;
+```
 
+````perl
 # Because 21-soon has a lower priority than finally-21,
 # finally-21 will cancel 21-soon if Jake is 21.
+```
 
+````perl
 # The result:
 #
 #   not quite 21 yet...
 #   time to get drunk!
-
 ```
 
 # DESCRIPTION
@@ -95,9 +122,7 @@ Evented::Object supplies an (obviously objective) interface to store and manage 
 for events, fire events upon objects, and more. It provides several methods for
 convenience and simplicity.
 
-## Naming confusion
-
-To clear some things up...
+## Terminology
 
 'Evented::Object' refers to the Evented::Object package, but 'evented object' refers to an
 object which is a member of the Evented::Object class or a class which inherits from the
@@ -111,9 +136,9 @@ management.
 fired.
 - **Listener object**: another evented object that receives event notifications.
 
-Evented::Object and its core packages are prefixed with `Evented::Object`.
-Packages which are specifically designed for use with Evented::Object are prefixed with
-`Evented::`.
+Evented::Object's included core packages are prefixed with `Evented::Object::`.
+Other packages which are specifically designed for use with Evented::Object are
+prefixed with `Evented::`.
 
 ## Purpose of Evented::Object
 
@@ -200,7 +225,7 @@ Evented::Object 3.9 adds the ability to register event callbacks to a subclass o
 Evented::Object. The methods `->register_callback()`, `->delete_event()`,
 `->delete_callback`, etc. can be called in the form of `MyClass->method()`.
 Evented::Object will store these callbacks in a special hash hidden in the package's
-symbol table.  
+symbol table.
 
 Any object of this class will borrow these callbacks from the class. They will be
 incorporated into the callback collection as though they were registered directly on the
@@ -225,7 +250,7 @@ registered to classes ONLY apply to objects directly blessed to the class.
 Evented::Object 4.0 introduces a "class monitor" feature. This allows an evented object to
 be registered as a "monitor" of a specific class/package. Any event callbacks that are
 added from that class to any evented object of any type will trigger an event on the
-monitor object - in other words, the \`caller\` of \`->register\_callback()\`, regardless of
+monitor object - in other words, the `caller` of `->register_callback()`, regardless of
 the object.
 
 An example scenario of when this might be useful is an evented object for debugging all
@@ -246,70 +271,6 @@ $eo->prepare(event_name => @args)->fire(some_fire_option => $value);
 ```
 
 See ["Collection methods"](#collection-methods) for more information.
-
-# COMPATIBILITY
-
-Although Evented::Object attempts to maintain compatibility for an extended period of
-time, a number of exceptions do exist. 
-
-## Asynchronous improvements 1.0+
-
-Evented::Object 1.\* series and above are incompatible with the former versions.
-Evented::Object 1.8+ is designed to be more thread-friendly and work well in asyncrhonous
-programs, whereas the previous versions were not suitable for such uses.
-
-The main comptability issue is the arguments passed to the callbacks. In the earlier
-versions, the evented object was always the first argument of all events, until
-Evented::Object 0.6 added the ability to pass a parameter to `->attach_event()` that
-would tell Evented::Object to omit the object from the callback's argument list.
-
-## Introduction of fire info 1.8+
-
-The Evented::Object series 1.8+ passes a hash reference `$fire` instead of the
-Evented::Object as the first argument. `$fire` contains information that was formerly
-held within the object itself, such as `event_info`, `event_return`, and `event_data`.
-These are now accessible through this new hash reference as `$fire->{info}`,
-`$fire->{return}`, `$fire->{data}`, etc. The object is now accessible with
-`$fire->{object}`. (this has since been changed; see below.)
-
-Events are now stored in the `eventedObject.events` hash key instead of `events`, as
-`events` was a tad bit too broad and could conflict with other libraries.
-
-In addition to these changes, the `->attach_event()` method was deprecated in version
-1.8 in favor of the new `->register_callback()`; however, it will remain in
-Evented::Object until at least the late 2.\* series.
-
-## Alias changes 2.0+
-
-Version 2.0 breaks things even more because `->on()` is now an alias for
-`->register_callback()` rather than the former deprecated `->attach_event()`.
-
-## Introduction of fire objects 2.2+
-
-Version 2.2+ introduces a new class, Evented::Object::EventFire, which provides several
-methods for fire objects. These methods such as `$fire->return` and
-`$fire->object` replace the former hash keys `$fire->{return}`,
-`$fire->{object}`, etc. The former hash interface is no longer supported and will
-lead to error.
-
-## Removal of ->attach\_event() 2.9+
-
-Version 2.9 removes the long-deprecated `->attach_event()` method in favor of the
-more flexible `->register_callback()`. This will break compatibility with any package
-still making use of `->attach_event()`.
-
-## Rename to Evented::Object 3.54+
-
-In order to correspond with other 'Evented' packages, EventedObject was renamed to
-Evented::Object. All packages making use of EventedObject will need to be modified to use
-Evented::Object instead. This change was made pre-CPAN.
-
-## Removal of deprecated options 5.0+
-
-Long-deprecated callback options may no longer behave as expected in older versions.
-Specifically, Evented::Object used to try to guess whether it should insert the event
-fire object and evented object to the callback arguments. Now, it does not try to guess
-but instead only listens to the explicit options.
 
 # Evented object methods
 
@@ -516,7 +477,7 @@ $eo->prepare_event(some_event => @arguments)->fire('return_check');
 
 ## $eo->prepare\_together(@events)
 
-The preparatory method equivalent to `->fire_events_together`. 
+The preparatory method equivalent to `->fire_events_together`.
 
 ## $eo->prepare(...)
 
@@ -526,7 +487,9 @@ A smart method that uses the best guess between `->prepare_event` and
 ````perl
 # uses ->prepare_event()
 $eo->prepare(some_event => @arguments);
+```
 
+````perl
 # uses ->prepare_together()
 $eo->prepare(
    [ some_event => @arguments ],
@@ -544,17 +507,23 @@ section above for more details on class monitors and their purpose.
 ````perl
 my $some_eo  = Evented::Object->new;
 my $other_eo = Evented::Object->new;
+```
 
+````perl
 $some_eo->on('monitor:register_callback', sub {
     my ($event, $eo, $event_name, $cb) = @_;
     # $eo         == $other_eo
     # $event_name == "blah"
     # $cb         == callback hash from ->register_callback()
-    say "Registered $$cb{name} to $eo for $event_name"; 
+    say "Registered $$cb{name} to $eo for $event_name";
 });
+```
 
+````perl
 $some_eo->monitor_events('Some::Class');
+```
 
+````perl
 package Some::Class;
 $other_eo->on(blah => sub{}); # will trigger the callback above
 ```
@@ -600,7 +569,6 @@ Evented::Object::fire_events_together(
     [ $channel, user_joined         => $user           ],
     [ $user,    joined_channel      => $channel        ]
 );
-
 ```
 
 Since Evented::Object 5.0, `->fire_events_together` can be used as a method on any
@@ -611,7 +579,6 @@ $eo->fire_events_together(
     [ some_event => @arguments ],
     [ some_other => @other_arg ]
 );
-
 ```
 
 The above example would formerly be achieved as:
@@ -621,7 +588,6 @@ Evented::Object::fire_events_together(
     [ $eo, some_event => @arguments ],
     [ $eo, some_other => @other_arg ]
 );
-
 ```
 
 However, other evented objects may be specified even when this is used as a method.
@@ -633,7 +599,6 @@ $eo->fire_events_together(
     [ $other_eo, some_event => @arguments ],
     [            some_other => @other_arg ] # no object, falls back to $eo
 );
-
 ```
 
 **Parameters**
@@ -642,7 +607,7 @@ $eo->fire_events_together(
 
 ## safe\_fire($eo, $event\_name, @args)
 
-Safely fires an event. In other words, if the \`$eo\` is not an evented object or is not
+Safely fires an event. In other words, if the `$eo` is not an evented object or is not
 blessed at all, the call will be ignored. This eliminates the need to use `blessed()`
 and `->isa()` on a value for testing whether it is an evented object.
 
@@ -653,7 +618,7 @@ Evented::Object::safe_fire($eo, myEvent => 'my argument');
 **Parameters**
 
 - **eo**: the evented object.
-- **event\_name**: the name of the event. 
+- **event\_name**: the name of the event.
 - **args**: the arguments for the event fire.
 
 # Collection methods
@@ -668,7 +633,6 @@ yet been sorted, they are sorted before the event is fired.
 
 ````perl
 $eo->prepare(some_event => @arguments)->fire('safe');
-
 ```
 
 **Parameters**
@@ -690,7 +654,7 @@ even if one of the callbacks fails. This could be dangerous if any of the callba
 expected a previous callback to be done when it actually failed.
 - **data**: _requires value_, a scalar value that can be fetched by `$fire->data`
 from within the callbacks. Good for data that might be useful sometimes but not frequently
-enough to deserve a spot in the argument list. If `data` is a hash reference, its 
+enough to deserve a spot in the argument list. If `data` is a hash reference, its
 values can be fetched conveniently with `$fire->data('key')`.
 
 ## $col->sort
@@ -749,14 +713,13 @@ Returns the callback which called `$fire->stop`.
 if ($fire->stopper) {
     say 'Fire was stopped by '.$fire->stopper;
 }
-
 ```
 
 ## $fire->exception
 
-If the event was fired with the \`safe\` option, it is possible that an exception occurred
-in one (or more if \`fail\_continue\` enabled) callbacks. This method returns the last
-exception that occurred or \`undef\` if none did.
+If the event was fired with the `safe` option, it is possible that an exception occurred
+in one (or more if `fail_continue` enabled) callbacks. This method returns the last
+exception that occurred or `undef` if none did.
 
 ````perl
 if (my $e = $fire->exception) {
@@ -772,11 +735,12 @@ has been called.
 
 ````perl
 say $fire->called, 'callbacks have been called so far.';
+```
 
+````perl
 if ($fire->called('some.callback')) {
     say 'some.callback has been called already.';
 }
-
 ```
 
 **Parameters**
@@ -791,7 +755,9 @@ particular callback is pending for being called.
 
 ````perl
 say $fire->pending, ' callbacks are left.';
+```
 
+````perl
 if ($fire->pending('some.callback')) {
     say 'some.callback will be called soon (unless it gets canceled)';
 }
@@ -837,7 +803,9 @@ This is also useful for determining which callback was the last to be called.
 
 ````perl
 say $fire->last, ' was called before this one.';
+```
 
+````perl
 my $fire = $eo->fire_event('myEvent');
 say $fire->last, ' was the last callback called.';
 ```
@@ -891,7 +859,7 @@ say 'my name is ', $fire->callback_data('name');
 
 **Parameters**
 
-- **key**: _optional_, a key to fetch a value if the data registered was a hash. 
+- **key**: _optional_, a key to fetch a value if the data registered was a hash.
 
 ## $fire->data($key)
 
@@ -905,7 +873,7 @@ say 'fire time was ', $fire->data('time');
 
 **Parameters**
 
-- **key**: _optional_, a key to fetch a value if the data registered was a hash. 
+- **key**: _optional_, a key to fetch a value if the data registered was a hash.
 
 # Aliases
 
@@ -938,6 +906,70 @@ Alias for `$eo->register_callbacks()`.
 ## $fire->eo
 
 Alias for `$fire->object`.
+
+# COMPATIBILITY
+
+Although Evented::Object attempts to maintain compatibility for an extended period of
+time, a number of exceptions do exist.
+
+## Asynchronous improvements 1.0+
+
+Evented::Object 1.\* series and above are incompatible with the former versions.
+Evented::Object 1.8+ is designed to be more thread-friendly and work well in asyncrhonous
+programs, whereas the previous versions were not suitable for such uses.
+
+The main comptability issue is the arguments passed to the callbacks. In the earlier
+versions, the evented object was always the first argument of all events, until
+Evented::Object 0.6 added the ability to pass a parameter to `->attach_event()` that
+would tell Evented::Object to omit the object from the callback's argument list.
+
+## Introduction of fire info 1.8+
+
+The Evented::Object series 1.8+ passes a hash reference `$fire` instead of the
+Evented::Object as the first argument. `$fire` contains information that was formerly
+held within the object itself, such as `event_info`, `event_return`, and `event_data`.
+These are now accessible through this new hash reference as `$fire->{info}`,
+`$fire->{return}`, `$fire->{data}`, etc. The object is now accessible with
+`$fire->{object}`. (this has since been changed; see below.)
+
+Events are now stored in the `eventedObject.events` hash key instead of `events`, as
+`events` was a tad bit too broad and could conflict with other libraries.
+
+In addition to these changes, the `->attach_event()` method was deprecated in version
+1.8 in favor of the new `->register_callback()`; however, it will remain in
+Evented::Object until at least the late 2.\* series.
+
+## Alias changes 2.0+
+
+Version 2.0 breaks things even more because `->on()` is now an alias for
+`->register_callback()` rather than the former deprecated `->attach_event()`.
+
+## Introduction of fire objects 2.2+
+
+Version 2.2+ introduces a new class, Evented::Object::EventFire, which provides several
+methods for fire objects. These methods such as `$fire->return` and
+`$fire->object` replace the former hash keys `$fire->{return}`,
+`$fire->{object}`, etc. The former hash interface is no longer supported and will
+lead to error.
+
+## Removal of ->attach\_event() 2.9+
+
+Version 2.9 removes the long-deprecated `->attach_event()` method in favor of the
+more flexible `->register_callback()`. This will break compatibility with any package
+still making use of `->attach_event()`.
+
+## Rename to Evented::Object 3.54+
+
+In order to correspond with other 'Evented' packages, EventedObject was renamed to
+Evented::Object. All packages making use of EventedObject will need to be modified to use
+Evented::Object instead. This change was made pre-CPAN.
+
+## Removal of deprecated options 5.0+
+
+Long-deprecated callback options may no longer behave as expected in older versions.
+Specifically, Evented::Object used to try to guess whether it should insert the event
+fire object and evented object to the callback arguments. Now, it does not try to guess
+but instead only listens to the explicit options.
 
 # AUTHOR
 
