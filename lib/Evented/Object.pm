@@ -30,7 +30,7 @@ use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
 # always use 2 decimals. change other packages too.
-our $VERSION = '5.58';
+our $VERSION = '5.59';
 
 # creates a new evented object.
 sub new {
