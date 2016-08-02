@@ -338,6 +338,20 @@ not request impossible priorities.
 In any case, `before` and `after` options are completely ignored when a `priority` is
 explicitly specified.
 
+## $eo->register\_callback($event\_name => \\&callback, $cb\_name, %options)
+
+If the list of options is odd, it is assumed that the first element is the
+callback name. In this case, the `with_eo` option is also automatically
+enabled. This was added in Evented::Object 5.57.
+
+````perl
+$eo->register_callback(myEvent => sub {
+    ...
+}, name => 'some.callback', priority => 200);
+```
+
+See the above method specification for parameters and supported options.
+
 ## $eo->register\_callbacks(@events)
 
 Registers several events at once. The arguments should be a list of hash references. These

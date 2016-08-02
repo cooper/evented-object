@@ -1,5 +1,4 @@
-#
-# Copyright (c) 2011-14, Mitchell Cooper
+# Copyright (c) 2011-16, Mitchell Cooper
 #
 # Evented::Object: a simple yet featureful base class event framework.
 # https://github.com/cooper/evented-object
@@ -11,10 +10,10 @@ use strict;
 use utf8;
 use 5.010;
 
-use Scalar::Util qw(weaken);
+use Scalar::Util qw(weaken blessed);
 use List::Util qw(min max);
 
-our $VERSION = '5.57';
+our $VERSION = '5.58';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -25,19 +24,24 @@ my %boolopts = map { $_ => 1 } qw(safe return_check fail_continue);
 #   Available fire options
 #   ----------------------
 #
-#   safe            calls all callbacks within eval blocks
+#   safe            calls all callbacks within eval blocks.
+#                   consumes no parameter.
 #
 #   return_check    causes the event to ->stop if any callback returns false
 #                   BUT IT WAITS until all have been fired. so if one returns false,
 #                   the rest will be called, but $fire->stopper will be true afterward.
+#                   consumes no parameter.
 #
 #   caller          specify an alternate [caller 1] value, mostly for internal use.
+#                   parameter = caller(1) info wrapped in an array reference.
 #
 #   fail_continue   if 'safe' is enabled and a callback raises an exception, it will
 #                   by default ->stop the fire. this option tells it to continue instead.
+#                   consumes no parameter.
 #
 #   data            some data to fire with the event. esp. good for things that might be
 #                   useful at times but not accessed frequently enough to be an argument.
+#                   parameter = the data.
 #
 sub fire {
     my ($collection, @options) = @_;
@@ -62,7 +66,7 @@ sub fire {
         collection => $collection
     );
 
-    # if it hasn't been sorted, do so.
+    # if it hasn't been sorted, do so now.
     $collection->sort if not $collection->{sorted};
     my $callbacks = $collection->{sorted} or return $fire;
 
@@ -94,6 +98,8 @@ sub sort : method {
     my %callbacks = %{ $collection->{pending} };
     my (@sorted, %done, %waited);
 
+    # iterate over the callback sets,
+    # which are array refs of [ priority, group, cb ]
     my @callbacks = values %callbacks;
     SET: while (my $set = shift @callbacks) {
         my ($priority, $group, $cb) = @$set;
@@ -107,15 +113,15 @@ sub sort : method {
             next;
         }
 
-        #
-        # TODO: if before and afters cannot be resolved, the callbacks are currently
-        # skipped. maybe there should be a way to specify that a callback is REQUIRED,
-        # meaning to skip the callback entirely if it cannot be done. or maybe something
-        # more sophisticated that can prioritize the befores and afters in this way.
-        # for now though, we will just try to not specify impossible befores and afters.
-        #
-        # also, the code repetition here for before and afters is quite ugly.
-        #
+
+        # TODO: if before and afters cannot be resolved, the callback dependencies
+        # are currently skipped. maybe there should be a way to specify that a callback
+        # dependency is REQUIRED, meaning to skip the callback entirely if it cannot
+        # be done. or maybe something more sophisticated that can prioritize the
+        # befores and afters in this way. for now though, we will just try to not
+        # specify impossible befores and afters.
+
+
 
         # callback priority determination can be postponed until another's
         # priority is determined. the maxmium number of times one particular
@@ -238,8 +244,11 @@ sub _call_callbacks {
     while (my $entry = shift @$remaining) {
         my ($priority, $group, $cb)  = @$entry;
         my ($eo, $event_name, $args) = @$group;
-        ref $eo && $eo->isa('Evented::Object') or return;
 
+        # sanity check!
+        blessed $eo && $eo->isa('Evented::Object') or return;
+
+        # increment the callback counter.
         $ef_props->{callback_i}++;
 
         # set the evented object of this callback.

@@ -1,5 +1,4 @@
-#
-# Copyright (c) 2011-14, Mitchell Cooper
+# Copyright (c) 2011-16, Mitchell Cooper
 #
 # Evented::Object: a simple yet featureful base class event framework.
 # https://github.com/cooper/evented-object
@@ -12,7 +11,7 @@ use 5.010;
 
 use List::Util qw(first);
 
-our $VERSION = '5.57';
+our $VERSION = '5.58';
 
 # exported import subroutine.
 sub import {

@@ -1,16 +1,15 @@
-#
-# Copyright (c) 2011-14, Mitchell Cooper
+# Copyright (c) 2011-16, Mitchell Cooper
 #
 # Evented::Object: a simple yet featureful base class event framework.
 #
-# Evented::Object 0.2+ is based on the libuic UIC::Evented::Object:
-# an event system based on the Evented::Object class from foxy-java IRC Bot,
+# Evented::Object is based on the libuic UIC::Evented::Object:
+# ... which is based on Evented::Object from foxy-java IRC Bot,
 # ... which is based on Evented::Object from Arinity IRC Services,
 # ... which is based on Evented::Object from ntirc IRC Client,
 # ... which is based on IRC::Evented::Object from libirc IRC Library.
 #
-# Evented::Object along with its very detailed documentation can be found
-# in its latest version at https://github.com/cooper/evented-object.
+# Evented::Object and its very detailed documentation can be found
+# in their latest versions at https://github.com/cooper/evented-object.
 #
 package Evented::Object;
 
@@ -30,11 +29,10 @@ use Scalar::Util qw(weaken blessed);
 use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
-# always using 2 decimals now for CPAN releases.
-# change other packages too.
-our $VERSION = '5.57';
+# always use 2 decimals. change other packages too.
+our $VERSION = '5.58';
 
-# create a new evented object.
+# creates a new evented object.
 sub new {
     my ($class, %opts) = @_;
     bless \%opts, $class;
@@ -44,11 +42,15 @@ sub new {
 ### REGISTERING CALLBACKS ###
 #############################
 
-# attach an event callback.
+# ->register_callback()
+#
+# aliases: ->register_event(), ->on()
+# attaches an event callback.
+#
 # $eo->register_callback(myEvent => sub {
 #     ...
-# }, name => 'some.callback', priority => 200, eo_obj => 1);
-# note: no_obj fires callback without $fire as first argument.
+# }, 'some.callback.name', priority => 200);
+#
 sub register_callback {
     my ($eo, $event_name, $code, @opts_) = @_;
 
@@ -101,7 +103,10 @@ sub register_callback {
     return $cb;
 }
 
-# attach several event callbacks.
+# ->register_callbacks()
+#
+# attaches several event callbacks at once.
+#
 sub register_callbacks {
     my $eo = shift;
     return map { $eo->register_callback(%$_, _caller => caller) } @_;
@@ -111,9 +116,13 @@ sub register_callbacks {
 ### DELETING CALLBACKS ###
 ##########################
 
-# delete an event callback or all callbacks of an event.
+# ->delete_callback(event_name => 'callback.name')
+# ->delete_event('event_name')
+#
+# deletes an event callback or all callbacks of an event.
 # returns a true value if any events were deleted, false otherwise.
 # more specifically, it returns the number of callbacks deleted.
+#
 sub delete_callback {
     my ($eo, $event_name, $name, $caller) = @_;
     my @caller      = $caller && ref $caller eq 'ARRAY' ? @$caller : caller;
@@ -161,7 +170,12 @@ sub delete_callback {
     return $amount;
 }
 
-# delete all the callbacks of every event.
+# ->delete_all_events()
+#
+# deletes all the callbacks of EVERY event.
+# useful when you're done with an object to ensure any possible self-referencing
+# callbacks are properly destroyed for garbage collection to work.
+#
 sub delete_all_events {
     my ($eo, $amount) = (shift, 0);
     my $event_store   = _event_store($eo) or return;
@@ -186,7 +200,11 @@ sub delete_all_events {
 ### PREPARING EVENTS ###
 ########################
 
-# smart prepare.
+# ->prepare()
+#
+# automatically guesses whether to use
+# ->prepare_event() or ->prepare_together().
+#
 sub prepare {
     my ($eo_maybe, $eo) = $_[0];
     $eo = shift if blessed $eo_maybe && $eo_maybe->isa(__PACKAGE__);
@@ -196,13 +214,21 @@ sub prepare {
     return $eo->prepare_event(@_);
 }
 
-# prepare a single event fire.
+# ->prepare_event()
+#
+# prepares a single event fire by creating a callback collection.
+# returns the collection.
+#
 sub prepare_event {
     my ($eo, $event_name, @args) = @_;
     return $eo->prepare_together([ $event_name, @args ]);
 }
 
-# prepare a fire of one or more events.
+# ->prepare_together()
+#
+# prepares several events fire by creating a callback collection.
+# returns the collection.
+#
 sub prepare_together {
     my ($obj, %collection);
     foreach my $set (@_) {
@@ -246,18 +272,27 @@ sub prepare_together {
 ### FIRING EVENTS ###
 #####################
 
-# fire an event.
-# returns $fire.
+# ->fire_event()
+#
+# prepares an event and then fires it.
+#
 sub fire_event {
     shift->prepare_event(shift, @_)->fire(caller => [caller 1]);
 }
 
-# fire multiple events on multiple objects as a single event.
+# ->fire_events_together()
+# fire_events_together()
+#
+# prepares several events and then fires them together.
+#
 sub fire_events_together {
     prepare_together(@_)->fire(caller => [caller 1]);
 }
 
-# fire an event; then delete it.
+# ->fire_once()
+#
+# prepares an event, fires it, and deletes all callbacks afterward.
+#
 sub fire_once {
     my ($eo, $event_name, @args) = @_;
 
@@ -274,7 +309,11 @@ sub fire_once {
 ### LISTENER OBJECTS ###
 ########################
 
-# add an object to listen to events.
+# ->add_listener()
+#
+# adds an object as a listener of another object's events.
+# see "listeners" in the documentation.
+#
 sub add_listener {
     my ($eo, $obj, $prefix) = @_;
 
@@ -290,7 +329,11 @@ sub add_listener {
     return 1;
 }
 
-# remove a listener.
+# ->delete_listener()
+#
+# removes an object which was listening to another object's events.
+# see "listeners" in the documentation.
+#
 sub delete_listener {
     my ($eo, $obj) = @_;
     return 1 unless my $listeners = $eo->{$props}{listeners};
@@ -306,6 +349,8 @@ sub delete_listener {
 sub monitor_events  {    add_class_monitor(reverse @_) }
 sub stop_monitoring { delete_class_monitor(reverse @_) }
 
+# add_class_monitor()
+#
 # set the monitor object of a class.
 #
 # TODO: honestly class monitors need to track individual callbacks so that the monitor is
@@ -329,7 +374,10 @@ sub add_class_monitor {
     return 1;
 }
 
-# remove a class monitor.
+# delete_class_monitor()
+#
+# remove a class monitor object from a class.
+#
 sub delete_class_monitor {
     my ($pkg, $obj) = @_;
     my $m = $monitors{$pkg} or return;
@@ -340,7 +388,11 @@ sub delete_class_monitor {
 ### CLASS FUNCTIONS ###
 #######################
 
-# safely fire an event.
+# safe_fire($obj, event => ...)
+#
+# checks that an object is blessed and that it is an evented object.
+# if so, prepares and fires an event with optional arguments.
+#
 sub safe_fire {
     my $obj = shift;
     return if !blessed $obj || !$obj->isa(__PACKAGE__);
@@ -838,6 +890,18 @@ not request impossible priorities.
 
 In any case, C<before> and C<after> options are completely ignored when a C<priority> is
 explicitly specified.
+
+=head2 $eo->register_callback($event_name => \&callback, $cb_name, %options)
+
+If the list of options is odd, it is assumed that the first element is the
+callback name. In this case, the C<with_eo> option is also automatically
+enabled. This was added in Evented::Object 5.57.
+
+ $eo->register_callback(myEvent => sub {
+     ...
+ }, name => 'some.callback', priority => 200);
+
+See the above method specification for parameters and supported options.
 
 =head2 $eo->register_callbacks(@events)
 
