@@ -3,11 +3,11 @@ require 5.010;
 use ExtUtils::MakeMaker;
 WriteMakefile
 (
-  'PREREQ_PM' => {},
   'INSTALLDIRS' => 'site',
+  'PL_FILES' => {},
   'NAME' => 'Evented::Object',
+  'PREREQ_PM' => {},
   'EXE_FILES' => [],
-  'VERSION_FROM' => 'lib/Evented/Object.pm',
-  'PL_FILES' => {}
+  'VERSION_FROM' => 'lib/Evented/Object.pm'
 )
 ;

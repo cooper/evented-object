@@ -15,7 +15,7 @@ use 5.010;
 ### EVENT FIRE OBJECTS ###
 ##########################
 
-our $VERSION = '5.56';
+our $VERSION = '5.57';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 

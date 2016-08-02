@@ -32,7 +32,7 @@ use Evented::Object::Collection;
 
 # always using 2 decimals now for CPAN releases.
 # change other packages too.
-our $VERSION = '5.56';
+our $VERSION = '5.57';
 
 # create a new evented object.
 sub new {
@@ -52,15 +52,22 @@ sub new {
 sub register_callback {
     my ($eo, $event_name, $code, @opts_) = @_;
 
-    # if there is only one option, it is the callback name.
+    # if there is an odd number of options, the first is the callback name.
     # this also implies with_eo.
-    if (@opts_ == 1) {
-        @opts_ = (name => shift @opts_, with_eo => 1);
+    my %opts;
+    if (@opts_ % 2) {
+        %opts = (
+            name    => shift @opts_,
+            with_eo => 1,
+            @opts_
+        );
+    }
+    else {
+        %opts = @opts_;
     }
 
     # no name was provided, so we shall construct one using pure hackery.
     # this is one of the most criminal things I've ever done.
-    my %opts = @opts_;
     my @caller = caller;
     if (!defined $opts{name}) {
         state $c    = -1; $c++;
