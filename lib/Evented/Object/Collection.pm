@@ -14,7 +14,7 @@ use 5.010;
 use Scalar::Util qw(weaken);
 use List::Util qw(min max);
 
-our $VERSION = '5.55';
+our $VERSION = '5.56';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
