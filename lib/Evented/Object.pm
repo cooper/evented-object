@@ -30,7 +30,7 @@ use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
 # always use 2 decimals. change other packages too.
-our $VERSION = '5.59';
+our $VERSION = '5.60';
 
 # creates a new evented object.
 sub new {
@@ -230,7 +230,8 @@ sub prepare_event {
 # returns the collection.
 #
 sub prepare_together {
-    my ($obj, %collection);
+    my $obj;
+    my $collection = Evented::Object::Collection->new;
     foreach my $set (@_) {
         my $eo;
 
@@ -260,12 +261,12 @@ sub prepare_together {
         }
 
         # add to the collection.
-        my %mini_collection = %{ _get_callbacks($eo, $event_name, @args) };
-        @collection{ keys %mini_collection } = values %mini_collection;
+        my $callbacks = _get_callbacks($eo, $event_name, @args);
+        $collection->push_callbacks($callbacks);
 
     }
 
-    return bless { pending => \%collection }, 'Evented::Object::Collection';
+    return $collection;
 }
 
 #####################
@@ -899,7 +900,7 @@ enabled. This was added in Evented::Object 5.57.
 
  $eo->register_callback(myEvent => sub {
      ...
- }, name => 'some.callback', priority => 200);
+ }, 'some.callback, priority => 200);
 
 See the above method specification for parameters and supported options.
 

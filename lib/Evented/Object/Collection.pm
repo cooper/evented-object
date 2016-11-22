@@ -12,13 +12,27 @@ use 5.010;
 
 use Scalar::Util qw(weaken blessed);
 use List::Util qw(min max);
+use Carp qw(carp);
 
-our $VERSION = '5.59';
+our $VERSION = '5.60';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
 my $dummy;
 my %boolopts = map { $_ => 1 } qw(safe return_check fail_continue);
+
+sub new {
+    my ($class, $initial_callbacks) = @_;
+    return bless { pending => $initial_callbacks || {} }, $class;
+}
+
+sub push_callbacks {
+    my ($collection, $callbacks) = @_;
+    my $pending = $collection->{pending};
+    my @conflicts = grep $callbacks->{$_} && $pending->{$_}, keys %$callbacks;
+    carp "callback '$_' overwritten!" for @conflicts;
+    @$pending{ keys %$callbacks } = values %$callbacks;
+}
 
 #
 #   Available fire options
