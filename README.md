@@ -347,7 +347,7 @@ enabled. This was added in Evented::Object 5.57.
 ````perl
 $eo->register_callback(myEvent => sub {
     ...
-}, name => 'some.callback', priority => 200);
+}, 'some.callback, priority => 200);
 ```
 
 See the above method specification for parameters and supported options.

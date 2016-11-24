@@ -14,7 +14,7 @@ use Scalar::Util qw(weaken blessed);
 use List::Util qw(min max);
 use Carp qw(carp);
 
-our $VERSION = '5.60';
+our $VERSION = '5.61';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -22,16 +22,25 @@ my $dummy;
 my %boolopts = map { $_ => 1 } qw(safe return_check fail_continue);
 
 sub new {
-    my ($class, $initial_callbacks) = @_;
-    return bless { pending => $initial_callbacks || {} }, $class;
+    return bless {
+        pending         => {},
+        default_names   => {},
+        names           => {}
+    }, shift;
 }
 
 sub push_callbacks {
-    my ($collection, $callbacks) = @_;
-    my $pending = $collection->{pending};
-    my @conflicts = grep $callbacks->{$_} && $pending->{$_}, keys %$callbacks;
-    carp "callback '$_' overwritten!" for @conflicts;
-    @$pending{ keys %$callbacks } = values %$callbacks;
+    my ($collection, $callbacks, $names) = @_;
+    my $pending  = $collection->{pending};
+    my $my_names = $collection->{names};
+
+    # add to pending callbacks and callback name-to-ID mapping.
+    @$pending { keys %$callbacks } = values %$callbacks;
+    @$my_names{ keys %$names     } = values %$names;
+
+    # set default names for any callback names which were not found
+    $collection->{default_names}{ $_->[2]{name} } ||= $_->[2]{id}
+        for values %$callbacks;
 }
 
 #
@@ -92,12 +101,19 @@ sub fire {
             caller => $caller,
             code   => \&_return_check
         };
-        push @$callbacks, [
-            -inf,                                                       # [0] $priority
-            [ $dummy ||= Evented::Object->new, 'returnCheck', [] ],     # [1] $group
-            $cb                                                         # [2] $cb
+        my $group = [
+            $dummy ||= Evented::Object->new,
+            'returnCheck',
+            [],
+            "$dummy/returnCheck"
         ];
-        $collection->{pending}{ $cb->{name} } = $cb;
+        push @$callbacks, [
+            -inf,           # [0] $priority
+            $group,         # [1] $group
+            $cb             # [2] $cb
+        ];
+        $cb->{id} = "$$group[3]/$$cb{name}";
+        $collection->{pending}{ $cb->{id} } = $cb;
     }
 
     # call them.
@@ -115,15 +131,17 @@ sub sort : method {
     # iterate over the callback sets,
     # which are array refs of [ priority, group, cb ]
     my @callbacks = values %callbacks;
-    SET: while (my $set = shift @callbacks) {
+    while (my $set = shift @callbacks) {
         my ($priority, $group, $cb) = @$set;
-        my (@befores, @afters);
-        next if $done{ $cb->{name} };
+        my $cb_id    = $cb->{id};
+        my $group_id = $group->[3];
+
+        next if $done{$cb_id};
 
         # a real priority exists already.
         if (defined $priority && $priority ne 'nan') {
             push @sorted, $set;
-            $done{ $cb->{name} } = 1;
+            $done{$cb_id} = 1;
             next;
         }
 
@@ -142,45 +160,37 @@ sub sort : method {
         # callback can be postponed is the number of total callbacks.
         my $wait_max = keys %callbacks;
 
-        # befores.
-        if (defined(my $b = $cb->{before})) {
-            $cb->{before} = $b = [ $b ] if ref $b ne 'ARRAY';
-            foreach (@$b) {
-                $callbacks{$_} or next;
-                my $their_priority = $callbacks{$_}[0];
+        my $name_to_id = $collection->_group_names($group_id);
+        my $get_befores_afters = sub {
+            my ($key, @results) = shift;
+            my $list = $cb->{$key} or return;
+            $list = [ $list ] if ref $list ne 'ARRAY';
 
-                # wait until priority is determined.
-                if ($their_priority eq 'nan') {
-                    my $key = $cb->{name}.q( ).$callbacks{$_}[2]->{name};
+            # for each callback name, find its priority.
+            foreach my $their_name (@$list) {
+
+                # map callback name to id, id to cbref, and cbref to priority.
+                my $their_id = $name_to_id->{$their_name} or next;
+                my $their_cb = $callbacks{$their_id}      or next;
+                my $their_p  = $their_cb->[0];
+
+                # if their priority is nan,
+                # we have to wait until it is determined.
+                if ($their_p eq 'nan') {
+                    my $wait_key = "$cb_id $their_id";
                     push @callbacks, $set
-                        unless ($waited{$key} || 0) > $wait_max;
-                    $waited{$key}++;
-                    next SET;
+                        unless $waited{$key}++ > $wait_max;
+                    return 1;
                 }
 
-                push @befores, $their_priority;
+                push @results, $their_p;
             }
-        }
 
-        # afters.
-        if (defined(my $b = $cb->{after})) {
-            $cb->{after} = $b = [ $b ] if ref $b ne 'ARRAY';
-            foreach (@$b) {
-                $callbacks{$_} or next;
-                my $their_priority = $callbacks{$_}[0];
+            return (undef, @results);
+        };
 
-                # wait until priority is determined.
-                if ($their_priority eq 'nan') {
-                    my $key = $cb->{name}.q( ).$callbacks{$_}[2]->{name};
-                    push @callbacks, $set
-                        unless ($waited{$key} || 0) > $wait_max;
-                    $waited{$key}++;
-                    next SET;
-                }
-
-                push @afters, $their_priority;
-            }
-        }
+        my ($next, @befores) = $get_befores_afters->('before'); next if $next;
+        ($next, my @afters ) = $get_befores_afters->('after');  next if $next;
 
         # figure the ideal priority.
         if (@befores && @afters) {
@@ -206,7 +216,7 @@ sub sort : method {
         # done with this callback.
         $set->[0] = $priority;
         push @sorted, $set;
-        $done{ $cb->{name} } = 1;
+        $done{$cb_id} = 1;
 
     }
 
@@ -215,8 +225,8 @@ sub sort : method {
 
 }
 
-# Nov. 22, 2013 revision:
-# -----------------------
+# Nov. 22, 2013 revision
+# ----------------------
 #
 #   collection      a set of callbacks about to be fired. they might belong to multiple
 #                   objects or maybe even multiple events. they can each have their own
@@ -236,8 +246,8 @@ sub sort : method {
 #       ...
 #   )
 #
-#   $group =                            $cb =
-#   [ $eo, $event_name, $args ]         { code, caller, %opts }
+#   $group =                                $cb =
+#   [ $eo, $event_name, $args, $id ]        { code, caller, %opts }
 #
 # This format has several major advantages over the former one. Specifically,
 # it makes it very simple to determine which callbacks will be called in the
@@ -248,7 +258,6 @@ sub sort : method {
 sub _call_callbacks {
     my ($collection, $fire) = @_;
     my $ef_props = $fire->{$props};
-    my %called;
 
     # store the collection.
     my $remaining = $collection->{sorted} or return;
@@ -256,31 +265,37 @@ sub _call_callbacks {
 
     # call each callback.
     while (my $entry = shift @$remaining) {
-        my ($priority, $group, $cb)  = @$entry;
-        my ($eo, $event_name, $args) = @$group;
+        my ($priority, $group, $cb) = @$entry;
+        my ($eo, $event_name, $args, $group_id) = @$group;
 
         # sanity check!
         blessed $eo && $eo->isa('Evented::Object') or return;
+
+        # callback name-to-ID mapping is specific to each group.
+        $ef_props->{callback_ids} = $collection->_group_names($group_id);
 
         # increment the callback counter.
         $ef_props->{callback_i}++;
 
         # set the evented object of this callback.
         # set the event name of this callback.
-        $ef_props->{object} = $eo; weaken($ef_props->{object});
-        $ef_props->{name}   = $event_name;
+        $ef_props->{object}             = $eo; weaken($ef_props->{object});     # $fire->object
+        $ef_props->{name}               = $event_name;                          # $fire->event_name
+
+        # store identifiers.
+        $ef_props->{callback_id}        = my $cb_id = $cb->{id};
+        $ef_props->{group_id}           = $group_id;
 
         # create info about the call.
-        $ef_props->{callback_name}     = $cb->{name};                          # $fire->callback_name
-        $ef_props->{callback_priority} = $priority;                            # $fire->callback_priority
-        $ef_props->{callback_data}     = $cb->{data} if defined $cb->{data};   # $fire->callback_data
+        $ef_props->{callback_name}      = $cb->{name};                          # $fire->callback_name
+        $ef_props->{callback_priority}  = $priority;                            # $fire->callback_priority
+        $ef_props->{callback_data}      = $cb->{data} if defined $cb->{data};   # $fire->callback_data
 
         # this callback has been called already.
-        next if $ef_props->{called}{ $cb->{name} };
-        next if $called{$cb};
+        next if $ef_props->{called}{$cb_id};
 
         # this callback has probably been cancelled.
-        next unless $collection->{pending}{ $cb->{name} };
+        next unless $collection->{pending}{$cb_id};
 
 
         # determine arguments.
@@ -290,31 +305,30 @@ sub _call_callbacks {
         # compat: all later version had a variety of with_obj-like-options below.
         #
         my @cb_args = @$args;
-        my $include_obj = grep { $cb->{$_} } qw(with_eo with_obj with_evented_obj eo_obj);
+        my $include_obj = grep $cb->{$_}, qw(with_eo with_obj with_evented_obj eo_obj);
         unshift @cb_args, $fire unless $cb->{no_fire_obj};
         unshift @cb_args, $eo   if $include_obj;
 
         # set return values.
         $ef_props->{last_return}            =   # set last return value.
-        $ef_props->{return}{ $cb->{name} }  =   # set this callback's return value.
+        $ef_props->{return}{$cb_id}         =   # set this callback's return value.
 
             # call the callback with proper arguments.
             $collection->{safe} ? eval { $cb->{code}(@cb_args) }
                                 :        $cb->{code}(@cb_args);
 
         # set $fire->called($cb) true, and set $fire->last to the callback's name.
-        $called{$cb}                       =
-        $ef_props->{called}{ $cb->{name} } = 1;
-        $ef_props->{last_callback}         = $cb->{name};
+        $ef_props->{called}{$cb_id} = 1;
+        $ef_props->{last_callback}  = $cb->{name};
 
         # no longer pending.
-        delete $collection->{pending}{ $cb->{name} };
+        delete $collection->{pending}{$cb_id};
 
         # stop if eval failed.
         if ($collection->{safe} and my $err = $@) {
             chomp $err;
-            $ef_props->{error}{ $cb->{name} } = $err;
-            $ef_props->{exception} = $err;
+            $ef_props->{error}{$cb_id} = # not used for anything
+            $ef_props->{exception}     = $err;
             $fire->stop($err) unless $collection->{fail_continue};
         }
 
@@ -327,16 +341,26 @@ sub _call_callbacks {
     }
 
     # dispose of things that are no longer needed.
-    delete @$ef_props{qw(
+    delete @$ef_props{ qw(
         callback_name callback_priority
         callback_data callback_i object
-        collection
-    )};
+        collection callback_ids
+    ) };
 
     # return the event object.
     $ef_props->{complete} = 1;
     return $fire;
 
+}
+
+sub _group_names {
+    my ($collection, $group_id) = @_;
+    return $collection->{group_names}{$group_id} ||= do {
+        my $names_from_group = $collection->{names}{$group_id} || {};
+        my $default_names    = $collection->{default_names};
+        my %names = (%$default_names, %$names_from_group);
+        \%names
+    }
 }
 
 sub _return_check {

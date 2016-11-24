@@ -14,7 +14,7 @@ use 5.010;
 ### EVENT FIRE OBJECTS ###
 ##########################
 
-our $VERSION = '5.60';
+our $VERSION = '5.61';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -35,18 +35,19 @@ sub stop {
 # returns a true value if the given callback has been called.
 # with no argument, returns number of callbacks called so far.
 sub called {
-    my ($fire, $callback) = @_;
+    my ($fire, $cb_name) = @_;
 
     # return the number of callbacks called.
     # this includes the current callback.
-    if (!defined $callback) {
+    if (!length $cb_name) {
         my $called = scalar keys %{ $fire->{$props}{called} };
         $called++ unless $fire->{$props}{complete};
         return $called;
     }
 
     # return whether the specified callback was called.
-    return $fire->{$props}{called}{$callback};
+    my $cb_id = $fire->_cb_id($cb_name) or return;
+    return $fire->{$props}{called}{$cb_id};
 
 }
 
@@ -57,12 +58,13 @@ sub pending {
     my $pending = $fire->{$props}{collection}{pending};
 
     # return number of callbacks remaining.
-    if (!defined $cb_name) {
+    if (!length $cb_name) {
         return scalar keys %$pending;
     }
 
     # return whether the specified callback is pending.
-    return $pending->{$cb_name};
+    my $cb_id = $fire->_cb_id($cb_name) or return;
+    return $pending->{$cb_id};
 
 }
 
@@ -72,10 +74,11 @@ sub cancel {
 
     # if there is no argument given, we will just
     # treat this like a ->stop on the event.
-    defined $cb_name or return $fire->stop;
+    length $cb_name or return $fire->stop;
 
     # cancel the callback.
-    delete $fire->{$props}{collection}{pending}{$cb_name};
+    my $cb_id = $fire->_cb_id($cb_name) or return;
+    delete $fire->{$props}{collection}{pending}{$cb_id};
 
     return 1;
 }
@@ -85,8 +88,9 @@ sub cancel {
 # if the return value has a possibility of being undef,
 # the only way to be sure is to first test ->callback_called.
 sub return_of {
-    my ($fire, $callback) = @_;
-    return $fire->{$props}{return}{$callback};
+    my ($fire, $cb_name) = @_;
+    my $cb_id = $fire->_cb_id($cb_name) or return;
+    return $fire->{$props}{return}{$cb_id};
 }
 
 # returns the callback that was last called.
@@ -157,6 +161,12 @@ sub object {
 # returns the exception from 'safe' option, if any.
 sub exception {
     shift->{$props}{exception};
+}
+
+# find a callback ID from a callback name.
+sub _cb_id {
+    my ($fire, $cb_name) = @_;
+    return $fire->{$props}{callback_ids}{$cb_name};
 }
 
 ###############

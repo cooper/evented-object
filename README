@@ -326,7 +326,7 @@ Evented object methods
 
      $eo->register_callback(myEvent => sub {
          ...
-     }, name => 'some.callback', priority => 200);
+     }, 'some.callback, priority => 200);
 
     See the above method specification for parameters and supported options.
 

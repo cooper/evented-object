@@ -30,7 +30,7 @@ use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
 # always use 2 decimals. change other packages too.
-our $VERSION = '5.60';
+our $VERSION = '5.61';
 
 # creates a new evented object.
 sub new {
@@ -261,8 +261,9 @@ sub prepare_together {
         }
 
         # add to the collection.
-        my $callbacks = _get_callbacks($eo, $event_name, @args);
-        $collection->push_callbacks($callbacks);
+        my ($callbacks, $names) =
+            _get_callbacks($eo, $event_name, @args);
+        $collection->push_callbacks($callbacks, $names);
 
     }
 
@@ -444,7 +445,7 @@ sub _get_callback_named {
 # internal use only.
 sub _get_callbacks {
     my ($eo, $event_name, @args) = @_;
-    my %collection;
+    my (%callbacks, %callback_names);
 
     # start out with two stores: the object and the package.
     my @stores = (
@@ -486,17 +487,21 @@ sub _get_callbacks {
         foreach my $priority (keys %$store) {
 
             # create a group reference.
-            my $group = [ $eo, $event_name, \@args];
+            my $group_id = "$eo/$event_name";
+            my $group    = [ $eo, $event_name, \@args, $group_id ];
             weaken($group->[0]);
 
             # add each callback.
-            $collection{ $_->{name} } = [ $priority, $group, $_ ]
-                foreach @{ $store->{$priority} };
+            foreach my $cb (@{ $store->{$priority} }) {
+                $cb->{id} = "$$group[3]/$$cb{name}";
+                $callbacks{ $cb->{id} } = [ $priority, $group, $cb ];
+                $callback_names{$group_id}{ $cb->{name} } = $cb->{id};
+            }
 
         }
     }
 
-    return \%collection;
+    return wantarray ? (\%callbacks, \%callback_names) : \%callbacks;
 }
 
 # fire a class monitor event.
