@@ -14,7 +14,7 @@ use 5.010;
 ### EVENT FIRE OBJECTS ###
 ##########################
 
-our $VERSION = '5.61';
+our $VERSION = '5.62';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -48,7 +48,6 @@ sub called {
     # return whether the specified callback was called.
     my $cb_id = $fire->_cb_id($cb_name) or return;
     return $fire->{$props}{called}{$cb_id};
-
 }
 
 # returns a true value if the given callback will be called soon.
@@ -65,7 +64,6 @@ sub pending {
     # return whether the specified callback is pending.
     my $cb_id = $fire->_cb_id($cb_name) or return;
     return $pending->{$cb_id};
-
 }
 
 # cancels a future callback once.

@@ -14,7 +14,7 @@ use Scalar::Util qw(weaken blessed);
 use List::Util qw(min max);
 use Carp qw(carp);
 
-our $VERSION = '5.61';
+our $VERSION = '5.62';
 our $events  = $Evented::Object::events;
 our $props   = $Evented::Object::props;
 
@@ -344,7 +344,7 @@ sub _call_callbacks {
     delete @$ef_props{ qw(
         callback_name callback_priority
         callback_data callback_i object
-        collection callback_ids
+        collection
     ) };
 
     # return the event object.
@@ -366,9 +366,9 @@ sub _group_names {
 sub _return_check {
     my $fire    = shift;
     my %returns = %{ $fire->{$props}{return} || {} };
-    foreach my $cb_name (keys %returns) {
-        next if $returns{$cb_name};
-        return $fire->stop("$cb_name returned false with return_check enabled");
+    foreach my $cb_id (keys %returns) {
+        next if $returns{$cb_id};
+        return $fire->stop("$cb_id returned false with return_check enabled");
     }
     return 1;
 }

@@ -4,10 +4,10 @@ use ExtUtils::MakeMaker;
 WriteMakefile
 (
   'NAME' => 'Evented::Object',
-  'VERSION_FROM' => 'lib/Evented/Object.pm',
-  'EXE_FILES' => [],
-  'PREREQ_PM' => {},
   'INSTALLDIRS' => 'site',
-  'PL_FILES' => {}
+  'PL_FILES' => {},
+  'EXE_FILES' => [],
+  'VERSION_FROM' => 'lib/Evented/Object.pm',
+  'PREREQ_PM' => {}
 )
 ;

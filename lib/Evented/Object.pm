@@ -30,7 +30,7 @@ use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
 # always use 2 decimals. change other packages too.
-our $VERSION = '5.61';
+our $VERSION = '5.62';
 
 # creates a new evented object.
 sub new {
@@ -491,9 +491,9 @@ sub _get_callbacks {
             my $group    = [ $eo, $event_name, \@args, $group_id ];
             weaken($group->[0]);
 
-            # add each callback.
+            # add each callback set. inject callback name.
             foreach my $cb (@{ $store->{$priority} }) {
-                $cb->{id} = "$$group[3]/$$cb{name}";
+                $cb->{id} = "$group_id/$$cb{name}";
                 $callbacks{ $cb->{id} } = [ $priority, $group, $cb ];
                 $callback_names{$group_id}{ $cb->{name} } = $cb->{id};
             }
