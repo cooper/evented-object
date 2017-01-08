@@ -30,7 +30,7 @@ use Evented::Object::EventFire;
 use Evented::Object::Collection;
 
 # always use 2 decimals. change other packages too.
-our $VERSION = '5.62';
+our $VERSION = '5.63';
 
 # creates a new evented object.
 sub new {
@@ -492,10 +492,11 @@ sub _get_callbacks {
             weaken($group->[0]);
 
             # add each callback set. inject callback name.
-            foreach my $cb (@{ $store->{$priority} }) {
-                $cb->{id} = "$group_id/$$cb{name}";
-                $callbacks{ $cb->{id} } = [ $priority, $group, $cb ];
-                $callback_names{$group_id}{ $cb->{name} } = $cb->{id};
+            foreach my $cb_ref (@{ $store->{$priority} }) {
+                my %cb = %$cb_ref; # make a copy
+                $cb{id} = "$group_id/$cb{name}";
+                $callbacks{ $cb{id} } = [ $priority, $group, \%cb ];
+                $callback_names{$group_id}{ $cb{name} } = $cb{id};
             }
 
         }
@@ -727,7 +728,7 @@ B<Fire objects and listeners>
 
 When an event is fired on an object, the same fire object is used for callbacks
 belonging to both the evented object and its listening objects. Therefore, callback names
-must be unique not only to the listener object but to the object being listened on as
+should be unique not only to the listener object but to the object being listened on as
 well.
 
 You should also note the values of the fire object:

@@ -207,7 +207,7 @@ be called before your callback with priority 0 on the cow object.
 
 When an event is fired on an object, the same fire object is used for callbacks
 belonging to both the evented object and its listening objects. Therefore, callback names
-must be unique not only to the listener object but to the object being listened on as
+should be unique not only to the listener object but to the object being listened on as
 well.
 
 You should also note the values of the fire object:
