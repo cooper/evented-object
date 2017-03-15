@@ -10,98 +10,67 @@ and fire objects and their methods.
 
 ````perl
 package Person;
-```
 
-````perl
 use warnings;
 use strict;
 use 5.010;
 use parent 'Evented::Object';
-```
 
-````perl
 use Evented::Object;
-```
 
-````perl
 # Creates a new person object. This is nothing special.
 # Evented::Object does not require any specific constructor to be called.
 sub new {
     my ($class, %opts) = @_;
     bless \%opts, $class;
 }
-```
 
-````perl
 # Fires birthday event and increments age.
 sub have_birthday {
     my $person = shift;
     $person->fire(birthday => ++$person->{age});
 }
+
 ```
 
 In some other package...
 
 ````perl
 package main;
-```
 
-````perl
 # Create a person named Jake at age 19.
 my $jake = Person->new(name => 'Jake', age => 19);
-```
 
-````perl
 # Add an event callback that assumes Jake is under 21.
 $jake->on(birthday => sub {
     my ($fire, $new_age) = @_;
-```
 
-````perl
     say 'not quite 21 yet...';
-```
 
-````perl
 }, name => '21-soon');
-```
 
-````perl
 # Add an event callback that checks if Jake is 21 and cancels the above callback if so.
 $jake->on(birthday => sub {
     my ($fire, $new_age) =  @_;
-```
 
-````perl
     if ($new_age == 21) {
         say 'time to get drunk!';
         $fire->cancel('21-soon');
     }
-```
 
-````perl
 }, name => 'finally-21', priority => 1);
-```
 
-````perl
 # Jake has two birthdays.
-```
 
-````perl
 # Jake's 20th birthday.
 $jake->have_birthday;
-```
 
-````perl
 # Jake's 21st birthday.
 $jake->have_birthday;
-```
 
-````perl
 # Because 21-soon has a lower priority than finally-21,
 # finally-21 will cancel 21-soon if Jake is 21.
-```
 
-````perl
 # The result:
 #
 #   not quite 21 yet...

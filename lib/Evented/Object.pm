@@ -1,4 +1,4 @@
-# Copyright (c) 2011-16, Mitchell Cooper
+# Copyright (c) 2011-17, Mitchell Cooper
 #
 # Evented::Object: a simple yet featureful base class event framework.
 #
@@ -548,64 +548,64 @@ Demonstrates basic Evented::Object subclasses, priorities of event callbacks,
 and fire objects and their methods.
 
  package Person;
-
+ 
  use warnings;
  use strict;
  use 5.010;
  use parent 'Evented::Object';
-
+ 
  use Evented::Object;
-
+ 
  # Creates a new person object. This is nothing special.
  # Evented::Object does not require any specific constructor to be called.
  sub new {
      my ($class, %opts) = @_;
      bless \%opts, $class;
  }
-
+ 
  # Fires birthday event and increments age.
  sub have_birthday {
      my $person = shift;
      $person->fire(birthday => ++$person->{age});
  }
-
+ 
 In some other package...
-
+ 
  package main;
-
+ 
  # Create a person named Jake at age 19.
  my $jake = Person->new(name => 'Jake', age => 19);
-
+ 
  # Add an event callback that assumes Jake is under 21.
  $jake->on(birthday => sub {
      my ($fire, $new_age) = @_;
-
+ 
      say 'not quite 21 yet...';
-
+ 
  }, name => '21-soon');
-
+ 
  # Add an event callback that checks if Jake is 21 and cancels the above callback if so.
  $jake->on(birthday => sub {
      my ($fire, $new_age) =  @_;
-
+ 
      if ($new_age == 21) {
          say 'time to get drunk!';
          $fire->cancel('21-soon');
      }
-
+ 
  }, name => 'finally-21', priority => 1);
-
+ 
  # Jake has two birthdays.
-
+ 
  # Jake's 20th birthday.
  $jake->have_birthday;
-
+ 
  # Jake's 21st birthday.
  $jake->have_birthday;
-
+ 
  # Because 21-soon has a lower priority than finally-21,
  # finally-21 will cancel 21-soon if Jake is 21.
-
+ 
  # The result:
  #
  #   not quite 21 yet...
