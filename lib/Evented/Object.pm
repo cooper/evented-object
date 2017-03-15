@@ -547,69 +547,65 @@ and then fire events on that object.
 Demonstrates basic Evented::Object subclasses, priorities of event callbacks,
 and fire objects and their methods.
 
- package Person;
- 
- use warnings;
- use strict;
- use 5.010;
- use parent 'Evented::Object';
- 
- use Evented::Object;
- 
- # Creates a new person object. This is nothing special.
- # Evented::Object does not require any specific constructor to be called.
- sub new {
-     my ($class, %opts) = @_;
-     bless \%opts, $class;
- }
- 
- # Fires birthday event and increments age.
- sub have_birthday {
-     my $person = shift;
-     $person->fire(birthday => ++$person->{age});
- }
- 
+    package Person;
+    
+    use warnings;
+    use strict;
+    use 5.010;
+    use parent 'Evented::Object';
+    
+    use Evented::Object;
+    
+    # Creates a new person object. This is nothing special.
+    # Evented::Object does not require any specific constructor to be called.
+    sub new {
+        my ($class, %opts) = @_;
+        bless \%opts, $class;
+    }
+    
+    # Fires birthday event and increments age.
+    sub have_birthday {
+        my $person = shift;
+        $person->fire(birthday => ++$person->{age});
+    }
+
 In some other package...
  
- package main;
- 
- # Create a person named Jake at age 19.
- my $jake = Person->new(name => 'Jake', age => 19);
- 
- # Add an event callback that assumes Jake is under 21.
- $jake->on(birthday => sub {
-     my ($fire, $new_age) = @_;
- 
-     say 'not quite 21 yet...';
- 
- }, name => '21-soon');
- 
- # Add an event callback that checks if Jake is 21 and cancels the above callback if so.
- $jake->on(birthday => sub {
+    package main;
+    
+    # Create a person named Jake at age 19.
+    my $jake = Person->new(name => 'Jake', age => 19);
+    
+    # Add an event callback that assumes Jake is under 21.
+    $jake->on(birthday => sub {
+        my ($fire, $new_age) = @_;
+        say 'not quite 21 yet...';
+    }, name => '21-soon');
+    
+    # Add an event callback that checks if Jake is 21 and cancels the above callback if so.
+    $jake->on(birthday => sub {
      my ($fire, $new_age) =  @_;
- 
-     if ($new_age == 21) {
-         say 'time to get drunk!';
-         $fire->cancel('21-soon');
-     }
- 
- }, name => 'finally-21', priority => 1);
- 
- # Jake has two birthdays.
- 
- # Jake's 20th birthday.
- $jake->have_birthday;
- 
- # Jake's 21st birthday.
- $jake->have_birthday;
- 
- # Because 21-soon has a lower priority than finally-21,
- # finally-21 will cancel 21-soon if Jake is 21.
- 
- # The result:
- #
- #   not quite 21 yet...
- #   time to get drunk!
+        if ($new_age == 21) {
+             say 'time to get drunk!';
+             $fire->cancel('21-soon');
+        }
+    }, name => 'finally-21', priority => 1);
+    
+    # Jake has two birthdays.
+    
+    # Jake's 20th birthday.
+    $jake->have_birthday;
+    
+    # Jake's 21st birthday.
+    $jake->have_birthday;
+    
+    # Because 21-soon has a lower priority than finally-21,
+    # finally-21 will cancel 21-soon if Jake is 21.
+    
+    # The result:
+    #
+    #   not quite 21 yet...
+    #   time to get drunk!
 
 =head1 DESCRIPTION
 
@@ -1550,96 +1546,11 @@ Alias for C<< $eo->register_callbacks() >>.
 
 Alias for C<< $fire->object >>.
 
-=head1 COMPATIBILITY
-
-Although Evented::Object attempts to maintain compatibility for an extended period of
-time, a number of exceptions do exist.
-
-=head2 Asynchronous improvements 1.0+
-
-Evented::Object 1.* series and above are incompatible with the former versions.
-Evented::Object 1.8+ is designed to be more thread-friendly and work well in asyncrhonous
-programs, whereas the previous versions were not suitable for such uses.
-
-The main comptability issue is the arguments passed to the callbacks. In the earlier
-versions, the evented object was always the first argument of all events, until
-Evented::Object 0.6 added the ability to pass a parameter to C<< ->attach_event() >> that
-would tell Evented::Object to omit the object from the callback's argument list.
-
-=head2 Introduction of fire info 1.8+
-
-The Evented::Object series 1.8+ passes a hash reference C<$fire> instead of the
-Evented::Object as the first argument. C<$fire> contains information that was formerly
-held within the object itself, such as C<event_info>, C<event_return>, and C<event_data>.
-These are now accessible through this new hash reference as C<< $fire->{info} >>,
-C<< $fire->{return} >>, C<< $fire->{data} >>, etc. The object is now accessible with
-C<< $fire->{object} >>. (this has since been changed; see below.)
-
-Events are now stored in the C<eventedObject.events> hash key instead of C<events>, as
-C<events> was a tad bit too broad and could conflict with other libraries.
-
-In addition to these changes, the C<< ->attach_event() >> method was deprecated in version
-1.8 in favor of the new C<< ->register_callback() >>; however, it will remain in
-Evented::Object until at least the late 2.* series.
-
-=head2 Alias changes 2.0+
-
-Version 2.0 breaks things even more because C<< ->on() >> is now an alias for
-C<< ->register_callback() >> rather than the former deprecated C<< ->attach_event() >>.
-
-=head2 Introduction of fire objects 2.2+
-
-Version 2.2+ introduces a new class, Evented::Object::EventFire, which provides several
-methods for fire objects. These methods such as C<< $fire->return >> and
-C<< $fire->object >> replace the former hash keys C<< $fire->{return} >>,
-C<< $fire->{object} >>, etc. The former hash interface is no longer supported and will
-lead to error.
-
-=head2 Removal of ->attach_event() 2.9+
-
-Version 2.9 removes the long-deprecated C<< ->attach_event() >> method in favor of the
-more flexible C<< ->register_callback() >>. This will break compatibility with any package
-still making use of C<< ->attach_event() >>.
-
-=head2 Rename to Evented::Object 3.54+
-
-In order to correspond with other 'Evented' packages, EventedObject was renamed to
-Evented::Object. All packages making use of EventedObject will need to be modified to use
-Evented::Object instead. This change was made pre-CPAN.
-
-=head2 Removal of deprecated options 5.0+
-
-Long-deprecated callback options may no longer behave as expected in older versions.
-Specifically, Evented::Object used to try to guess whether it should insert the event
-fire object and evented object to the callback arguments. Now, it does not try to guess
-but instead only listens to the explicit options.
-
 =head1 AUTHOR
 
 L<Mitchell Cooper|https://github.com/cooper> <cooper@cpan.org>
 
-Copyright E<copy> 2011-2014. Released under BSD license.
+Copyright E<copy> 2011-2017. Released under BSD license.
 
-=over 4
-
-=item *
-
-B<IRC>: L<irc.notroll.net #k|irc://irc.notroll.net/k>
-
-=item *
-
-B<Email>: L<cooper@cpan.org|mailto:cooper@cpan.org>
-
-=item *
-
-B<CPAN>: L<COOPER|http://search.cpan.org/~cooper/>
-
-=item *
-
-B<GitHub>: L<cooper|https://github.com/cooper>
-
-=back
-
-Comments, complaints, and recommendations are accepted. IRC is my preferred communication
-medium. Bugs may be reported on
+Comments, complaints, and recommendations are accepted. Bugs may be reported on
 L<RT|https://rt.cpan.org/Public/Dist/Display.html?Name=Evented-Object>.

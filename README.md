@@ -30,7 +30,6 @@ sub have_birthday {
     my $person = shift;
     $person->fire(birthday => ++$person->{age});
 }
-
 ```
 
 In some other package...
@@ -44,20 +43,16 @@ my $jake = Person->new(name => 'Jake', age => 19);
 # Add an event callback that assumes Jake is under 21.
 $jake->on(birthday => sub {
     my ($fire, $new_age) = @_;
-
     say 'not quite 21 yet...';
-
 }, name => '21-soon');
 
 # Add an event callback that checks if Jake is 21 and cancels the above callback if so.
 $jake->on(birthday => sub {
-    my ($fire, $new_age) =  @_;
-
+ my ($fire, $new_age) =  @_;
     if ($new_age == 21) {
-        say 'time to get drunk!';
-        $fire->cancel('21-soon');
+         say 'time to get drunk!';
+         $fire->cancel('21-soon');
     }
-
 }, name => 'finally-21', priority => 1);
 
 # Jake has two birthdays.
@@ -890,81 +885,11 @@ Alias for `$eo->register_callbacks()`.
 
 Alias for `$fire->object`.
 
-# COMPATIBILITY
-
-Although Evented::Object attempts to maintain compatibility for an extended period of
-time, a number of exceptions do exist.
-
-## Asynchronous improvements 1.0+
-
-Evented::Object 1.\* series and above are incompatible with the former versions.
-Evented::Object 1.8+ is designed to be more thread-friendly and work well in asyncrhonous
-programs, whereas the previous versions were not suitable for such uses.
-
-The main comptability issue is the arguments passed to the callbacks. In the earlier
-versions, the evented object was always the first argument of all events, until
-Evented::Object 0.6 added the ability to pass a parameter to `->attach_event()` that
-would tell Evented::Object to omit the object from the callback's argument list.
-
-## Introduction of fire info 1.8+
-
-The Evented::Object series 1.8+ passes a hash reference `$fire` instead of the
-Evented::Object as the first argument. `$fire` contains information that was formerly
-held within the object itself, such as `event_info`, `event_return`, and `event_data`.
-These are now accessible through this new hash reference as `$fire->{info}`,
-`$fire->{return}`, `$fire->{data}`, etc. The object is now accessible with
-`$fire->{object}`. (this has since been changed; see below.)
-
-Events are now stored in the `eventedObject.events` hash key instead of `events`, as
-`events` was a tad bit too broad and could conflict with other libraries.
-
-In addition to these changes, the `->attach_event()` method was deprecated in version
-1.8 in favor of the new `->register_callback()`; however, it will remain in
-Evented::Object until at least the late 2.\* series.
-
-## Alias changes 2.0+
-
-Version 2.0 breaks things even more because `->on()` is now an alias for
-`->register_callback()` rather than the former deprecated `->attach_event()`.
-
-## Introduction of fire objects 2.2+
-
-Version 2.2+ introduces a new class, Evented::Object::EventFire, which provides several
-methods for fire objects. These methods such as `$fire->return` and
-`$fire->object` replace the former hash keys `$fire->{return}`,
-`$fire->{object}`, etc. The former hash interface is no longer supported and will
-lead to error.
-
-## Removal of ->attach\_event() 2.9+
-
-Version 2.9 removes the long-deprecated `->attach_event()` method in favor of the
-more flexible `->register_callback()`. This will break compatibility with any package
-still making use of `->attach_event()`.
-
-## Rename to Evented::Object 3.54+
-
-In order to correspond with other 'Evented' packages, EventedObject was renamed to
-Evented::Object. All packages making use of EventedObject will need to be modified to use
-Evented::Object instead. This change was made pre-CPAN.
-
-## Removal of deprecated options 5.0+
-
-Long-deprecated callback options may no longer behave as expected in older versions.
-Specifically, Evented::Object used to try to guess whether it should insert the event
-fire object and evented object to the callback arguments. Now, it does not try to guess
-but instead only listens to the explicit options.
-
 # AUTHOR
 
 [Mitchell Cooper](https://github.com/cooper) <cooper@cpan.org>
 
-Copyright © 2011-2014. Released under BSD license.
+Copyright © 2011-2017. Released under BSD license.
 
-- **IRC**: [irc.notroll.net #k](irc://irc.notroll.net/k)
-- **Email**: [cooper@cpan.org](mailto:cooper@cpan.org)
-- **CPAN**: [COOPER](http://search.cpan.org/~cooper/)
-- **GitHub**: [cooper](https://github.com/cooper)
-
-Comments, complaints, and recommendations are accepted. IRC is my preferred communication
-medium. Bugs may be reported on
+Comments, complaints, and recommendations are accepted. Bugs may be reported on
 [RT](https://rt.cpan.org/Public/Dist/Display.html?Name=Evented-Object).
