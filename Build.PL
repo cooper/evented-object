@@ -30,7 +30,7 @@ my $class = Module::Build->subclass(
                             next;
                         }
 
-                        push @lines, '````perl', $code;
+                        push @lines, '```perl', $code;
                         $in_block = 1;
                         next;
                     }

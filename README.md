@@ -8,7 +8,7 @@ and then fire events on that object.
 Demonstrates basic Evented::Object subclasses, priorities of event callbacks,
 and fire objects and their methods.
 
-````perl
+```perl
 package Person;
 
 use warnings;
@@ -34,7 +34,7 @@ sub have_birthday {
 
 In some other package...
 
-````perl
+```perl
 package main;
 
 # Create a person named Jake at age 19.
@@ -230,7 +230,7 @@ are represented by a collection object. Collections are returned by the 'prepare
 Collections are especially useful for firing events with special options. This usually
 looks something like:
 
-````perl
+```perl
 $eo->prepare(event_name => @args)->fire(some_fire_option => $value);
 ```
 
@@ -248,7 +248,7 @@ Evented::Object. It is unncessary to call `SUPER::new()`, as
 `Evented::Object->new()` returns nothing more than an empty hash reference blessed to
 Evented::Object.
 
-````perl
+```perl
 my $eo = Evented::Object->new();
 ```
 
@@ -258,7 +258,7 @@ Attaches an event callback the object. When the specified event is fired, each o
 callbacks registered using this method will be called by descending priority order
 (numerically higher priority numbers are called first.)
 
-````perl
+```perl
 $eo->register_callback(myEvent => sub {
     ...
 }, name => 'some.callback', priority => 200);
@@ -308,7 +308,7 @@ If the list of options is odd, it is assumed that the first element is the
 callback name. In this case, the `with_eo` option is also automatically
 enabled. This was added in Evented::Object 5.57.
 
-````perl
+```perl
 $eo->register_callback(myEvent => sub {
     ...
 }, 'some.callback, priority => 200);
@@ -322,7 +322,7 @@ Registers several events at once. The arguments should be a list of hash referen
 references take the same options as `->register_callback()`. Returns a list of return
 values in the order that the events were specified.
 
-````perl
+```perl
 $eo->register_callbacks(
     { myEvent => \&my_event_1, name => 'cb.1', priority => 200 },
     { myEvent => \&my_event_2, name => 'cb.2', priority => 100 }
@@ -339,7 +339,7 @@ Deletes all callbacks registered for the supplied event.
 
 Returns a true value if any events were deleted, false otherwise.
 
-````perl
+```perl
 $eo->delete_event('myEvent');
 ```
 
@@ -353,7 +353,7 @@ Deletes an event callback from the object with the given callback name.
 
 Returns a true value if any events were deleted, false otherwise.
 
-````perl
+```perl
 $eo->delete_callback(myEvent => 'my.callback');
 ```
 
@@ -367,11 +367,11 @@ $eo->delete_callback(myEvent => 'my.callback');
 Fires the specified event, calling each callback that was registered with
 `->register_callback()` in descending order of their priorities.
 
-````perl
+```perl
 $eo->fire_event('some_event');
 ```
 
-````perl
+```perl
 $eo->fire_event(some_event => $some_argument, $some_other_argument);
 ```
 
@@ -388,7 +388,7 @@ Fires the specified event, calling each callback that was registered with
 Then, all callbacks for the event are deleted. This method is useful for situations where
 an event will never be fired more than once.
 
-````perl
+```perl
 $eo->fire_once('some_event');
 $eo->fire_event(some_event => $some_argument, $some_other_argument);
 # the second does nothing because the first deleted the callbacks
@@ -404,7 +404,7 @@ $eo->fire_event(some_event => $some_argument, $some_other_argument);
 Makes the passed evented object a listener of this evented object. See the "listener
 objects" section for more information on this feature.
 
-````perl
+```perl
 $cow->add_listener($farm, 'cow');
 ```
 
@@ -423,7 +423,7 @@ on evented objects. See the documentation for the function in ["Procedural funct
 Removes a listener of this evented object. See the "listener objects" section for more
 information on this feature.
 
-````perl
+```perl
 $cow->delete_listener($farm, 'cow');
 ```
 
@@ -448,7 +448,7 @@ fired. This is most useful for firing events with special fire options.
 Prepares a single event for firing. Returns a collection object representing the callbacks
 for the event.
 
-````perl
+```perl
 # an example using the fire option return_check.
 $eo->prepare_event(some_event => @arguments)->fire('return_check');
 ```
@@ -462,12 +462,12 @@ The preparatory method equivalent to `->fire_events_together`.
 A smart method that uses the best guess between `->prepare_event` and
 `->prepare_together`.
 
-````perl
+```perl
 # uses ->prepare_event()
 $eo->prepare(some_event => @arguments);
 ```
 
-````perl
+```perl
 # uses ->prepare_together()
 $eo->prepare(
    [ some_event => @arguments ],
@@ -482,12 +482,12 @@ $eo->prepare(
 Registers an evented object as the class monitor for a specific package. See the
 section above for more details on class monitors and their purpose.
 
-````perl
+```perl
 my $some_eo  = Evented::Object->new;
 my $other_eo = Evented::Object->new;
 ```
 
-````perl
+```perl
 $some_eo->on('monitor:register_callback', sub {
     my ($event, $eo, $event_name, $cb) = @_;
     # $eo         == $other_eo
@@ -497,11 +497,11 @@ $some_eo->on('monitor:register_callback', sub {
 });
 ```
 
-````perl
+```perl
 $some_eo->monitor_events('Some::Class');
 ```
 
-````perl
+```perl
 package Some::Class;
 $other_eo->on(blah => sub{}); # will trigger the callback above
 ```
@@ -513,7 +513,7 @@ $other_eo->on(blah => sub{}); # will trigger the callback above
 Removes an evented object from its current position as a monitor for a specific package.
 See the section above for more details on class monitors and their purpose.
 
-````perl
+```perl
 $some_eo->stop_monitoring('Some::Class');
 ```
 
@@ -541,7 +541,7 @@ which event or which object they belong.
 The function takes a list of array references in the form of:
 `[ $evented_object, event_name => @arguments ]`
 
-````perl
+```perl
 Evented::Object::fire_events_together(
     [ $server,  user_joined_channel => $user, $channel ],
     [ $channel, user_joined         => $user           ],
@@ -552,7 +552,7 @@ Evented::Object::fire_events_together(
 Since Evented::Object 5.0, `->fire_events_together` can be used as a method on any
 evented object.
 
-````perl
+```perl
 $eo->fire_events_together(
     [ some_event => @arguments ],
     [ some_other => @other_arg ]
@@ -561,7 +561,7 @@ $eo->fire_events_together(
 
 The above example would formerly be achieved as:
 
-````perl
+```perl
 Evented::Object::fire_events_together(
     [ $eo, some_event => @arguments ],
     [ $eo, some_other => @other_arg ]
@@ -572,7 +572,7 @@ However, other evented objects may be specified even when this is used as a meth
 Basically, anywhere that an object is missing will fall back to the object on which
 the method was called.
 
-````perl
+```perl
 $eo->fire_events_together(
     [ $other_eo, some_event => @arguments ],
     [            some_other => @other_arg ] # no object, falls back to $eo
@@ -589,7 +589,7 @@ Safely fires an event. In other words, if the `$eo` is not an evented object or 
 blessed at all, the call will be ignored. This eliminates the need to use `blessed()`
 and `->isa()` on a value for testing whether it is an evented object.
 
-````perl
+```perl
 Evented::Object::safe_fire($eo, myEvent => 'my argument');
 ```
 
@@ -609,7 +609,7 @@ that are about to be fired.
 Fires the pending callbacks with the specified options, if any. If the callbacks have not
 yet been sorted, they are sorted before the event is fired.
 
-````perl
+```perl
 $eo->prepare(some_event => @arguments)->fire('safe');
 ```
 
@@ -649,7 +649,7 @@ the callback, the caller of the event, event data, and more.
 
 Returns the evented object.
 
-````perl
+```perl
 $fire->object->delete_event('myEvent');
 ```
 
@@ -658,7 +658,7 @@ $fire->object->delete_event('myEvent');
 Returns the value of `caller(1)` from within the `->fire()` method. This allows you
 to determine from where the event was fired.
 
-````perl
+```perl
 my $name   = $fire->event_name;
 my @caller = $fire->caller;
 say "Package $caller[0] line $caller[2] called event $name";
@@ -672,7 +672,7 @@ calls $fire->stop, the name of that callback is stored as `$fire->stopper`.
 If the event has already been stopped, this method returns the reason for which the
 fire was stopped or "unspecified" if no reason was given.
 
-````perl
+```perl
 # ignore messages from trolls
 if ($user eq 'noah') {
     # user is a troll.
@@ -687,7 +687,7 @@ if ($user eq 'noah') {
 
 Returns the callback which called `$fire->stop`.
 
-````perl
+```perl
 if ($fire->stopper) {
     say 'Fire was stopped by '.$fire->stopper;
 }
@@ -699,7 +699,7 @@ If the event was fired with the `safe` option, it is possible that an exception 
 in one (or more if `fail_continue` enabled) callbacks. This method returns the last
 exception that occurred or `undef` if none did.
 
-````perl
+```perl
 if (my $e = $fire->exception) {
    say "Exception! $e";
 }
@@ -711,11 +711,11 @@ If no argument is supplied, returns the number of callbacks called so far, inclu
 current one. If a callback argument is supplied, returns whether that particular callback
 has been called.
 
-````perl
+```perl
 say $fire->called, 'callbacks have been called so far.';
 ```
 
-````perl
+```perl
 if ($fire->called('some.callback')) {
     say 'some.callback has been called already.';
 }
@@ -731,11 +731,11 @@ If no argument is supplied, returns the number of callbacks pending to be called
 excluding the current one. If a callback  argument is supplied, returns whether that
 particular callback is pending for being called.
 
-````perl
+```perl
 say $fire->pending, ' callbacks are left.';
 ```
 
-````perl
+```perl
 if ($fire->pending('some.callback')) {
     say 'some.callback will be called soon (unless it gets canceled)';
 }
@@ -749,7 +749,7 @@ if ($fire->pending('some.callback')) {
 
 Cancels the supplied callback once.
 
-````perl
+```perl
 if ($user eq 'noah') {
     # we don't love noah!
     $fire->cancel('send.hearts');
@@ -764,7 +764,7 @@ if ($user eq 'noah') {
 
 Returns the return value of the supplied callback.
 
-````perl
+```perl
 if ($fire->return_of('my.callback')) {
     say 'my.callback returned a true value';
 }
@@ -779,11 +779,11 @@ if ($fire->return_of('my.callback')) {
 Returns the most recent previous callback called.
 This is also useful for determining which callback was the last to be called.
 
-````perl
+```perl
 say $fire->last, ' was called before this one.';
 ```
 
-````perl
+```perl
 my $fire = $eo->fire_event('myEvent');
 say $fire->last, ' was the last callback called.';
 ```
@@ -792,7 +792,7 @@ say $fire->last, ' was the last callback called.';
 
 Returns the last callback's return value.
 
-````perl
+```perl
 if ($fire->last_return) {
     say 'the callback before this one returned a true value.';
 }
@@ -805,7 +805,7 @@ else {
 
 Returns the name of the event.
 
-````perl
+```perl
 say 'the event being fired is ', $fire->event_name;
 ```
 
@@ -813,7 +813,7 @@ say 'the event being fired is ', $fire->event_name;
 
 Returns the name of the current callback.
 
-````perl
+```perl
 say 'the current callback being called is ', $fire->callback_name;
 ```
 
@@ -821,7 +821,7 @@ say 'the current callback being called is ', $fire->callback_name;
 
 Returns the priority of the current callback.
 
-````perl
+```perl
 say 'the priority of the current callback is ', $fire->callback_priority;
 ```
 
@@ -830,7 +830,7 @@ say 'the priority of the current callback is ', $fire->callback_priority;
 Returns the data supplied to the callback when it was registered, if any. If the data
 is a hash reference, an optional key parameter can specify a which value to fetch.
 
-````perl
+```perl
 say 'my data is ', $fire->callback_data;
 say 'my name is ', $fire->callback_data('name');
 ```
@@ -844,7 +844,7 @@ say 'my name is ', $fire->callback_data('name');
 Returns the data supplied to the collection when it was fired, if any. If the data
 is a hash reference, an optional key parameter can specify a which value to fetch.
 
-````perl
+```perl
 say 'fire data is ', $fire->data;
 say 'fire time was ', $fire->data('time');
 ```
