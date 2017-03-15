@@ -1,12 +1,9 @@
 NAME
 
-    Evented::Object - a base class that allows you to attach event
-    callbacks to an object and then fire events on that object.
+    Evented::Object - a base class which allows you to attach callbacks to
+    objects and then fire events on them.
 
 SYNOPSIS
-
-    Demonstrates basic Evented::Object subclasses, priorities of event
-    callbacks, and fire objects and their methods.
 
         package Person;
         
@@ -43,7 +40,8 @@ SYNOPSIS
             say 'not quite 21 yet...';
         }, name => '21-soon');
         
-        # Add an event callback that checks if Jake is 21 and cancels the above callback if so.
+        # Add an event callback that checks if Jake is 21
+        # and cancels the above callback if so.
         $jake->on(birthday => sub {
          my ($fire, $new_age) =  @_;
             if ($new_age == 21) {
@@ -70,89 +68,71 @@ SYNOPSIS
 
 DESCRIPTION
 
-    I honestly doubt your objects have ever been this evented in your
-    entire life. This concept is so incredible that we're using a noun as a
-    verb without being arrested by the grammar police.
-
-    Evented::Object started as a basic class for registering event handlers
-    and firing events. After many improvements throughout several projects,
-    Evented::Object has become far more complex and quite featureful.
+    I doubt your objects have ever been this evented in your entire life.
 
     Evented::Object supplies an (obviously objective) interface to store
-    and manage callbacks for events, fire events upon objects, and more. It
-    provides several methods for convenience and simplicity.
+    and manage callbacks for events, fire events upon objects, and more.
 
- Terminology
+    Evented::Object allows you to attach event callbacks to an object
+    (i.e., a blessed hash reference) and then fire events on that object.
+    Event fires are much like method calls, except that there can be many
+    responders.
 
-    'Evented::Object' refers to the Evented::Object package, but 'evented
-    object' refers to an object which is a member of the Evented::Object
-    class or a class which inherits from the Evented::Object class. 'Fire
-    object' refers to an object representing an event fire.
+ Glossary
 
-      * Evented::Object: this class that provides methods for managing
+    These terms are used throughout the Evented::Object documentation.
+
+      * Evented::Object - this base class, providing methods for managing
       events.
 
-      * Evented object: $eo - refers to an object that uses Evented::Object
-      for event management.
+      * Evented object: $eo - refers to any object instance of
+      Evented::Object or a package which inherits from it.
 
       * Fire object: $fire or $event - an object that represents an event
       fire.
 
-      * Collection: $col or $collection - represents a group of callbacks
-      about to be fired.
+      * Collection: $col or $collection - an object that represents a group
+      of callbacks waiting to be fired.
 
-      * Listener object: another evented object that receives event
-      notifications.
+      * Listener object - an evented object that receives event
+      notifications from another evented object.
 
     Evented::Object's included core packages are prefixed with
     Evented::Object::. Other packages which are specifically designed for
     use with Evented::Object are prefixed with Evented::.
 
- Purpose of Evented::Object
+ Prioritized callbacks
 
-    In short, Evented::Object allows you to attach event callbacks to an
-    object (also known as a blessed hash reference) and then fire events on
-    that object. To relate, event fires are much like method calls.
-    However, there can be many handlers, many return values, and many
-    responses rather than just one of each of these.
-
- Event callbacks
-
-    These handlers, known as callbacks, are called in descending order by
-    priority. Numerically larger priorities are called first. This allows
-    you to place a certain callback in front of or behind another. They can
-    modify other callbacks, modify the evented object itself, and much
-    more.
+    Event responders, known as callbacks, are executed in descending order
+    by priority. Numerically larger priorities are called first. This
+    allows you to place a certain callback in front of or behind another.
 
  Objective approach
 
     Whereas many event systems involve globally unique event names,
-    Evented::Object allows you to attach events to a specific object. The
-    event callbacks, information, and other data are stored secretly within
-    the object itself. This is quite comparable to the JavaScript event
-    systems often found in browsers.
+    Evented::Object allows you to attach events on specific objects. The
+    event callbacks, priority options, and other data are stored within the
+    object itself.
 
  Fire objects
 
-    Another important concept of Evented::Object is the fire object. It
-    provides methods for fetching information relating to the event being
-    fired, callback being called, and more. Additionally, it provides an
-    interface for modifying the evented object and modifying future event
-    callbacks. Fire objects belong to the Evented::Object::EventFire class.
+    The fire object provides methods for fetching information related to
+    the current event fire. It also provides an interface for modifying the
+    behavior of the remaining callbacks.
 
-    Fire objects are specific to each firing. If you fire the same event
-    twice in a row, the event object passed to the callbacks the first time
-    will not be the same as the second time. Therefore, all modifications
-    made by the fire object's methods apply only to the callbacks remaining
-    in this particular fire. For example, $fire->cancel($callback) will
-    only cancel the supplied callback once. The next time the event is
-    fired, that cancelled callback will be called regardless.
+    Fire objects are specific to the particular event fire, not the event.
+    If you fire the same event twice in a row, the event object used the
+    first time will not be the same as the second time. Therefore, all
+    modifications made by the fire object's methods apply only to the
+    callbacks remaining in this particular fire. For example,
+    $fire->cancel($callback) will only cancel the supplied callback once.
 
     See "Fire object methods" for more information.
 
  Listener objects
 
-    Additional evented objects can be registered as "listeners."
+    Additional evented objects can be registered as "listeners," which
+    allows them to respond to the events of another evented object.
 
     Consider a scenario where you have a class whose objects represent a
     farm. You have another class which represents a cow. You would like to
@@ -163,21 +143,6 @@ DESCRIPTION
     make the farm a listener of the cow. Then, you can attach a single
     callback to your farm. If your cow's event for mooing is moo, your
     farm's event for mooing is cow.moo.
-
-    Potential looping references
-
-    The cow holds a weak reference to the farm, so you do not need to worry
-    about deleting it later. This, however, means that your listener object
-    must also be referred to in another location in order for this to work.
-    I doubt that will be a problem, though.
-
-    Priorities and listeners
-
-    Evented::Object is rather genius when it comes to callback priorities.
-    With object listeners, it is as though the callbacks belong to the
-    object being listened to. Referring to the above example, if you attach
-    a callback on the farm object with priority 1, it will be called before
-    your callback with priority 0 on the cow object.
 
     Fire objects and listeners
 
@@ -197,42 +162,30 @@ DESCRIPTION
     cancel all remaining callbacks, including those belonging to the
     evented object.
 
- Registering callbacks to classes
+ Registering callbacks to package names
 
-    Evented::Object 3.9 adds the ability to register event callbacks to a
-    subclass of Evented::Object. The methods ->register_callback(),
-    ->delete_event(), ->delete_callback, etc. can be called in the form of
-    MyClass->method(). Evented::Object will store these callbacks in a
-    special hash hidden in the package's symbol table.
+    The methods ->register_callback(), ->delete_event(), ->delete_callback,
+    etc. can be called in the form of MyClass->method(). Evented::Object
+    will store these callbacks in the package's symbol table.
 
     Any object of this class will borrow these callbacks from the class.
     They will be incorporated into the callback collection as though they
     were registered directly on the object.
 
-    Note: Events cannot be fired on a class.
+    Note that events cannot be fired on a class, only on evented objects.
 
-    Prioritizing
-
-    When firing an event, any callbacks on the class will sorted by
-    priority just as if they were registered on the object. Whether
-    registered on the class or the object, a callback with a higher
-    priority will be called before one of a lower priority.
-
-    Subclassing
-
-    If an evented object is blessed to a subclass of a class with callbacks
-    registered to it, the object will NOT inherit the callbacks associated
-    with the parent class. Callbacks registered to classes ONLY apply to
-    objects directly blessed to the class.
+    Note that if an evented object is blessed to a subclass of a class with
+    callbacks registered to it, the object will NOT inherit the callbacks
+    associated with the parent class. Callbacks registered to classes ONLY
+    apply to objects directly blessed to the class.
 
  Class monitors
 
-    Evented::Object 4.0 introduces a "class monitor" feature. This allows
-    an evented object to be registered as a "monitor" of a specific
-    class/package. Any event callbacks that are added from that class to
-    any evented object of any type will trigger an event on the monitor
-    object - in other words, the caller of ->register_callback(),
-    regardless of the object.
+    An evented object can be registered as a "monitor" of a specific
+    class/package.
+
+    All event callbacks that are added from that class to any evented
+    object of any type will trigger an event on the monitor object.
 
     An example scenario of when this might be useful is an evented object
     for debugging all events being registered by a certain package. It
@@ -240,13 +193,11 @@ DESCRIPTION
 
  Collections
 
-    Evented::Object 5.0 introduces callback collections. Sometimes it is
-    useful to prepare an event fire before actually calling it. The group
-    of callbacks that are about to be called are represented by a
-    collection object. Collections are returned by the 'prepare' methods.
+    A collection is a group of callbacks pending to be called.
 
-    Collections are especially useful for firing events with special
-    options. This usually looks something like:
+    Sometimes it is useful to prepare an event fire before actually calling
+    it. This way, you can provide special options for the fire. Collections
+    are returned by the 'prepare' methods.
 
      $eo->prepare(event_name => @args)->fire(some_fire_option => $value);
 
@@ -260,9 +211,7 @@ Evented object methods
  Evented::Object->new()
 
     Creates a new Evented::Object. Typically, this method is overriden by a
-    child class of Evented::Object. It is unncessary to call SUPER::new(),
-    as Evented::Object->new() returns nothing more than an empty hash
-    reference blessed to Evented::Object.
+    child class of Evented::Object.
 
      my $eo = Evented::Object->new();
 
@@ -283,8 +232,8 @@ Evented object methods
 
       * callback: a CODE reference to be called when the event is fired.
 
-      * options: optional, a hash (not hash reference) of any of the below
-      options.
+      * options: optional, a hash (NOT a hash reference) of any of the
+      below options.
 
     %options - event handler options
 
@@ -315,10 +264,10 @@ Evented object methods
     Note: the order of objects will always be $eo, $fire, @args, regardless
     of omissions. By default, the argument list is $fire, @args.
 
-    Note: In Evented::Object 5.5+, you may have any number of before and
-    any number of after options for any given callback. For instance, one
-    callback may specify to be before 'b' and 'c' but after 'a'.
-    Evented::Object will resolve these priorities to its best ability.
+    You may have any number of before and any number of after options for
+    any given callback. For instance, one callback may specify to be before
+    'b' and 'c' but after 'a'. Evented::Object will resolve these
+    priorities to its best ability.
 
     In the case that the priorities can not be resolved (for instance, if a
     callback asks to be before 'a' and after 'b' while 'b' has already
@@ -333,7 +282,7 @@ Evented object methods
 
     If the list of options is odd, it is assumed that the first element is
     the callback name. In this case, the with_eo option is also
-    automatically enabled. This was added in Evented::Object 5.57.
+    automatically enabled.
 
      $eo->register_callback(myEvent => sub {
          ...
@@ -434,9 +383,9 @@ Evented object methods
 
  $eo->fire_events_together(@events)
 
-    Since Evented::Object 5.0, the fire_events_together() function can be
-    used as a method on evented objects. See the documentation for the
-    function in "Procedural functions".
+    The fire_events_together() function can be used as a method on evented
+    objects. See the documentation for the function in "Procedural
+    functions".
 
  $eo->delete_listener($other_eo)
 
@@ -461,9 +410,8 @@ Evented object methods
 
 Preparation methods
 
-    Evented::Object 5.0 introduces a means by which callbacks can be
-    prepared before being fired. This is most useful for firing events with
-    special fire options.
+    Callbacks can be prepared before being fired. This is most useful for
+    firing events with special fire options.
 
  $eo->prepare_event(event_name => @arguments)
 
@@ -559,8 +507,8 @@ Procedural functions
          [ $user,    joined_channel      => $channel        ]
      );
 
-    Since Evented::Object 5.0, ->fire_events_together can be used as a
-    method on any evented object.
+    ->fire_events_together can also be used as a method on any evented
+    object.
 
      $eo->fire_events_together(
          [ some_event => @arguments ],
