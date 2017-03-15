@@ -81,123 +81,143 @@ Evented::Object allows you to attach event callbacks to an object
 (i.e., a blessed hash reference) and then fire events on that object. Event
 fires are much like method calls, except that there can be many responders.
 
-## Glossary
-
-These terms are used throughout the Evented::Object documentation.
-
-- **Evented::Object** - this base class, providing methods for managing events.
-- **Evented object**: `$eo` - refers to any object instance of Evented::Object or
-a package which inherits from it.
-- **Fire object**: `$fire` or `$event` - an object that represents an event fire.
-- **Collection**: `$col` or `$collection` - an object that represents a group of
-callbacks waiting to be fired.
-- **Listener object** - an evented object that receives event notifications from
-another evented object.
-
-Evented::Object's included core packages are prefixed with `Evented::Object::`.
-Other packages which are specifically designed for use with Evented::Object are
-prefixed with `Evented::`.
-
-## Prioritized callbacks
-
-Event responders, known as callbacks, are executed in descending order by
-priority. Numerically larger priorities are called first. This allows you to
-place a certain callback in front of or behind another.
-
-## Objective approach
-
 Whereas many event systems involve globally unique event names, Evented::Object
 allows you to attach events on specific objects. The event callbacks,
 priority options, and other data are stored within the object itself.
 
-## Fire objects
+## Glossary
 
+These terms are used throughout the Evented::Object documentation.
+
+- **Evented::Object**
+
+```perl
+This base class, providing methods for managing events.
+```
+
+- **Evented object** - `$eo`
+
+```perl
+Refers to any object instance of Evented::Object or a package which inherits
+from it.
+```
+
+```perl
+See ["Evented object methods"](#evented-object-methods).
+```
+
+- **Callback**
+
+```perl
+Event responders, known as callbacks, consist of a code reference and sometimes
+additional options describing how and when they should be executed.
+```
+
+```perl
+They are executed in descending order by priority. Numerically larger priorities
+are called first. This allows you to place a certain callback in front of or
+behind another.
+```
+
+- **Fire object** - `$fire` or `$event`
+
+```perl
+An object representing an event fire.
+```
+
+```perl
 The fire object provides methods for fetching information related to the current
 event fire. It also provides an interface for modifying the behavior of the
 remaining callbacks.
+```
 
+```perl
 Fire objects are specific to the particular event fire, not the event. If you
 fire the same event twice in a row, the event object used the first time will
 not be the same as the second time. Therefore, all modifications made by the
 fire object's methods apply only to the callbacks remaining in this particular
 fire. For example, `$fire->cancel($callback)` will only cancel the supplied
 callback once.
+```
 
-See ["Fire object methods"](#fire-object-methods) for more information.
+```perl
+See ["Fire object methods"](#fire-object-methods).
+```
 
-## Listener objects
+- **Collection** - `$col` or `$collection`
 
+```perl
+An object representing a group of callbacks waiting to be fired.
+```
+
+```perl
+Sometimes it is useful to prepare an event fire before actually calling it.
+This way, you can provide special options for the fire. Collections are returned
+by the 'prepare' methods.
+```
+
+```perl
+    $eo->prepare(event_name => @args)->fire(some_fire_option => $value);
+```
+
+```perl
+See ["Collection methods"](#collection-methods).
+```
+
+- **Listener object**
+
+```perl
+An evented object that receives event notifications from another evented object.
+```
+
+```perl
 Additional evented objects can be registered as "listeners," which allows them
 to respond to the events of another evented object.
+```
 
+```perl
 Consider a scenario where you have a class whose objects represent a farm. You
 have another class which represents a cow. You would like to use the same
 callback for all of the moos that occur on the farm, regardless of which cow
 initiated it.
+```
 
+```perl
 Rather than attaching an event callback to every cow, you can instead make the
 farm a listener of the cow. Then, you can attach a single callback to your farm.
 If your cow's event for mooing is `moo`, your farm's event for mooing is
 `cow.moo`.
+```
 
+```perl
 **Fire objects and listeners**
+```
 
+```perl
 When an event is fired on an object, the same fire object is used for callbacks
 belonging to both the evented object and its listening objects. Therefore,
 callback names should be unique not only to the listener object but to the
 object being listened on as well.
+```
 
+```perl
 You should also note the values of the fire object:
+```
 
+```perl
 - **$fire->event\_name**: the name of the event from the perspective of the
 listener; i.e. `cow.moo` (NOT `moo`)
 - **$fire->object**: the object being listened to; i.e. `$cow` (NOT `$farm`)
-
-This also means that stopping the event from a listener object will cancel all
-remaining callbacks, including those belonging to the evented object.
-
-## Registering callbacks to package names
-
-The methods `->register_callback()`, `->delete_event()`,
-`->delete_callback`, etc. can be called in the form of
-`MyClass->method()`. Evented::Object will store these callbacks in the
-package's symbol table.
-
-Any object of this class will borrow these callbacks from the class. They will
-be incorporated into the callback collection as though they were registered
-directly on the object.
-
-Note that events cannot be fired on a class, only on evented objects.
-
-Note that if an evented object is blessed to a subclass of a class with
-callbacks registered to it, the object will NOT inherit the callbacks associated
-with the parent class. Callbacks registered to classes ONLY apply to objects
-directly blessed to the class.
-
-## Class monitors
-
-An evented object can be registered as a "monitor" of a specific class/package.
-
-_All_ event callbacks that are added from that class to _any_ evented object
-of _any_ type will trigger an event on the monitor object.
-
-An example scenario of when this might be useful is an evented object for
-debugging all events being registered by a certain package. It would log all of
-them, making it easier to find a problem.
-
-## Collections
-
-A collection is a group of callbacks pending to be called.
-
-Sometimes it is useful to prepare an event fire before actually calling it.
-This way, you can provide special options for the fire. Collections are returned
-by the 'prepare' methods.
-
-```perl
-$eo->prepare(event_name => @args)->fire(some_fire_option => $value);
 ```
 
-See ["Collection methods"](#collection-methods) for more information.
+```perl
+This also means that stopping the event from a listener object will cancel all
+remaining callbacks, including those belonging to the evented object.
+```
+
+Evented::Object's included core packages are prefixed with `Evented::Object::`.
+Other packages which are specifically designed for use with Evented::Object are
+prefixed with `Evented::`.
 
 # Evented object methods
 
@@ -862,6 +882,37 @@ Alias for `$eo->register_callbacks()`.
 ## $fire->eo
 
 Alias for `$fire->object`.
+
+# ADVANCED FEATURES
+
+## Registering callbacks to package names
+
+The methods `->register_callback()`, `->delete_event()`,
+`->delete_callback`, etc. can be called in the form of
+`MyClass->method()`. Evented::Object will store these callbacks in the
+package's symbol table.
+
+Any object of this class will borrow these callbacks from the class. They will
+be incorporated into the callback collection as though they were registered
+directly on the object.
+
+Note that events cannot be fired on a class, only on evented objects.
+
+Note that if an evented object is blessed to a subclass of a class with
+callbacks registered to it, the object will NOT inherit the callbacks associated
+with the parent class. Callbacks registered to classes ONLY apply to objects
+directly blessed to the class.
+
+## Class monitors
+
+An evented object can be registered as a "monitor" of a specific class/package.
+
+_All_ event callbacks that are added from that class to _any_ evented object
+of _any_ type will trigger an event on the monitor object.
+
+An example scenario of when this might be useful is an evented object for
+debugging all events being registered by a certain package. It would log all of
+them, making it easier to find a problem.
 
 # AUTHOR
 

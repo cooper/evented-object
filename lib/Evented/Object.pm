@@ -80,7 +80,7 @@ sub register_callback {
     my $event_store = _event_store($eo);
 
     # before/after a callback.
-    my $priority   = delete $opts{priority} || 0;
+    my $priority = delete $opts{priority} || 0;
     if (defined $opts{before} or defined $opts{after}) {
         $priority = 'nan';
         # nan priority indicates it should be determined at a later time.
@@ -620,54 +620,39 @@ Evented::Object allows you to attach event callbacks to an object
 (i.e., a blessed hash reference) and then fire events on that object. Event
 fires are much like method calls, except that there can be many responders.
 
-=head2 Glossary
-
-These terms are used throughout the Evented::Object documentation.
-
-=over 4
-
-=item *
-
-B<Evented::Object> - this base class, providing methods for managing events.
-
-=item *
-
-B<Evented object>: C<$eo> - refers to any object instance of Evented::Object or
-a package which inherits from it.
-
-=item *
-
-B<Fire object>: C<$fire> or C<$event> - an object that represents an event fire.
-
-=item *
-
-B<Collection>: C<$col> or C<$collection> - an object that represents a group of
-callbacks waiting to be fired.
-
-=item *
-
-B<Listener object> - an evented object that receives event notifications from
-another evented object.
-
-=back
-
-Evented::Object's included core packages are prefixed with C<Evented::Object::>.
-Other packages which are specifically designed for use with Evented::Object are
-prefixed with C<Evented::>.
-
-=head2 Prioritized callbacks
-
-Event responders, known as callbacks, are executed in descending order by
-priority. Numerically larger priorities are called first. This allows you to
-place a certain callback in front of or behind another.
-
-=head2 Objective approach
-
 Whereas many event systems involve globally unique event names, Evented::Object
 allows you to attach events on specific objects. The event callbacks,
 priority options, and other data are stored within the object itself.
 
-=head2 Fire objects
+=head2 Glossary
+
+These terms are used throughout the Evented::Object documentation.
+
+=over
+
+=item B<Evented::Object>
+
+This base class, providing methods for managing events.
+
+=item B<Evented object> - C<$eo>
+
+Refers to any object instance of Evented::Object or a package which inherits
+from it.
+
+See L</"Evented object methods">.
+
+=item B<Callback>
+
+Event responders, known as callbacks, consist of a code reference and sometimes
+additional options describing how and when they should be executed.
+
+They are executed in descending order by priority. Numerically larger priorities
+are called first. This allows you to place a certain callback in front of or
+behind another.
+
+=item B<Fire object> - C<$fire> or C<$event>
+
+An object representing an event fire.
 
 The fire object provides methods for fetching information related to the current
 event fire. It also provides an interface for modifying the behavior of the
@@ -680,9 +665,23 @@ fire object's methods apply only to the callbacks remaining in this particular
 fire. For example, C<< $fire->cancel($callback) >> will only cancel the supplied
 callback once.
 
-See L</"Fire object methods"> for more information.
+See L</"Fire object methods">.
 
-=head2 Listener objects
+=item B<Collection> - C<$col> or C<$collection>
+
+An object representing a group of callbacks waiting to be fired.
+
+Sometimes it is useful to prepare an event fire before actually calling it.
+This way, you can provide special options for the fire. Collections are returned
+by the 'prepare' methods.
+
+ $eo->prepare(event_name => @args)->fire(some_fire_option => $value);
+
+See L</"Collection methods">.
+
+=item B<Listener object>
+
+An evented object that receives event notifications from another evented object.
 
 Additional evented objects can be registered as "listeners," which allows them
 to respond to the events of another evented object.
@@ -706,7 +705,7 @@ object being listened on as well.
 
 You should also note the values of the fire object:
 
-=over 4
+=over
 
 =item *
 
@@ -722,46 +721,11 @@ B<< $fire->object >>: the object being listened to; i.e. C<$cow> (NOT C<$farm>)
 This also means that stopping the event from a listener object will cancel all
 remaining callbacks, including those belonging to the evented object.
 
-=head2 Registering callbacks to package names
+=back
 
-The methods C<< ->register_callback() >>, C<< ->delete_event() >>,
-C<< ->delete_callback >>, etc. can be called in the form of
-C<< MyClass->method() >>. Evented::Object will store these callbacks in the
-package's symbol table.
-
-Any object of this class will borrow these callbacks from the class. They will
-be incorporated into the callback collection as though they were registered
-directly on the object.
-
-Note that events cannot be fired on a class, only on evented objects.
-
-Note that if an evented object is blessed to a subclass of a class with
-callbacks registered to it, the object will NOT inherit the callbacks associated
-with the parent class. Callbacks registered to classes ONLY apply to objects
-directly blessed to the class.
-
-=head2 Class monitors
-
-An evented object can be registered as a "monitor" of a specific class/package.
-
-I<All> event callbacks that are added from that class to I<any> evented object
-of I<any> type will trigger an event on the monitor object.
-
-An example scenario of when this might be useful is an evented object for
-debugging all events being registered by a certain package. It would log all of
-them, making it easier to find a problem.
-
-=head2 Collections
-
-A collection is a group of callbacks pending to be called.
-
-Sometimes it is useful to prepare an event fire before actually calling it.
-This way, you can provide special options for the fire. Collections are returned
-by the 'prepare' methods.
-
- $eo->prepare(event_name => @args)->fire(some_fire_option => $value);
-
-See L</"Collection methods"> for more information.
+Evented::Object's included core packages are prefixed with C<Evented::Object::>.
+Other packages which are specifically designed for use with Evented::Object are
+prefixed with C<Evented::>.
 
 =head1 Evented object methods
 
@@ -787,7 +751,7 @@ priority order (numerically higher priority numbers are called first.)
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -809,7 +773,7 @@ B<%options - event handler options>
 All of these options are B<optional>, but the use of a callback name is B<highly
 recommended>.
 
-=over 4
+=over
 
 =item *
 
@@ -889,7 +853,7 @@ the events were specified.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -907,7 +871,7 @@ Returns a true value if any events were deleted, false otherwise.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -925,7 +889,7 @@ Returns a true value if any events were deleted, false otherwise.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -948,7 +912,7 @@ C<< ->register_callback() >> in descending order of their priorities.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -974,7 +938,7 @@ situations where an event will never be fired more than once.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -995,7 +959,7 @@ Makes the passed evented object a listener of this evented object. See the
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1021,7 +985,7 @@ for more information on this feature.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1094,7 +1058,7 @@ section above for more details on class monitors and their purpose.
  package Some::Class;
  $other_eo->on(blah => sub{}); # will trigger the callback above
 
-=over 4
+=over
 
 =item *
 
@@ -1110,7 +1074,7 @@ purpose.
 
  $some_eo->stop_monitoring('Some::Class');
 
-=over 4
+=over
 
 =item *
 
@@ -1172,7 +1136,7 @@ object on which the method was called.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1192,7 +1156,7 @@ an evented object.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1222,7 +1186,7 @@ have not yet been sorted, they are sorted before the event is fired.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1233,7 +1197,7 @@ event fire.
 
 B<@options>
 
-=over 4
+=over
 
 =item *
 
@@ -1311,7 +1275,7 @@ the fire was stopped or "unspecified" if no reason was given.
      return $fire->stop;
  }
 
-=over 4
+=over
 
 =item *
 
@@ -1352,7 +1316,7 @@ that particular callback has been called.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1374,7 +1338,7 @@ whether that particular callback is pending for being called.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1393,7 +1357,7 @@ Cancels the supplied callback once.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1411,7 +1375,7 @@ Returns the return value of the supplied callback.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1469,7 +1433,7 @@ fetch.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1488,7 +1452,7 @@ fetch.
 
 B<Parameters>
 
-=over 4
+=over
 
 =item *
 
@@ -1527,6 +1491,37 @@ Alias for C<< $eo->register_callbacks() >>.
 =head2 $fire->eo
 
 Alias for C<< $fire->object >>.
+
+=head1 ADVANCED FEATURES
+
+=head2 Registering callbacks to package names
+
+The methods C<< ->register_callback() >>, C<< ->delete_event() >>,
+C<< ->delete_callback >>, etc. can be called in the form of
+C<< MyClass->method() >>. Evented::Object will store these callbacks in the
+package's symbol table.
+
+Any object of this class will borrow these callbacks from the class. They will
+be incorporated into the callback collection as though they were registered
+directly on the object.
+
+Note that events cannot be fired on a class, only on evented objects.
+
+Note that if an evented object is blessed to a subclass of a class with
+callbacks registered to it, the object will NOT inherit the callbacks associated
+with the parent class. Callbacks registered to classes ONLY apply to objects
+directly blessed to the class.
+
+=head2 Class monitors
+
+An evented object can be registered as a "monitor" of a specific class/package.
+
+I<All> event callbacks that are added from that class to I<any> evented object
+of I<any> type will trigger an event on the monitor object.
+
+An example scenario of when this might be useful is an evented object for
+debugging all events being registered by a certain package. It would log all of
+them, making it easier to find a problem.
 
 =head1 AUTHOR
 
