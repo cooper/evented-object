@@ -26,9 +26,9 @@ SYNOPSIS
          my $person = shift;
          $person->fire(birthday => ++$person->{age});
      }
-     
-     In some other package...
-    
+
+    In some other package...
+
      package main;
      
      # Create a person named Jake at age 19.
@@ -60,7 +60,7 @@ SYNOPSIS
      
      # Because 21-soon has a lower priority than finally-21,
      # finally-21 will cancel 21-soon if Jake is 21.
-    
+     
      # The result:
      #
      #   not quite 21 yet...
