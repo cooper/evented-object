@@ -10,11 +10,21 @@ my $class = Module::Build->subclass(
         sub ACTION_distmeta {
             use Pod::Readme;
             use Pod::Select;
+            use File::Copy;
+
 
             my $self = shift;
-
-            podselect({ -output => 'README.pod' },
+            
+            podselect({ -output => 'doc/Evented/Object.pod' },
                 'lib/Evented/Object.pm');
+
+            podselect({ -output => 'doc/Evented/Object/EventFire.pod' },
+                'lib/Evented/Object/EventFire.pm');
+
+            podselect({ -output => 'doc/Evented/Object/Collection.pod' },
+                'lib/Evented/Object/Collection.pm');
+
+            copy('doc/Evented/Object.pod', 'README.pod');
 
             my $parser = Pod::Readme->new();
             $parser->parse_from_file('README.pod', 'README');
