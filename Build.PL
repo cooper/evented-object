@@ -15,17 +15,18 @@ my $class = Module::Build->subclass(
 
             my $self = shift;
             
+            # Generate .pod files
             podselect({ -output => 'doc/Evented/Object.pod' },
                 'lib/Evented/Object.pm');
-
             podselect({ -output => 'doc/Evented/Object/EventFire.pod' },
                 'lib/Evented/Object/EventFire.pm');
-
             podselect({ -output => 'doc/Evented/Object/Collection.pod' },
                 'lib/Evented/Object/Collection.pm');
 
+            # Copy Object.pod to README.pod
             copy('doc/Evented/Object.pod', 'README.pod');
 
+            # Extract text to generate README
             my $parser = Pod::Readme->new();
             $parser->parse_from_file('README.pod', 'README');
 

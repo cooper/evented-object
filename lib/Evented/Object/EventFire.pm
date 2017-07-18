@@ -233,7 +233,7 @@ the fire was stopped or "unspecified" if no reason was given.
 
 =item *
 
-B<reason>: I<optional>, the reason for stopping the event fire.
+B<$reason> - I<optional>, the reason for stopping the event fire.
 
 =back
 
@@ -274,7 +274,7 @@ B<Parameters>
 
 =item *
 
-B<callback>: I<optional>, the callback being checked.
+B<$callback> - I<optional>, the callback being checked.
 
 =back
 
@@ -296,7 +296,7 @@ B<Parameters>
 
 =item *
 
-B<callback>: I<optional>, the callback being checked.
+B<$callback> - I<optional>, the callback being checked.
 
 =back
 
@@ -315,7 +315,7 @@ B<Parameters>
 
 =item *
 
-B<callback>: the callback to be cancelled.
+B<$callback> - callback to be cancelled.
 
 =back
 
@@ -333,7 +333,7 @@ B<Parameters>
 
 =item *
 
-B<callback>: the desired callback.
+B<$callback> - desired callback.
 
 =back
 
@@ -391,7 +391,7 @@ B<Parameters>
 
 =item *
 
-B<key>: I<optional>, a key to fetch a value if the data registered was a hash.
+B<$key> - I<optional>, a key to fetch a value if the data registered was a hash.
 
 =back
 
@@ -410,7 +410,7 @@ B<Parameters>
 
 =item *
 
-B<key>: I<optional>, a key to fetch a value if the data registered was a hash.
+B<$key> - I<optional>, a key to fetch a value if the data registered was a hash.
 
 =back
 

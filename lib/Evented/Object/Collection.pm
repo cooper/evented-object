@@ -403,23 +403,23 @@ B<Parameters>
 
 =item *
 
-B<options>: I<optional>, a mixture of boolean and key:value options for the
+B<@options> - I<optional>, a mixture of boolean and key:value options for the
 event fire.
 
 =back
 
-B<@options>
+B<@options> - fire options
 
 =over
 
 =item *
 
-B<caller>: I<requires value>, use an alternate C<[caller 1]> value for the event
+B<caller> - I<requires value>, use an alternate C<[caller 1]> value for the event
 fire. This is typically only used internally.
 
 =item *
 
-B<return_check>: I<boolean>, if true, the event will yield that it was stopped
+B<return_check> - I<boolean>, if true, the event will yield that it was stopped
 if any of the callbacks return a false value. Note however that if one callbacks
 returns false, the rest will still be called. The fire object will only yield
 stopped status after all callbacks have been called and any number of them
@@ -427,19 +427,19 @@ returned false.
 
 =item *
 
-B<safe>: I<boolean>, wrap all callback calls in C<eval> for safety. if any of
+B<safe> - I<boolean>, wrap all callback calls in C<eval> for safety. if any of
 them fail, the event will be stopped at that point with the error.
 
 =item *
 
-B<fail_continue>: I<boolean>, if C<safe> above is enabled, this tells the fire
+B<fail_continue> - I<boolean>, if C<safe> above is enabled, this tells the fire
 to continue even if one of the callbacks fails. This could be dangerous if any
 of the callbacks expected a previous callback to be done when it actually
 failed.
 
 =item *
 
-B<data>: I<requires value>, a scalar value that can be fetched by
+B<data> - I<requires value>, a scalar value that can be fetched by
 C<< $fire->data >> from within the callbacks. Good for data that might be useful
 sometimes but not frequently enough to deserve a spot in the argument list. If
 C<data> is a hash reference, its values can be fetched conveniently with
