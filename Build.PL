@@ -43,11 +43,12 @@ my $build = $class->new(
         perl => '5.010',
         # Scalar::Util (nothing used unavailable in 5.10 core dist)
     },
-    recommends          => {},
-    build_requires      => {
+    configure_requires  => {
         'Pod::Readme'   => 0,
-        'Pod::Select'   => 0,
-        'Test::More'    => 0,
+        'Pod::Select'   => 0
+    },
+    build_requires      => {
+        'Test::More'    => 0
     },
     auto_configure_requires => 0,
     license             => 'bsd',
