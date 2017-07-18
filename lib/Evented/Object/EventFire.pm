@@ -418,7 +418,7 @@ B<$key> - I<optional>, a key to fetch a value if the data registered was a hash.
 
 L<Mitchell Cooper|https://github.com/cooper> <cooper@cpan.org>
 
-Copyright E<copy> 2011-2017. Released under BSD license.
+Copyright E<copy> 2011-2017. Released under New BSD license.
 
 Comments, complaints, and recommendations are accepted. Bugs may be reported on
 L<GitHub|https://github.com/cooper/evented-object/issues>.
