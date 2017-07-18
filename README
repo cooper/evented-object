@@ -177,7 +177,7 @@ MANAGING CALLBACKS
 
  $eo->register_callbacks(@events)
 
-    Registers several events at once.
+    Registers several event callbacks at once.
 
     The arguments should be a list of hash references. These references
     take the same options as ->register_callback(). Returns a list of
@@ -197,7 +197,7 @@ MANAGING CALLBACKS
 
     Deletes all callbacks registered for the supplied event.
 
-    Returns a true value if any events were deleted, false otherwise.
+    Returns number of callbacks deleted, false if none.
 
      $eo->delete_event('myEvent');
 
@@ -209,7 +209,7 @@ MANAGING CALLBACKS
 
     Deletes an event callback from the object with the given callback name.
 
-    Returns a true value if any events were deleted, false otherwise.
+    Returns true if a callback was deleted.
 
      $eo->delete_callback(myEvent => 'my.callback');
 
@@ -495,9 +495,8 @@ PROCEDURAL FUNCTIONS
 
 ALIASES
 
-    A number of aliases exist for convenience, but some of the names are
-    rather broad. For that reason, they are only recommended for use when
-    you are sure that other subclassing will not interfere.
+    A number of aliases exist for convenience, but please only use them if
+    you're certain that other subclassing will not interfere.
 
  $eo->on(...)
 

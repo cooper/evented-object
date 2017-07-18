@@ -200,7 +200,7 @@ See the above method specification for parameters and supported options.
 
 =head2 $eo->register_callbacks(@events)
 
-Registers several events at once.
+Registers several event callbacks at once.
 
 The arguments should be a list of hash
 references. These references take the same options as
@@ -226,7 +226,7 @@ B<@events> - array of hash references to pass to C<< ->register_callback() >>.
 
 Deletes all callbacks registered for the supplied event.
 
-Returns a true value if any events were deleted, false otherwise.
+Returns number of callbacks deleted, false if none.
 
  $eo->delete_event('myEvent');
 
@@ -244,7 +244,7 @@ B<$event_name> - name of the event.
 
 Deletes an event callback from the object with the given callback name.
 
-Returns a true value if any events were deleted, false otherwise.
+Returns true if a callback was deleted.
 
  $eo->delete_callback(myEvent => 'my.callback');
 
@@ -594,9 +594,8 @@ B<@args> - arguments for the event fire.
 
 =head1 ALIASES
 
-A number of aliases exist for convenience, but some of the names are rather
-broad. For that reason, they are only recommended for use when you are sure that
-other subclassing will not interfere.
+A number of aliases exist for convenience, but please only use them if you're
+certain that other subclassing will not interfere.
 
 =head2 $eo->on(...)
 
