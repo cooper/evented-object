@@ -52,7 +52,6 @@ my $build = $class->new(
     },
     auto_configure_requires => 0,
     license             => 'bsd',
-    create_makefile_pl  => 'traditional',
     create_readme       => 1,
     dynamic_config      => 0,
     meta_merge          => {
