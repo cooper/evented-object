@@ -7,7 +7,7 @@ use Module::Build;
 my $class = Module::Build->subclass(
     class => 'Evented::Object::Builder',
     code => q{
-        sub ACTION_distmeta {
+        sub ACTION_docs {
             use Pod::Readme;
             use Pod::Select;
             use File::Copy;
