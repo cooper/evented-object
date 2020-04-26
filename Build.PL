@@ -26,7 +26,7 @@ my $class = Module::Build->subclass(
             # Copy Object.pod to README.pod
             copy('doc/Evented/Object.pod', 'README.pod');
 
-            # Extract text to generate README
+            # Extract text to generate plain-text README
             my $parser = Pod::Readme->new();
             $parser->parse_from_file('README.pod', 'README');
 
